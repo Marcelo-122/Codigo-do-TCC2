@@ -1,0 +1,666 @@
+===== 20260511203832.jpg =====
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 0
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 1086 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 691 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 1565 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 10
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 1591 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 1192 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 2264 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 20
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 1994 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 1603 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 3073 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 30
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 2226 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 1828 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 3790 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 40
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 2336 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 1942 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 4302 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 50
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 2432 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 2045 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 4776 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 60
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 2634 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 2243 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 5258 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 70
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 2878 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 2479 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 5824 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 80
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 3056 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 2675 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 6692 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 90
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 3701 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 3310 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 8407 bytes
+----------------------------
+============================
+===== 20260511204422.jpg =====
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 0
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 3
+Tamanho: 1106 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 711 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 747 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 10
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 3
+Tamanho: 1409 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 1014 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 860 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 20
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 3
+Tamanho: 1693 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 1302 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 976 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 30
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 3
+Tamanho: 1828 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 1435 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 1089 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 40
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 3
+Tamanho: 2061 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 1666 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 1180 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 50
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 3
+Tamanho: 2190 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 1805 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 1251 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 60
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 3
+Tamanho: 2288 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 1896 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 1337 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 70
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 3
+Tamanho: 2407 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 2003 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 1433 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 80
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 3
+Tamanho: 2677 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 2295 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 1564 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 90
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 3
+Tamanho: 3131 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 2758 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 160 px
+Canais de Cor: 1
+Tamanho: 1856 bytes
+----------------------------
+============================
+===== 20260511204204.jpg =====
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 0
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 1123 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 722 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 1467 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 10
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 1517 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 1110 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 2172 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 20
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 1850 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 1443 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 2838 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 30
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 2030 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 1614 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 3440 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 40
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 2268 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 1861 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 3872 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 50
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 2392 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 1996 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 4271 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 60
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 2520 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 2114 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 4655 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 70
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 2664 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 2255 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 5178 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 80
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 2996 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 2585 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 5918 bytes
+----------------------------
+***** PARÂMETROS *****
+Algoritmo: JPG
+Qualidade: 90
+**********
+----- Imagem Original -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 3
+Tamanho: 3567 bytes
+----------------------------
+----- Imagem Escala Cinza -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 3151 bytes
+----------------------------
+----- Imagem Binarizada -----
+Largura: 160 px
+Altura: 120 px
+Canais de Cor: 1
+Tamanho: 7422 bytes
+----------------------------
+============================
