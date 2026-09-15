@@ -78,8 +78,7 @@ void sendChunk(int index, int total, const String &dataHex) {
 
     // Debug: mostra a resposta bruta completa do módulo, separada do stream
     // ao vivo acima. Se o Radioenge reportar canal/frequência em algum campo
-    // aqui, vai aparecer nessa linha - me manda um exemplo que eu ajusto o
-    // parser pra destacar isso como "Canal: ..." separadamente.
+    // aqui, vai aparecer nessa linha
     Serial.print("[resposta bruta do modulo]: ");
     Serial.println(resposta);
 
@@ -134,7 +133,7 @@ void loop() {
     } else if (linha.startsWith("RESEND:")) {
       // Ex: "RESEND:2,7,15,23" reenvia so esses indices (o 'total' usado na
       // mensagem CHUNK precisa bater com o do lote original - ajuste TOTAL_ORIGINAL).
-      const int TOTAL_ORIGINAL = 50; // <-- ajuste para o total do lote que você mandou
+      const int TOTAL_ORIGINAL = 50; // <-- ajuste para o total do lote 
 
       String lista = linha.substring(7);
       Serial.print("Reenviando indices: ");
