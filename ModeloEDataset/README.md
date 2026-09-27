@@ -154,9 +154,9 @@ par "real/previsto" (verde = acertou, vermelho = errou). Exemplo:
 
 Também há um teste com imagens **completamente novas** (nunca usadas em nenhuma etapa do
 treino) em **[TESTE_IMAGENS_NOVAS.md](TESTE_IMAGENS_NOVAS.md)** — hidrômetros chineses de
-marca/fonte de dígito nunca vista, gerado por `testar_imagens_novas.py`: 20/22 dígitos
-individuais corretos (91%), um pouco abaixo da validação porque é um estilo de medidor
-genuinamente novo.
+marca/fonte de dígito nunca vista (4 fotos limpas) + fotos reais tiradas pela própria
+ESP32CAM (2 fotos), gerado por `testar_imagens_novas.py`: 30/32 dígitos individuais
+corretos (94%), incluindo as 2 fotos reais da ESP32CAM 100% corretas.
 
 | Etapa | Acurácia geral (validação, 10 classes) | Acurácia nas fotos reais da ESP32CAM |
 |---|---|---|

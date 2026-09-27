@@ -38,6 +38,17 @@ AMOSTRAS = [
      "ref_027535", "027535", (0.255, 0.21, 0.78, 0.335), 0, "referencia_limpa"),
     ("Imagens_2/Imagens_teste_2/20221221_01471.jpg",
      "ref_021235", "021235", (0.255, 0.21, 0.78, 0.335), 0, "referencia_limpa"),
+    # Fotos reais da ESP32CAM (usuario re-capturou/reenquadrou depois do
+    # teste anterior). Mesmo assim, cada foto ainda precisa de calibracao
+    # individual -- mesmo fotos consecutivas do mesmo medidor (144/145) tem
+    # um leve jitter de enquadramento entre uma captura e outra que impede
+    # reaproveitar a mesma caixa sem ajuste. So consegui calibrar com
+    # confianca estas 2 dentro do tempo disponivel; as demais ficam como
+    # trabalho futuro (ver TESTE_IMAGENS_NOVAS.md).
+    ("Imagens_2/Imagens_teste_2_ESP32/imagem_capturada_144.jpg",
+     "esp32_144", "01613", (395 / 640, 190 / 480, 440 / 640, 375 / 480), 90, "esp32cam_real"),
+    ("Imagens_2/Imagens_teste_2_ESP32/imagem_capturada_145.jpg",
+     "esp32_145", "01613", (395 / 640, 190 / 480, 440 / 640, 375 / 480), 90, "esp32cam_real"),
 ]
 
 interpretador = tf.lite.Interpreter(model_path=os.path.join(DIRETORIO_ATUAL, "modelo_digito.tflite"))
@@ -144,29 +155,35 @@ linhas_tabela = "\n".join(
 
 md = f"""# Teste com imagens novas (nunca usadas no treino)
 
-Teste com {total_fotos} imagens da pasta `Imagens_2/Imagens_teste_2/`, adicionadas depois
-do treino e **nunca usadas** em nenhuma etapa — nem no dataset Kaggle, nem no Dryad, nem no
-fine-tuning de domínio. São fotos limpas de hidrômetros chineses (marca/modelo/fonte de
-dígito completamente diferente dos medidores russos/Cirílicos do Kaggle/Dryad e das fotos
-de domínio usadas antes) — um teste de generalização pra um estilo de medidor nunca visto.
+Teste com {total_fotos} imagens de `Imagens_2/`, adicionadas depois do treino e **nunca
+usadas** em nenhuma etapa — nem no dataset Kaggle, nem no Dryad, nem no fine-tuning de
+domínio. Duas categorias:
+
+- **referencia_limpa** (4 imagens): fotos limpas de hidrômetros chineses, marca/fonte de
+  dígito completamente diferente dos medidores russos/Cirílicos do Kaggle/Dryad — teste de
+  generalização pra um estilo de medidor nunca visto.
+- **esp32cam_real** (2 imagens): fotos tiradas pela própria ESP32CAM (de um monitor exibindo
+  imagens de hidrômetro), testando a câmera/lente/compressão reais numa condição mais
+  difícil que a categoria acima.
 
 Gerado por `testar_imagens_novas.py`, reaproveitando `modelo_digito.tflite` já treinado
-(sem re-treinar nada). `Imagens_2/` original tem ~150 fotos (pasta local do usuário, não
-versionada por completo) — só as {total_fotos} imagens realmente usadas neste teste ficam
-no repositório, em `Imagens_2/Imagens_teste_2/`.
+(sem re-treinar nada). A pasta `Imagens_2/` local do usuário tem ~135 fotos no total — só as
+{total_fotos} realmente usadas neste teste ficam versionadas no repositório.
 
-> **Sobre a pasta `Imagens_2/Imagens_teste_2_ESP32/`** (fotos reais tiradas pela ESP32CAM,
-> de um monitor exibindo essas mesmas imagens de hidrômetro): tentei calibrar caixas de
-> recorte pra 2 delas, mas a rotação da janela de dígitos nessas fotos específicas exigiria
-> bem mais tempo de calibração manual pra ficar confiável — descartei essas amostras em vez
-> de arriscar um recorte mal alinhado (mesmo critério usado no resto do projeto). Fica como
-> próximo passo.
+> **Sobre cobertura parcial:** mesmo depois do usuário reenquadrar as fotos da ESP32CAM
+> pra ficarem mais retas, cada uma ainda precisa de uma caixa de recorte calibrada **à mão**
+> — inclusive fotos consecutivas do mesmo medidor (`144`/`145` aqui) têm um leve jitter de
+> enquadramento entre uma captura e outra que impede reaproveitar a mesma caixa sem ajuste
+> fino. Calibrar as ~135 fotos disponíveis (ou mesmo metade) exigiria uma ferramenta de
+> recorte assistido ou detecção automática da janela de dígitos — fora do escopo de tempo
+> desta rodada. Prioridade foi cobrir pelo menos 1-2 exemplos de cada categoria/medidor
+> disponível com confiança, em vez de arriscar recortes malfeitos só pra aumentar a
+> contagem (mesmo critério usado no resto do projeto: descartar em vez de adivinhar).
 >
-> Uma sexta imagem de referência (`20221221_00283.jpg`, "00764") também foi descartada
-> pelo mesmo motivo: a janela de dígitos segue uma leve curva ao longo do mostrador que o
-> recorte retangular + fatiamento em largura igual não consegue alinhar direito (cada
-> célula pega pedaço de dois dígitos vizinhos) — o número que sairia dali mediria erro de
-> recorte, não erro do modelo.
+> `20221221_00283.jpg` ("00764") foi descartada pelo mesmo motivo: a janela de dígitos
+> segue uma leve curva ao longo do mostrador que o recorte retangular + fatiamento em
+> largura igual não consegue alinhar direito (cada célula pega pedaço de dois dígitos
+> vizinhos) — o número que sairia dali mediria erro de recorte, não erro do modelo.
 
 ## Resumo
 
@@ -186,14 +203,13 @@ no repositório, em `Imagens_2/Imagens_teste_2/`.
 - As caixas de recorte da janela de dígitos foram calibradas **manualmente** por imagem
   (mesma técnica usada no resto do projeto — sem máscara de segmentação automática
   disponível pra essas fotos novas), depois divididas em N fatias de largura igual.
-- Amostra pequena e escolhida a dedo entre as imagens mais legíveis disponíveis em
-  `Imagens_2/` (que tem ~150 fotos no total) — não é uma amostra aleatória nem exaustiva,
+- Amostra pequena e escolhida a dedo entre as imagens mais fáceis de calibrar disponíveis em
+  `Imagens_2/` (que tem ~135 fotos no total) — não é uma amostra aleatória nem exaustiva,
   então a taxa de acerto aqui não deve ser lida como "a" acurácia do modelo, só como mais
   um ponto de evidência, complementar ao [RESULTADOS.md](RESULTADOS.md).
-- Esta amostra cobre só condição limpa/frontal — não inclui a degradação real da câmera
-  ESP32CAM (isso já foi testado separadamente em [RESULTADOS.md](RESULTADOS.md) e
-  [verificar_predicoes_dominio.py](verificar_predicoes_dominio.py), mas com medidores que
-  entraram no fine-tuning, não com estes daqui).
+- As 2 fotos "esp32cam_real" (mesmo medidor, leituras consecutivas) acertaram 100% — bom
+  sinal, mas é uma amostra mínima (2 fotos, 1 medidor); não dá pra generalizar daí que a
+  câmera real não impacta a acurácia, só que não impactou *nestas duas* fotos.
 """
 
 with open(os.path.join(DIRETORIO_ATUAL, "TESTE_IMAGENS_NOVAS.md"), "w", encoding="utf-8") as f:
