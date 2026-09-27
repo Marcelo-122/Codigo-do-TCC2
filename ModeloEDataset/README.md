@@ -152,6 +152,12 @@ domínio em `dataset/predicoes_dominio/`, com a foto original, cada recorte de d
 par "real/previsto" (verde = acertou, vermelho = errou). Exemplo:
 [campo_imagem_capturada_15_predicao.png](dataset/predicoes_dominio/campo_imagem_capturada_15_predicao.png).
 
+Também há um teste com imagens **completamente novas** (nunca usadas em nenhuma etapa do
+treino) em **[TESTE_IMAGENS_NOVAS.md](TESTE_IMAGENS_NOVAS.md)** — hidrômetros chineses de
+marca/fonte de dígito nunca vista, gerado por `testar_imagens_novas.py`: 20/22 dígitos
+individuais corretos (91%), um pouco abaixo da validação porque é um estilo de medidor
+genuinamente novo.
+
 | Etapa | Acurácia geral (validação, 10 classes) | Acurácia nas fotos reais da ESP32CAM |
 |---|---|---|
 | **Fase A + Fase B (final, INT8)** | **96,9%** | **100%** (24/24) |
@@ -215,6 +221,7 @@ Conferir sempre antes de confiar no dataset gerado:
 | [gerar_header.py](gerar_header.py) | Converte qualquer `.tflite` em `.h` (usado tanto pro modelo de segmentação quanto pro de dígito) |
 | [gerar_relatorio_resultados.py](gerar_relatorio_resultados.py) | Reavalia o modelo já treinado e gera [RESULTADOS.md](RESULTADOS.md) + matriz de confusão (não re-treina) |
 | [verificar_predicoes_dominio.py](verificar_predicoes_dominio.py) | Gera uma imagem por foto de domínio comparando dígito real vs. previsto (verificação visual) |
+| [testar_imagens_novas.py](testar_imagens_novas.py) | Testa o modelo em imagens novas (`Imagens_2/`), nunca usadas no treino — gera [TESTE_IMAGENS_NOVAS.md](TESTE_IMAGENS_NOVAS.md) |
 | `modelo_digito.h5` / `.tflite` / `.h` | Artefatos finais do classificador de dígito |
 
 ## Limitações conhecidas
