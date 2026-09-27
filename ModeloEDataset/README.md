@@ -146,6 +146,12 @@ Números oficiais em **[RESULTADOS.md](RESULTADOS.md)** — gerado por
 confusão e acurácia por dígito. É a fonte confiável, não os números soltos abaixo — ver a
 nota importante logo depois.
 
+Pra conferir visualmente, foto a foto, o que o modelo previu contra o valor real (em vez de
+só a acurácia agregada), rode `verificar_predicoes_dominio.py` — gera uma imagem por foto de
+domínio em `dataset/predicoes_dominio/`, com a foto original, cada recorte de dígito e o
+par "real/previsto" (verde = acertou, vermelho = errou). Exemplo:
+[campo_imagem_capturada_15_predicao.png](dataset/predicoes_dominio/campo_imagem_capturada_15_predicao.png).
+
 | Etapa | Acurácia geral (validação, 10 classes) | Acurácia nas fotos reais da ESP32CAM |
 |---|---|---|
 | **Fase A + Fase B (final, INT8)** | **96,9%** | **100%** (24/24) |
@@ -188,6 +194,9 @@ python -m venv .venv
 
 # 5. (Opcional) Gera/atualiza o relatório verificável de resultados
 ./.venv/Scripts/python gerar_relatorio_resultados.py
+
+# 6. (Opcional) Conferencia visual foto a foto (real vs. previsto)
+./.venv/Scripts/python verificar_predicoes_dominio.py
 ```
 
 Conferir sempre antes de confiar no dataset gerado:
@@ -205,6 +214,7 @@ Conferir sempre antes de confiar no dataset gerado:
 | [treinar_classificador_digitos.py](treinar_classificador_digitos.py) | Constrói, treina (Fase A + B), converte INT8 e valida a CNN |
 | [gerar_header.py](gerar_header.py) | Converte qualquer `.tflite` em `.h` (usado tanto pro modelo de segmentação quanto pro de dígito) |
 | [gerar_relatorio_resultados.py](gerar_relatorio_resultados.py) | Reavalia o modelo já treinado e gera [RESULTADOS.md](RESULTADOS.md) + matriz de confusão (não re-treina) |
+| [verificar_predicoes_dominio.py](verificar_predicoes_dominio.py) | Gera uma imagem por foto de domínio comparando dígito real vs. previsto (verificação visual) |
 | `modelo_digito.h5` / `.tflite` / `.h` | Artefatos finais do classificador de dígito |
 
 ## Limitações conhecidas
