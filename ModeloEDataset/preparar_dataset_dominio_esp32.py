@@ -7,9 +7,6 @@ from PIL import Image
 from digitos_comum import segment_cells_iguais, save_digit_crops
 
 DIRETORIO_ATUAL = os.path.dirname(os.path.abspath(__file__))
-# pasta pessoal usada nas primeiras fotos de teste (cartaz estatico); nao ha
-# nenhuma linha "cartaz" em dominio_labels.csv atualmente, entao isso fica
-# sem uso -- ajuste se reativar esse conjunto.
 DIR_CARTAZ = r"E:\lição\7° Semestre\TCC I\imagens"
 DIR_CAMPO = os.path.join(DIRETORIO_ATUAL, "Imagens")
 DIR_OUT = os.path.join(DIRETORIO_ATUAL, "dataset", "digits_domain")

@@ -10,6 +10,9 @@ from tensorflow.keras import layers
 DIRETORIO_ATUAL = os.path.dirname(os.path.abspath(__file__))
 DIR_DIGITS = os.path.join(DIRETORIO_ATUAL, "dataset", "digits")
 DIR_DOMINIO = os.path.join(DIRETORIO_ATUAL, "dataset", "digits_domain")
+DIR_MODELOS = os.path.join(DIRETORIO_ATUAL, "modelos")
+DIR_RELATORIOS = os.path.join(DIRETORIO_ATUAL, "relatorios")
+os.makedirs(DIR_RELATORIOS, exist_ok=True)
 IMG_SIZE = (28, 28)
 SEED = 42
 BATCH_SIZE = 128
@@ -34,14 +37,14 @@ contagens_treino = {c: len(os.listdir(os.path.join(DIR_DIGITS, c))) for c in cla
 # Avaliacao do modelo FLOAT (.h5)
 # ==========================================
 print("-> Avaliando modelo_digito.h5 (float)")
-modelo_float = tf.keras.models.load_model(os.path.join(DIRETORIO_ATUAL, "modelo_digito.h5"))
+modelo_float = tf.keras.models.load_model(os.path.join(DIR_MODELOS, "modelo_digito.h5"))
 loss_f, acc_f = modelo_float.evaluate(ds_val, verbose=0)
 
 # ==========================================
 # Avaliacao do modelo INT8 (.tflite) + matriz de confusao
 # ==========================================
 print("-> Avaliando modelo_digito.tflite (INT8) e montando matriz de confusao")
-interpretador = tf.lite.Interpreter(model_path=os.path.join(DIRETORIO_ATUAL, "modelo_digito.tflite"))
+interpretador = tf.lite.Interpreter(model_path=os.path.join(DIR_MODELOS, "modelo_digito.tflite"))
 interpretador.allocate_tensors()
 entrada = interpretador.get_input_details()[0]
 saida = interpretador.get_output_details()[0]
@@ -124,15 +127,15 @@ for i in range(n_classes):
             ax.text(j, i, str(valor), ha="center", va="center", color=cor, fontsize=7)
 fig.colorbar(im, ax=ax, shrink=0.8)
 fig.tight_layout()
-caminho_matriz = os.path.join(DIRETORIO_ATUAL, "matriz_confusao.png")
+caminho_matriz = os.path.join(DIR_RELATORIOS, "matriz_confusao.png")
 fig.savefig(caminho_matriz, dpi=150)
 print(f"-> {caminho_matriz} salvo")
 
 # ==========================================
 # Grava resultados_treino.json (maquina-legivel) e RESULTADOS.md (humano)
 # ==========================================
-tam_tflite_kb = os.path.getsize(os.path.join(DIRETORIO_ATUAL, "modelo_digito.tflite")) / 1024
-tam_seg_kb = os.path.getsize(os.path.join(DIRETORIO_ATUAL, "modelo_esp32.tflite")) / 1024
+tam_tflite_kb = os.path.getsize(os.path.join(DIR_MODELOS, "modelo_digito.tflite")) / 1024
+tam_seg_kb = os.path.getsize(os.path.join(DIR_MODELOS, "modelo_esp32.tflite")) / 1024
 
 resultados = {
     "classes": classes,
@@ -149,7 +152,7 @@ resultados = {
     "tamanho_tflite_kb": round(tam_tflite_kb, 1),
     "tamanho_modelo_segmentacao_kb": round(tam_seg_kb, 1),
 }
-with open(os.path.join(DIRETORIO_ATUAL, "resultados_treino.json"), "w", encoding="utf-8") as f:
+with open(os.path.join(DIR_RELATORIOS, "resultados_treino.json"), "w", encoding="utf-8") as f:
     json.dump(resultados, f, indent=2, ensure_ascii=False)
 
 linhas_classe = "\n".join(
@@ -196,7 +199,7 @@ nada, só mede. Para reproduzir do zero, rode `treinar_classificador_digitos.py`
 3. Os números crus, sem arredondamento, também ficam em `resultados_treino.json`.
 """
 
-with open(os.path.join(DIRETORIO_ATUAL, "RESULTADOS.md"), "w", encoding="utf-8") as f:
+with open(os.path.join(DIR_RELATORIOS, "RESULTADOS.md"), "w", encoding="utf-8") as f:
     f.write(md)
 
 print("\n-> RESULTADOS.md e resultados_treino.json gerados")

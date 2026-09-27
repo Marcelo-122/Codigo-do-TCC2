@@ -15,7 +15,7 @@ DIR_FOTOS = os.path.join(DIRETORIO_ATUAL, "Imagens")
 LABELS_CSV = os.path.join(DIRETORIO_ATUAL, "dominio_labels.csv")
 DIR_OUT = os.path.join(DIRETORIO_ATUAL, "dataset", "predicoes_dominio")
 
-interpretador = tf.lite.Interpreter(model_path=os.path.join(DIRETORIO_ATUAL, "modelo_digito.tflite"))
+interpretador = tf.lite.Interpreter(model_path=os.path.join(DIRETORIO_ATUAL, "modelos", "modelo_digito.tflite"))
 interpretador.allocate_tensors()
 entrada = interpretador.get_input_details()[0]
 saida = interpretador.get_output_details()[0]

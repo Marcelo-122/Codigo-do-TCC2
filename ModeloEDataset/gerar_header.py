@@ -1,8 +1,8 @@
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--tflite", default="modelo_esp32.tflite")
-parser.add_argument("--header", default="modelo.h")
+parser.add_argument("--tflite", default="modelos/modelo_esp32.tflite")
+parser.add_argument("--header", default="modelos/modelo.h")
 parser.add_argument("--array-name", default="modelo_tflite")
 args = parser.parse_args()
 

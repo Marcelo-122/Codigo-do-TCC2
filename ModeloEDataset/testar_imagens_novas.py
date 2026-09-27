@@ -11,7 +11,10 @@ from PIL import Image, ImageDraw, ImageFont
 
 DIRETORIO_ATUAL = os.path.dirname(os.path.abspath(__file__))
 DIR_OUT = os.path.join(DIRETORIO_ATUAL, "dataset", "teste_imagens_novas")
+DIR_MODELOS = os.path.join(DIRETORIO_ATUAL, "modelos")
+DIR_RELATORIOS = os.path.join(DIRETORIO_ATUAL, "relatorios")
 os.makedirs(DIR_OUT, exist_ok=True)
+os.makedirs(DIR_RELATORIOS, exist_ok=True)
 
 # (caminho, apelido_curto, rotulo_real, caixa_fracionaria(x0,y0,x1,y1), rotacao_graus, categoria)
 # apelido_curto e usado no nome do arquivo de saida (os nomes originais de
@@ -51,7 +54,7 @@ AMOSTRAS = [
      "esp32_145", "01613", (395 / 640, 190 / 480, 440 / 640, 375 / 480), 90, "esp32cam_real"),
 ]
 
-interpretador = tf.lite.Interpreter(model_path=os.path.join(DIRETORIO_ATUAL, "modelo_digito.tflite"))
+interpretador = tf.lite.Interpreter(model_path=os.path.join(DIR_MODELOS, "modelo_digito.tflite"))
 interpretador.allocate_tensors()
 entrada = interpretador.get_input_details()[0]
 saida = interpretador.get_output_details()[0]
@@ -212,7 +215,7 @@ Gerado por `testar_imagens_novas.py`, reaproveitando `modelo_digito.tflite` já 
   câmera real não impacta a acurácia, só que não impactou *nestas duas* fotos.
 """
 
-with open(os.path.join(DIRETORIO_ATUAL, "TESTE_IMAGENS_NOVAS.md"), "w", encoding="utf-8") as f:
+with open(os.path.join(DIR_RELATORIOS, "TESTE_IMAGENS_NOVAS.md"), "w", encoding="utf-8") as f:
     f.write(md)
 
 print(f"\nResumo: {fotos_ok}/{total_fotos} fotos corretas, {digitos_ok}/{total_digitos} dígitos corretos")

@@ -95,8 +95,10 @@ class TempoEstimadoCallback(tf.keras.callbacks.Callback):
 print("\n-> Iniciando Treinamento")
 model.fit(X_train, Y_train, validation_split=0.2, epochs=10000, batch_size=1, callbacks=[TempoEstimadoCallback()])
 
+os.makedirs(os.path.join(DIRETORIO_ATUAL, "modelos"), exist_ok=True)
+
 # isso é só o backup temporário do modelo, não é necessário para o ESP32
-model.save("modelo_medidor.h5") 
+model.save(os.path.join(DIRETORIO_ATUAL, "modelos", "modelo_medidor.h5"))
 
 # ==========================================
 # 5. CONVERSÃO E QUANTIZAÇÃO (TFLITE INT8)
@@ -119,7 +121,7 @@ converter.inference_output_type = tf.int8
 
 tflite_quant_model = converter.convert()
 
-with open("modelo_esp32.tflite", "wb") as f:
+with open(os.path.join(DIRETORIO_ATUAL, "modelos", "modelo_esp32.tflite"), "wb") as f:
     f.write(tflite_quant_model)
 
-print("\n->Arquivo 'modelo_esp32.tflite' gerado.")
+print("\n->Arquivo 'modelos/modelo_esp32.tflite' gerado.")

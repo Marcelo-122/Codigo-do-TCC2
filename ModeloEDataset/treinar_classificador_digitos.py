@@ -6,6 +6,8 @@ from tensorflow.keras import layers, models
 DIRETORIO_ATUAL = os.path.dirname(os.path.abspath(__file__))
 DIR_DIGITS = os.path.join(DIRETORIO_ATUAL, "dataset", "digits")
 DIR_DOMINIO = os.path.join(DIRETORIO_ATUAL, "dataset", "digits_domain")
+DIR_MODELOS = os.path.join(DIRETORIO_ATUAL, "modelos")
+os.makedirs(DIR_MODELOS, exist_ok=True)
 IMG_SIZE = (28, 28)
 SEED = 42
 
@@ -174,7 +176,7 @@ else:
 # ==========================================
 # 6. SALVA MODELO FLOAT
 # ==========================================
-modelo.save(os.path.join(DIRETORIO_ATUAL, "modelo_digito.h5"))
+modelo.save(os.path.join(DIR_MODELOS, "modelo_digito.h5"))
 print("\n-> modelo_digito.h5 salvo")
 
 # ==========================================
@@ -205,7 +207,7 @@ converter.inference_input_type = tf.int8
 converter.inference_output_type = tf.int8
 tflite_modelo = converter.convert()
 
-caminho_tflite = os.path.join(DIRETORIO_ATUAL, "modelo_digito.tflite")
+caminho_tflite = os.path.join(DIR_MODELOS, "modelo_digito.tflite")
 with open(caminho_tflite, "wb") as f:
     f.write(tflite_modelo)
 print(f"-> {caminho_tflite} gerado ({len(tflite_modelo) / 1024:.1f} KB)")
@@ -245,7 +247,7 @@ if TEM_DOMINIO:
 # ==========================================
 # 10. ORCAMENTO DE MEMORIA - comparacao com o modelo de segmentacao atual
 # ==========================================
-caminho_segmentacao = os.path.join(DIRETORIO_ATUAL, "modelo_esp32.tflite")
+caminho_segmentacao = os.path.join(DIR_MODELOS, "modelo_esp32.tflite")
 if os.path.exists(caminho_segmentacao):
     tam_seg = os.path.getsize(caminho_segmentacao) / 1024
     print(f"\nComparacao de tamanho: modelo_digito.tflite = {len(tflite_modelo)/1024:.1f} KB "
