@@ -29,7 +29,14 @@ ds_train = tf.keras.utils.image_dataset_from_directory(
 ds_val = tf.keras.utils.image_dataset_from_directory(
     DIR_DIGITS, labels="inferred", label_mode="int", color_mode="grayscale",
     image_size=IMG_SIZE, batch_size=BATCH_SIZE, validation_split=0.15, subset="validation",
-    seed=SEED, shuffle=False,
+    # IMPORTANTE: precisa do mesmo shuffle=True (e seed) da chamada de treino
+    # acima. O image_dataset_from_directory usa o parametro `shuffle` tambem
+    # pra decidir se embaralha a lista de arquivos ANTES de cortar
+    # treino/validacao -- com valores diferentes nas duas chamadas, os dois
+    # cortes deixam de ser complementares. Aqui isso fazia a "validacao"
+    # virar so os ultimos 15% da lista ordenada por classe (dígitos 7,8,9),
+    # nunca uma amostra real das 10 classes. Ver RESULTADOS.md.
+    seed=SEED, shuffle=True,
 )
 classes = ds_train.class_names
 print("Classes:", classes)

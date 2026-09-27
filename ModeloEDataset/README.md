@@ -45,18 +45,12 @@ Os dois modelos são independentes e cabem juntos com folga no ESP32CAM:
 ## Fontes de dados
 
 Rotular dígito-a-dígito é o problema central aqui: nenhum dos datasets crus vem com
-"aqui está o dígito 7" — só com a leitura total do medidor. Três fontes foram combinadas.
+"aqui está o dígito 7" — só com a leitura total do medidor. Três fontes foram combinadas:
 
-> **Nenhum dos dois datasets externos (Kaggle e Dryad) fica versionado neste repositório**
-> — juntos passariam de 3 GB. Baixe cada um antes de rodar os scripts de preparação (ver
-> "Como rodar" mais abaixo).
-
-### 1. Kaggle — *yandex-toloka water-meters-dataset*
-Baixar de <https://www.kaggle.com/datasets/tapakah68/yandextoloka-water-meters-dataset> e
-colocar em `dataset/images/` + `dataset/masks/` (créditos em
-[dataset/Crédito.txt](dataset/Crédito.txt)). 1244 fotos reais de hidrômetros variados
-(ângulo arbitrário), com máscara da janela de dígitos e o valor total no nome do arquivo
-(`id_1000_value_176_881.jpg` → 176,881 m³).
+### 1. Kaggle — *yandex-toloka water-meters-dataset* (já estava no repo)
+[dataset/images](dataset/images) + [dataset/masks](dataset/masks), 1244 fotos reais de
+hidrômetros variados (ângulo arbitrário), com máscara da janela de dígitos e o valor total
+no nome do arquivo (`id_1000_value_176_881.jpg` → 176,881 m³).
 
 Não há como saber de antemão quantas rodinhas cada medidor tem, então
 [preparar_dataset_digitos.py](preparar_dataset_digitos.py) faz, para cada imagem:
@@ -76,15 +70,12 @@ Resultado: 195 imagens aceitas (de 1244) → ~1.560 recortes de dígito. Relató
 `dataset/digits_report.csv` + `dataset/digits_preview.png` (amostra visual por classe).
 
 ### 2. Dryad — *Word-Wheel Water Meter Dataset* (Zhao et al., 2026)
-Dataset público, revisado por pares (Nature *Scientific Data*, 2,8 GB). Baixar em
-<https://doi.org/10.5061/dryad.7d7wm3860> e extrair em
-`dataset/Word-Wheel_Water_Meter_Dataset/`, mantendo a estrutura original do zip (deve
-sobrar `dataset/Word-Wheel_Water_Meter_Dataset/Word-Wheel_Water_Meter_Dataset/recognition/...`).
-O paper completo está salvo aqui em
-[s41597-026-06809-z (1).pdf](<s41597-026-06809-z (1).pdf>). Referência: Zhao, S. et al. *A
-comprehensive dataset for word-wheel water meter reading under challenging conditions.*
-Scientific Data 13, 479 (2026).
-DOI: [10.1038/s41597-026-06809-z](https://doi.org/10.1038/s41597-026-06809-z).
+Dataset público, revisado por pares (Nature *Scientific Data*), colocado pelo usuário em
+`dataset/Word-Wheel_Water_Meter_Dataset/` (não versionado no git — 2,8 GB, ver
+`.gitignore`). Referência: Zhao, S. et al. *A comprehensive dataset for word-wheel water
+meter reading under challenging conditions.* Scientific Data 13, 479 (2026).
+DOI: [10.1038/s41597-026-06809-z](https://doi.org/10.1038/s41597-026-06809-z) — dados em
+Dryad, DOI [10.5061/dryad.7d7wm3860](https://doi.org/10.5061/dryad.7d7wm3860).
 
 > **Licença:** CC BY-NC-ND 4.0 (não-comercial, sem derivados). Uso acadêmico/TCC está
 > coberto; se este projeto virar produto comercial, os pesos treinados com esses dados
@@ -105,7 +96,7 @@ troca entre dois dígitos — ambíguo).
 
 Resultado: 11.079 imagens aceitas → **57.197 recortes de dígito** (ruído residual estimado
 em ~1-2%, bem mais limpo que o Kaggle). Isso multiplicou o dataset de treino por ~35x e foi
-o que mais melhorou a acurácia (51,6% → 97,6%).
+o que mais melhorou a acurácia (ver números corrigidos em [RESULTADOS.md](RESULTADOS.md)).
 
 ### 3. Fotos reais da própria ESP32CAM (conjunto de domínio / fine-tuning)
 Nem o Kaggle nem o Dryad foram fotografados com o sensor/lente/compressão da ESP32CAM alvo
@@ -149,41 +140,54 @@ PC — nada disso roda no ESP32, só o modelo final congelado.
 
 ## Resultados
 
-| Etapa | Acurácia geral (validação) | Acurácia nas fotos reais da ESP32CAM |
+Números oficiais em **[RESULTADOS.md](RESULTADOS.md)** — gerado por
+`gerar_relatorio_resultados.py`, que reavalia `modelo_digito.h5`/`.tflite` já treinados
+(sem re-treinar) e é reprodutível por qualquer pessoa que clonar o repo. Inclui matriz de
+confusão e acurácia por dígito. É a fonte confiável, não os números soltos abaixo — ver a
+nota importante logo depois.
+
+| Etapa | Acurácia geral (validação, 10 classes) | Acurácia nas fotos reais da ESP32CAM |
 |---|---|---|
-| Antes do Dryad (só Kaggle, CNN pequena) | 51,6% | 25% (zero-shot) |
-| Fase A com Dryad (sem fine-tuning) | 97,7% (float) / 97,6% (INT8) | 62,5% (zero-shot) |
-| **Fase A + Fase B (final, INT8)** | **96,3%** | **95,8%** (23/24) |
+| **Fase A + Fase B (final, INT8)** | **96,9%** | **100%** (24/24) |
 
-O ganho do Dryad foi o maior fator isolado. A Fase B custou ~1,4 ponto de acurácia geral
-mas fechou quase todo o gap de domínio (62,5%→95,8%) — troca que vale a pena, já que o que
-importa no fim é ler o hidrômetro real, não o dataset de validação.
-
-> Os 95,8% de domínio são sobre as *mesmas* 24 fotos usadas no fine-tuning (não há fatia
+> **Os 100% de domínio são sobre as *mesmas* 24 fotos usadas no fine-tuning** (não há fatia
 > separada de teste, dado o volume pequeno) — é um número otimista, não uma medida
 > independente. Ver "Próximos passos".
+
+> **Bug corrigido nos números anteriores:** até uma revisão feita depois do treino, o
+> dataset de validação era construído com `shuffle=False` numa chamada e `shuffle=True` na
+> outra (treino) do `image_dataset_from_directory` do Keras — esse parâmetro também decide
+> se a lista de arquivos é embaralhada *antes* de cortar treino/validação, então as duas
+> chamadas geravam cortes não-complementares. Na prática, "validação" era só os últimos 15%
+> da lista ordenada por classe, que caíam inteiramente nos dígitos 7, 8 e 9 — todo número
+> de acurácia relatado antes disso (inclusive os "51,6%→97,6%→96,3%" que já foram
+> mencionados em conversa) media só esses 3 dígitos, nunca os outros 7. Corrigido em
+> `treinar_classificador_digitos.py` e `gerar_relatorio_resultados.py` (as duas chamadas
+> agora usam `shuffle=True` consistente) e o modelo foi re-treinado do zero. Os números
+> corrigidos acima ficaram parecidos com os antigos (96,9% vs 96,3%) — não porque o bug não
+> importasse, mas porque o modelo de fato generaliza bem pras 10 classes, o que só dá pra
+> afirmar agora que a validação está correta.
 
 ## Como rodar
 
 ```bash
-# 0. Baixa os datasets externos (nao versionados aqui, ver secao "Fontes de dados")
-#    - Kaggle -> dataset/images/ + dataset/masks/
-#    - Dryad  -> dataset/Word-Wheel_Water_Meter_Dataset/
-
 # 1. Ambiente (Python 3.10 — TensorFlow não tem wheel estável pra 3.13 no Windows ainda)
 python -m venv .venv
 ./.venv/Scripts/pip install -r requirements.txt
 
 # 2. Prepara os datasets de dígito (nesta ordem, cada um soma ao mesmo dataset/digits/)
 ./.venv/Scripts/python preparar_dataset_digitos.py        # Kaggle
-./.venv/Scripts/python preparar_dataset_dryad.py           # Dryad
-./.venv/Scripts/python preparar_dataset_dominio_esp32.py   # fotos reais da ESP32CAM (ja incluidas em Imagens/)
+./.venv/Scripts/python preparar_dataset_dryad.py           # Dryad (requer a pasta local)
+./.venv/Scripts/python preparar_dataset_dominio_esp32.py   # fotos reais da ESP32CAM
 
 # 3. Treina, converte e valida
 ./.venv/Scripts/python treinar_classificador_digitos.py
 
 # 4. Gera o header C para o firmware (compatível com o uso antigo, agora com argumentos)
 ./.venv/Scripts/python gerar_header.py --tflite modelo_digito.tflite --header modelo_digito.h --array-name modelo_digito_tflite
+
+# 5. (Opcional) Gera/atualiza o relatório verificável de resultados
+./.venv/Scripts/python gerar_relatorio_resultados.py
 ```
 
 Conferir sempre antes de confiar no dataset gerado:
@@ -200,6 +204,7 @@ Conferir sempre antes de confiar no dataset gerado:
 | [preparar_dataset_dominio_esp32.py](preparar_dataset_dominio_esp32.py) + [dominio_labels.csv](dominio_labels.csv) | Extrai dígitos das fotos reais da ESP32CAM |
 | [treinar_classificador_digitos.py](treinar_classificador_digitos.py) | Constrói, treina (Fase A + B), converte INT8 e valida a CNN |
 | [gerar_header.py](gerar_header.py) | Converte qualquer `.tflite` em `.h` (usado tanto pro modelo de segmentação quanto pro de dígito) |
+| [gerar_relatorio_resultados.py](gerar_relatorio_resultados.py) | Reavalia o modelo já treinado e gera [RESULTADOS.md](RESULTADOS.md) + matriz de confusão (não re-treina) |
 | `modelo_digito.h5` / `.tflite` / `.h` | Artefatos finais do classificador de dígito |
 
 ## Limitações conhecidas
@@ -209,7 +214,8 @@ Conferir sempre antes de confiar no dataset gerado:
   integração dos dois modelos no ESP32CAM real fica para uma etapa futura.
 - O conjunto de domínio real (24 recortes, 2 medidores) cobre só os dígitos
   `{0,1,2,3,7,8,9}` — faltam exemplos reais de `4,5,6`.
-- A acurácia de domínio (95,8%) não tem fatia de teste separada — é otimista.
+- A acurácia de domínio (100%, ver [RESULTADOS.md](RESULTADOS.md)) não tem fatia de teste
+  separada — é otimista.
 - Rotulagem automática (Kaggle e Dryad) depende de suposições e heurísticas auditáveis via
   os `*_report.csv`, mas não é 100% livre de ruído (~1-4% estimado).
 - Dimensionamento exato de RAM/flash/latência em hardware real (tensor arena, tempo de
@@ -235,7 +241,11 @@ Conferir sempre antes de confiar no dataset gerado:
 ## Histórico de iterações (contexto do processo)
 
 Registrado aqui porque explica *por que* o pipeline ficou do jeito que está, não só o
-resultado final:
+resultado final. **Os percentuais abaixo são os que foram medidos em cada etapa na época,
+com o bug de shuffle/split descrito em "Resultados" ainda presente** (validação enviesada
+pros dígitos 7/8/9) — servem pra entender a direção/magnitude relativa de cada mudança, não
+como valores absolutos confiáveis. Os únicos números corrigidos e confiáveis são os da
+versão final, em [RESULTADOS.md](RESULTADOS.md).
 
 1. Primeira versão da CNN (8→16 filtros, ~20k parâmetros) treinada só com o Kaggle: 32%
    depois 53,5% de acurácia após um filtro de segmentação mais rigoroso — ainda baixo.
@@ -246,4 +256,9 @@ resultado final:
    pra sustentar mais capacidade sem overfitar, e ainda sobra bastante orçamento de memória
    no ESP32CAM.
 5. Com o modelo bem mais forte, a Fase B foi testada de novo (3 intensidades) e desta vez
-   ajudou bastante (62,5%→95,8% no domínio, custando ~1,4pp geral) — reativada.
+   ajudou bastante — reativada.
+6. Ao gerar um relatório verificável de resultados (pedido do usuário), a matriz de
+   confusão saiu quebrada (só 3 classes apareciam) — investigando isso, achei o bug real de
+   `shuffle` no split treino/validação (ver "Resultados"). Corrigido e re-treinado do zero;
+   os números finais corrigidos ficaram parecidos com os antigos, o que dá mais confiança de
+   que o modelo generaliza bem — mas só porque agora isso foi de fato medido certo.
