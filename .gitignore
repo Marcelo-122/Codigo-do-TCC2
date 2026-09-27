@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- ModeloEDataset (pipeline de OCR do hidrometro) ---
+ModeloEDataset/.venv/
+ModeloEDataset/dataset/images/
+ModeloEDataset/dataset/masks/
+ModeloEDataset/dataset/digits/
+ModeloEDataset/dataset/Word-Wheel_Water_Meter_Dataset/
+ModeloEDataset/_savedmodel_digito/
