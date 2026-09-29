@@ -6,8 +6,8 @@ from tensorflow import keras, io
 from tensorflow.keras import layers
 
 # --- 1. PARÂMETROS E CONFIGURAÇÕES ---
-IMG_WIDTH = 64
-IMG_HEIGHT = 64
+IMG_WIDTH = 68
+IMG_HEIGHT = 68
 VOCAB = "0123456789"  # Suas 10 classes
 
 # Mapeamento do caractere para o número da classe (0 a 9)
@@ -64,7 +64,7 @@ def encode_single_sample(img_path: str):
     return img, label
 
 # --- 4. CARREGAMENTO DOS DADOS ---
-path_file = Path(__file__).resolve().parent
+path_file = Path(__file__).resolve().parent.parent
 dataset_dir = path_file / 'num_dataset'
 
 imgs_paths = []
@@ -99,8 +99,8 @@ model.summary()
 model.fit(
     train_ds,
     validation_data=val_ds,
-    epochs=20
+    epochs=30
 )
 
 # Salvar modelo pronto para uso
-model.save('modelo_ocr.keras')
+model.save(path_file / 'models' / 'modelo_ocr.keras')
