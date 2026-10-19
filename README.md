@@ -35,22 +35,22 @@ O trabalho une duas frentes que se complementam:
 
 ## Visão geral da arquitetura
 
-```
-                       ┌────────────────────────── OCR (visão computacional) ───────────────────────────┐
-                       │                                                                                 │
- Hidrômetro ──foto──▶ ESP32-CAM ──▶ [1] segmentação (U-Net INT8)  ──▶ recorte da janela de dígitos      │
-                       │                                          ──▶ [2] leitura dos dígitos           │
-                       │                                               (CNN por dígito  ou  CRNN+CTC)   │
-                       └─────────────────────────────────────────────────────────────────────────────────┘
-                                   │ imagem JPEG (ou leitura) em chunks de 100 bytes
-                                   ▼
-                       Radioenge RD49C (AU915, DR6 = SF8 / BW 500 kHz, canal 64 = 915,9 MHz)
-                                   │  LoRaWAN (uplink, ABP)
-                                   ▼
-                       Heltec/TTGO LoRa32 (receptor, imprime  HEX:<frame>|RSSI:<n>  na serial)
-                                   │ USB-serial
-                                   ▼
-                       PC: reconstrutor.py  →  descriptografa (AES-128 CTR) → remonta o JPEG
+```mermaid
+flowchart TB
+    subgraph OCR ["1. Visão computacional (OCR)"]
+        direction LR
+        H["Hidrômetro"] -- foto --> C["ESP32-CAM"]
+        C --> S["[1] Segmentação<br/>(U-Net INT8)<br/>e recorte da janela"]
+        S --> L["[2] Leitura dos dígitos<br/>(CNN por dígito<br/>ou CRNN+CTC)"]
+    end
+
+    subgraph ENLACE ["2. Enlace LoRaWAN"]
+        direction LR
+        RD["Radioenge RD49C<br/>AU915, DR6 = SF8<br/>BW 500 kHz, 915,9 MHz"] -- "LoRaWAN<br/>(uplink, ABP)" --> RX["Heltec/TTGO LoRa32<br/>(receptor)"]
+        RX -- "USB-serial<br/>HEX:frame|RSSI:n" --> PC["PC: reconstrutor.py<br/>descriptografa (AES-128 CTR)<br/>e remonta o JPEG"]
+    end
+
+    OCR -. "imagem JPEG (ou leitura)<br/>em chunks de 100 bytes" .-> ENLACE
 ```
 
 Os dois estágios de OCR já foram **testados juntos em uma ESP32-CAM real**
@@ -411,7 +411,7 @@ seriais disponíveis, rode `python -m serial.tools.list_ports -v`.
 |---|---|---|---|
 | [Yandex.Toloka Water Meters](https://www.kaggle.com/datasets/tapakah68/yandextoloka-water-meters-dataset) | Kucev Roman | Fotos + máscaras da janela de dígitos (`images/`, `masks/`) | Ver página do Kaggle |
 | [Digits 0–9](https://www.kaggle.com/datasets/aquibiqbal/digits-09) | Aquib Iqbal | Dígitos isolados (`num/`, `num_dataset/`) | Ver página do Kaggle |
-| Word-Wheel Water Meter Dataset | Zhao et al., *Scientific Data* 13, 479 (2026) — [DOI 10.1038/s41597-026-06809-z](https://doi.org/10.1038/s41597-026-06809-z) | Dígitos rotulados (não versionado, 2,8 GB) | **CC BY-NC-ND 4.0** — uso acadêmico OK; reavaliar se virar produto comercial |
+| Word-Wheel Water Meter Dataset | Zhao et al., *Scientific Data* 13, 479 (2026) — [DOI 10.1038/s41597-026-06809-z](https://doi.org/10.1038/s41597-026-06809-z) | Dígitos rotulados (não versionado, 2,8 GB) | **CC BY-NC-ND 4.0** |
 | Fotos da ESP32-CAM | Próprio projeto | Fine-tuning de domínio e testes | — |
 
 Os três datasets públicos **não são versionados**. Use `python scripts/download_datasets.py --listar`
@@ -470,4 +470,3 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 - **Gustavo Santos** — `TreinoEModelosOCRNaBorda/` (treino e modelos de OCR na borda; autor do modelo de segmentação original citado em `ModeloEDataset/`)
 - **ChristianDev123** — `poc_diminuicao_imagem/` e `ocr_cloud/`
 
-> Atribuições inferidas do histórico de commits — ajuste conforme a contribuição real de cada um.
