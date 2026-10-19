@@ -1,0 +1,35 @@
+Fonte;Arquivo;Veredito;Latï¿½ï¿½ncia ;ýýrea (px);IoU (%);Dice (%)
+Amostra Dataset;id_96_value_353_0.jpg;Gabarito Validado;9051.77;0;N/A;N/A
+Amostra Dataset;id_659_value_342_009.jpg;Gabarito Validado;109.33;3357;2.34;4.57
+Amostra Dataset;id_105_value_78_404.jpg;Gabarito Validado;113.62;2470;93.43;96.6
+Amostra Dataset;id_1056_value_722_363.jpg;Gabarito Validado;110.04;3838;87.76;93.48
+Amostra Dataset;id_1173_value_886_683.jpg;Gabarito Validado;319.81;2129;72.36;83.96
+Amostra Dataset;id_283_value_23_365.jpg;Gabarito Validado;107.65;4327;93.61;96.7
+Amostra Dataset;id_309_value_976_451.jpg;Gabarito Validado;111.83;1316;54.46;70.52
+Amostra Dataset;id_811_value_188_799.jpg;Gabarito Validado;115.69;5080;90.83;95.19
+Amostra Dataset;id_990_value_106_899.jpg;Gabarito Validado;112.5;3941;82.42;90.36
+Amostra Dataset;id_104_value_322_032.jpg;Gabarito Validado;116.26;3988;14.23;24.92
+Amostra Dataset;id_915_value_91_523.jpg;Gabarito Validado;109.72;801;N/A;N/A
+Amostra Dataset;id_247_value_795_861.jpg;Gabarito Validado;109.0;2217;92.21;95.95
+Amostra Dataset;id_886_value_491_457.jpg;Gabarito Validado;111.37;1998;41.09;58.25
+Amostra Dataset;id_654_value_489_464.jpg;Gabarito Validado;108.95;387;N/A;N/A
+Amostra Dataset;id_287_value_110_818.jpg;Gabarito Validado;108.94;2883;16.36;28.11
+Amostra Dataset;id_708_value_195_1.jpg;Gabarito Validado;107.04;2573;96.31;98.12
+Amostra Dataset;id_967_value_588_276.jpg;Gabarito Validado;109.23;1641;4.62;8.84
+Amostra Dataset;id_393_value_376_319.jpg;Gabarito Validado;108.69;1730;7.07;13.21
+Amostra Dataset;id_1012_value_591_381.jpg;Gabarito Validado;110.26;4314;6.46;12.14
+Amostra Dataset;id_174_value_680_443.jpg;Gabarito Validado;109.37;9796;69.28;81.85
+Mundo Real;image.jpg;Mal Posicionado (Muito Distante);112.53;1004;N/A;N/A
+Mundo Real;image1.jpg;Mal Posicionado (ï¿½ï¿½ngulo/Corte Incorr;373.71;1250;N/A;N/A
+Mundo Real;image10.jpg;Identificï¿½ï¿;108.7;6367;N/A;N/A
+Mundo Real;image11.jpg;Identificï¿½ï¿;105.26;5795;N/A;N/A
+Mundo Real;image13.jpg;Identificï¿½ï¿;120.44;4570;N/A;N/A
+Mundo Real;image14.jpg;Inexistente;108.54;0;N/A;N/A
+Mundo Real;image2.jpeg;Mal Posicionado (ï¿½ï¿½ngulo/Corte Incorr;122.36;2771;N/A;N/A
+Mundo Real;image3.jpg;Identificï¿½ï¿;108.16;8095;N/A;N/A
+Mundo Real;image4.jpg;Identificï¿½ï¿;103.39;1342;N/A;N/A
+Mundo Real;image5.jpg;Identificï¿½ï¿;106.2;1179;N/A;N/A
+Mundo Real;image6.jpg;Identificï¿½ï¿;104.73;3546;N/A;N/A
+Mundo Real;image7.jpeg;Identificï¿½ï¿;104.41;4064;N/A;N/A
+Mundo Real;image8.jpg;Mal Posicionado (Muito Distante);109.97;1242;N/A;N/A
+Mundo Real;image9.jpg;Identificï¿½ï¿;106.19;4858;N/A;N/A
