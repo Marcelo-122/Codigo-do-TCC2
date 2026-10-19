@@ -11,17 +11,17 @@ import struct
 import serial
 from Crypto.Cipher import AES
 
+import config
+
 # ---------------------------------------------------------------------------
-# CONFIGURE AQUI
+# Configuração: porta e chaves vêm do .env (veja .env.example), nunca do código
 # ---------------------------------------------------------------------------
-RX_SERIAL_PORT = "COM8"        # porta do Heltec (ajuste se necessário)
+RX_SERIAL_PORT = config.require("RX_SERIAL_PORT")   # porta do Heltec
 BAUD_RATE      = 115200
 OUTPUT_FILE    = "imagem_recebida.jpg"
 
-DEV_ADDR_HEX = ""                          # AT+DADDR=?  no Radioenge
-APP_SKEY_HEX = ""  # AT+APPSKEY=? no Radioenge
-
-
+DEV_ADDR_HEX = config.get("LORA_DEV_ADDR", "")
+APP_SKEY_HEX = config.get("LORA_APP_SKEY", "")
 
 # ---------------------------------------------------------------------------
 
@@ -56,6 +56,8 @@ def parse_lorawan(raw: bytes, app_skey: bytes) -> bytes:
 
 # --- Main -----------------------------------------------------------------
 def main():
+    if not APP_SKEY_HEX:
+        sys.exit("APP_SKEY não configurada: defina LORA_APP_SKEY no .env (veja .env.example).")
     app_skey = bytes.fromhex(APP_SKEY_HEX)
     dev_addr = bytes.fromhex(DEV_ADDR_HEX)   # usado só pra referência; parse usa o do frame
 
