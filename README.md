@@ -394,14 +394,18 @@ seriais disponíveis, rode `python -m serial.tools.list_ports -v`.
 | Variável | Usada por |
 | --- | --- |
 | `TX_SERIAL_PORT` | `main.py`, `mqtt_bridge.py`, `mac_simulator.py`, `orchestrator.py`, `test_images/grab_image.py`, `test_images/debug_ocr_esp32cam/grab_image_debug.py` |
-| `RX_SERIAL_PORT` | `reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py` |
-| `LORA_DEV_ADDR`, `LORA_APP_SKEY` | `reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py`, `mac_simulator.py` |
+| `RX_SERIAL_PORT` | `reconstrutor.py`, `files/reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py` |
+| `LORA_DEV_ADDR`, `LORA_APP_SKEY` | `reconstrutor.py`, `files/reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py`, `mac_simulator.py` |
 | `LORA_NWK_SKEY`, `GATEWAY_UDP_IP`, `GATEWAY_UDP_PORT`, `GATEWAY_MAC` | `mac_simulator.py` |
 | `MQTT_BROKER`, `MQTT_PORT`, `CHIRPSTACK_APPLICATION_ID`, `CHIRPSTACK_DEV_EUI` | `mqtt_bridge.py` |
 | `IMAGE_PATH` | `orchestrator.py` |
 
-> Se algum valor já foi commitado em algum momento, ele continua no histórico do Git: gere novas
-> chaves (`AT+NWKSKEY`, `AT+APPSKEY`) em vez de reutilizar as antigas.
+> **Histórico do Git mantido.** Commits antigos ainda trazem as chaves, o IP e os IDs do dispositivo de
+> teste `Node-01` do ChirpStack (que já foi removido do servidor, então esses valores não dão mais
+> acesso a nada) e os datasets que hoje estão fora do Git. Por isso um clone novo é grande (cerca de
+> 440 MB). Decidimos **não reescrever o histórico**. As chaves do módulo Radioenge usado no enlace
+> nunca foram commitadas. Não reutilize valores que apareçam em commits antigos: gere chaves novas
+> (`AT+NWKSKEY`, `AT+APPSKEY`) para qualquer dispositivo novo.
 
 ---
 
@@ -458,7 +462,8 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
   `decode.py`, `mqtt_bridge.py`, `mac_simulator.py`) para subpastas de `Rede/`. Decidir também o que
   fazer com as amostras na raiz (`image.jpg`, `imagem_*.jpg`, `raw_*.txt`).
 - Confirmar a versão exata do Python usada no treino de `TreinoEModelosOCRNaBorda/` (hoje só a faixa 3.11–3.13
-  está verificada) e validar o download do Kaggle em uma máquina limpa.
+  está verificada). O download dos datasets do Kaggle já foi validado; o do Dryad continua manual.
+- O **histórico do Git** não foi reescrito (decisão do grupo); um clone novo baixa ~440 MB.
 - `mac_simulator.py` usa `FREQ = 868.1` (faixa EU868) com comentário de AU915; ajustar para o plano
   de canais realmente configurado no ChirpStack.
 

@@ -2,24 +2,32 @@
 reconstrutor.py
 Lê a serial do Heltec, descriptografa o LoRaWAN e reconstrói a imagem JPEG.
 
+Versão antiga: use o reconstrutor.py da raiz do repositório. Esta cópia fica
+só como referência e lê porta e chaves do .env, como a versão atual.
+
 Requisitos:  pip install pyserial pycryptodome
 """
 
 import sys
 import re
 import struct
+from pathlib import Path
 import serial
 from Crypto.Cipher import AES
 
+# config.py fica na raiz do repositório (uma pasta acima desta)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import config
+
 # ---------------------------------------------------------------------------
-# CONFIGURE AQUI
+# Configuração: porta e chaves vêm do .env (veja .env.example), nunca do código
 # ---------------------------------------------------------------------------
-RX_SERIAL_PORT = "COM8"        # porta do Heltec (ajuste se necessário)
+RX_SERIAL_PORT = config.require("RX_SERIAL_PORT")   # porta do Heltec
 BAUD_RATE      = 115200
 OUTPUT_FILE    = "imagem_recebida.jpg"
 
-DEV_ADDR_HEX = "00000000"                          # AT+DADDR=?  no Radioenge
-APP_SKEY_HEX = "00000000000000000000000000000000"  # AT+APPSKEY=? no Radioenge
+DEV_ADDR_HEX = config.get("LORA_DEV_ADDR", "")
+APP_SKEY_HEX = config.get("LORA_APP_SKEY", "")
 # ---------------------------------------------------------------------------
 
 LINE_RE = re.compile(r"HEX:([0-9A-Fa-f]+)\|RSSI:(-?\d+)")
@@ -53,6 +61,8 @@ def parse_lorawan(raw: bytes, app_skey: bytes) -> bytes:
 
 # --- Main -----------------------------------------------------------------
 def main():
+    if not APP_SKEY_HEX:
+        sys.exit("APP_SKEY não configurada: defina LORA_APP_SKEY no .env (veja .env.example).")
     app_skey = bytes.fromhex(APP_SKEY_HEX)
     dev_addr = bytes.fromhex(DEV_ADDR_HEX)   # usado só pra referência; parse usa o do frame
 
