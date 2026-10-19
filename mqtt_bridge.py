@@ -4,15 +4,17 @@ import base64
 import time
 import paho.mqtt.client as mqtt
 
-# --- Configuration ---
-SERIAL_PORT = 'COM5'
+import config
+
+# --- Configuration (valores no .env, veja .env.example) ---
+SERIAL_PORT = config.require("TX_SERIAL_PORT")
 BAUD_RATE = 115200
-MQTT_BROKER = '127.0.0.1'
-MQTT_PORT = 1883
+MQTT_BROKER = config.get("MQTT_BROKER", "127.0.0.1")
+MQTT_PORT = int(config.get("MQTT_PORT", "1883"))
 
 # --- ChirpStack Identifiers ---
-APPLICATION_ID = "eb9c99d9-e72c-4c12-9e10-58ad9cffac80"
-DEV_EUI = "5690b20ac943a357"
+APPLICATION_ID = config.require("CHIRPSTACK_APPLICATION_ID")
+DEV_EUI = config.require("CHIRPSTACK_DEV_EUI")
 
 MQTT_TOPIC = f"application/{APPLICATION_ID}/device/{DEV_EUI}/event/up"
 

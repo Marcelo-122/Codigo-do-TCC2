@@ -217,3 +217,25 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 *:Zone.*
+# Arquivos de metadados do Windows (o ":" vira um caractere especial no nome)
+*Zone.Identifier*
+
+# --- Datasets públicos e dados gerados: NÃO versionar ------------------------
+# Baixe com: python scripts/download_datasets.py  (fontes e licenças: --listar)
+ocr_cloud/num_dataset/
+ocr_cloud/output_dataset/
+TreinoEModelosOCRNaBorda/dataset/images/
+TreinoEModelosOCRNaBorda/dataset/masks/
+TreinoEModelosOCRNaBorda/dataset/num/
+TreinoEModelosOCRNaBorda/dataset/test_images/
+TreinoEModelosOCRNaBorda/dataset/test_masks/
+TreinoEModelosOCRNaBorda/dataset/visores_sinteticos/
+TreinoEModelosOCRNaBorda/dataset/visores_blackout/
+ModeloEDataset/dataset/images/
+ModeloEDataset/dataset/masks/
+ModeloEDataset/dataset/Word-Wheel_Water_Meter_Dataset/
+
+# --- Backups e modelos intermediários ----------------------------------------
+# Mantenha versionados só os modelos finais (ocr_cloud/models/ e Modelos/ escolhidos)
+TreinoEModelosOCRNaBorda/Backups/
+Backups/

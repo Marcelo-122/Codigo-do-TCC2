@@ -8,17 +8,19 @@ import threading
 from Crypto.Cipher import AES
 from Crypto.Hash import CMAC
 
-# --- Gateway UDP Configuration ---
-UDP_IP = "172.21.65.166"
-UDP_PORT = 1700
-GATEWAY_MAC = bytes.fromhex("0016c00000000001")
+import config
 
-# --- Node-01 ABP Session Keys ---
-DEV_ADDR = bytes.fromhex("01166e7e")[::-1]  # LoRaWAN expects DevAddr in Little-Endian
-NWK_S_KEY = bytes.fromhex("ba0bf1cff73357664674c0c14c4cd237")
-APP_S_KEY = bytes.fromhex("01093a9c1863337e5c667c8b1c5bafdf")
+# --- Gateway UDP Configuration (valores no .env, veja .env.example) ---
+UDP_IP = config.require("GATEWAY_UDP_IP")
+UDP_PORT = int(config.get("GATEWAY_UDP_PORT", "1700"))
+GATEWAY_MAC = config.require_hex("GATEWAY_MAC", 8)
 
-SERIAL_PORT = 'COM5'
+# --- ABP Session Keys (valores no .env, nunca no código) ---
+DEV_ADDR = config.require_hex("LORA_DEV_ADDR", 4)[::-1]  # LoRaWAN expects DevAddr in Little-Endian
+NWK_S_KEY = config.require_hex("LORA_NWK_SKEY", 16)
+APP_S_KEY = config.require_hex("LORA_APP_SKEY", 16)
+
+SERIAL_PORT = config.require("TX_SERIAL_PORT")
 BAUD_RATE = 115200
 
 # --- AU915 sub-band 2 (channels 8-15), SF8 for ANATEL compliance ---

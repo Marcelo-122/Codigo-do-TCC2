@@ -73,6 +73,9 @@ def decodificar_beam_search(logits_batch, tamanhos, beam_width=10):
     for linha in denso:
         saida.append([int(v) for v in linha if v >= 0])
     return saida
+
+
+def colapsar_repeticoes(lista):
     """Simula o que aconteceria se toda repetição consecutiva fosse fundida
     em uma só (o comportamento do CTC quando falta um blank entre elas)."""
     saida = []
@@ -80,6 +83,7 @@ def decodificar_beam_search(logits_batch, tamanhos, beam_width=10):
         if not saida or saida[-1] != d:
             saida.append(d)
     return saida
+
 
 def diagnosticar_colapso(resultados):
     """resultados: lista de (real, previsto), cada um lista de dígitos.
