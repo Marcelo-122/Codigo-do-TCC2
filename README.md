@@ -140,7 +140,7 @@ copy .env.example .env      # Linux/macOS: cp .env.example .env
 versionados). Os datasets públicos **não ficam no Git**:
 
 ```bash
-pip install kaggle          # e configure ~/.kaggle/kaggle.json (ou KAGGLE_USERNAME/KAGGLE_KEY no .env)
+pip install kaggle          # e defina KAGGLE_API_TOKEN (token em kaggle.com/settings/api) no ambiente ou no .env
 python scripts/download_datasets.py --listar    # fontes e licenças
 python scripts/download_datasets.py             # baixa os do Kaggle
 ```
@@ -409,7 +409,7 @@ seriais disponíveis, rode `python -m serial.tools.list_ports -v`.
 
 | Dataset | Autor | Uso | Licença/observação |
 |---|---|---|---|
-| [Yandex.Toloka Water Meters](https://www.kaggle.com/datasets/tapakah68/yandextoloka-water-meters-dataset) | Kucev Roman | Fotos + máscaras da janela de dígitos (`images/`, `masks/`) | Ver página do Kaggle |
+| [Yandex.Toloka Water Meters](https://www.kaggle.com/datasets/tapakah68/yandextoloka-water-meters-dataset) | Kucev Roman | Fotos + máscaras da janela de dígitos (`images/`, `masks/`), ~1 GB | **CC BY-NC-ND 4.0** (metadados do Kaggle; confirme na página) |
 | [Digits 0–9](https://www.kaggle.com/datasets/aquibiqbal/digits-09) | Aquib Iqbal | Dígitos isolados (`num/`, `num_dataset/`) | Ver página do Kaggle |
 | Word-Wheel Water Meter Dataset | Zhao et al., *Scientific Data* 13, 479 (2026) — [DOI 10.1038/s41597-026-06809-z](https://doi.org/10.1038/s41597-026-06809-z) | Dígitos rotulados (não versionado, 2,8 GB) | **CC BY-NC-ND 4.0** |
 | Fotos da ESP32-CAM | Próprio projeto | Fine-tuning de domínio e testes | — |
@@ -418,11 +418,11 @@ Os três datasets públicos **não são versionados**. Use `python scripts/downl
 para ver as fontes e licenças e `python scripts/download_datasets.py` para baixar os do Kaggle (o
 Dryad é manual, o script mostra os passos).
 
-> **Sobre a licença CC BY-NC-ND (Word-Wheel):** o uso aqui é acadêmico (TCC), mas os recortes de dígitos
-> gerados por `preparar_dataset_dryad.py` são uma versão adaptada dos dados, e a licença proíbe
-> redistribuir obras derivadas. Por isso nem o dataset nem os recortes ficam no repositório. Se os
-> **pesos treinados** com esses dados puderem ser distribuídos ainda precisa ser confirmado com o
-> orientador ou com os autores do dataset.
+> **Sobre a licença CC BY-NC-ND (Word-Wheel e Yandex.Toloka):** o uso aqui é acadêmico (TCC), mas os
+> recortes de dígitos (`preparar_dataset_*.py`) e os visores recortados (`gerar_blackout.py`) são
+> versões adaptadas dos dados, e a licença proíbe redistribuir obras derivadas. Por isso nem os
+> datasets nem esses recortes ficam no repositório. Se os **pesos treinados** com esses dados puderem
+> ser distribuídos ainda precisa ser confirmado com o orientador ou com os autores dos datasets.
 
 Documentos regulatórios/técnicos usados como referência (fora do repositório): Anatel — Ato nº 14448/2017,
 Anatel — Resolução nº 715/2019 e o manual LoRaWAN.

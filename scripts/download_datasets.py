@@ -11,8 +11,9 @@ Uso:
 
 Requisitos para os datasets do Kaggle:
     pip install kaggle
-    e credenciais do Kaggle: arquivo ~/.kaggle/kaggle.json OU KAGGLE_USERNAME e
-    KAGGLE_KEY no .env (veja .env.example).
+    e credenciais do Kaggle (https://www.kaggle.com/settings/api, "Generate New Token"):
+    variável KAGGLE_API_TOKEN (no ambiente ou no .env, veja .env.example) ou o login
+    `kaggle auth login`.
 
 O destino depende da branch: só são preenchidas as pastas de módulo que existem
 no checkout atual (ocr_cloud/, TreinoEModelosOCRNaBorda/, ModeloEDataset/).
@@ -33,7 +34,7 @@ DATASETS = {
         "nome": "Yandex.Toloka Water Meters Dataset (autor: Kucev Roman)",
         "fonte": "https://www.kaggle.com/datasets/tapakah68/yandextoloka-water-meters-dataset",
         "kaggle": "tapakah68/yandextoloka-water-meters-dataset",
-        "licenca": "ver a página do dataset no Kaggle antes de redistribuir",
+        "licenca": "CC BY-NC-ND 4.0 (segundo os metadados do Kaggle; confirme na página). ~1 GB",
         "usado_por": "detector de visor e dataset de dígitos (BDM.py, treinamento-detector.py, "
                      "gerar_blackout.py, preparar_dataset_digitos.py)",
         # (pasta a procurar dentro do download, destino relativo à raiz do repo)
@@ -120,6 +121,18 @@ def baixar_kaggle(slug, destino):
     api.dataset_download_files(slug, path=str(destino), unzip=True, quiet=False)
 
 
+def pendentes(pastas, forcar):
+    """Destinos deste checkout que ainda precisam ser preenchidos."""
+    saida = []
+    for procurar, destino_rel in pastas:
+        if not (RAIZ / destino_rel.split("/")[0]).is_dir():
+            continue  # esta branch não tem esse módulo
+        destino = RAIZ / destino_rel
+        if forcar or not (destino.is_dir() and any(destino.iterdir())):
+            saida.append((procurar, destino_rel))
+    return saida
+
+
 def preencher(origem_raiz, pastas, forcar):
     for procurar, destino_rel in pastas:
         modulo = destino_rel.split("/")[0]
@@ -157,6 +170,10 @@ def main():
         if d["kaggle"] is None:
             ok = (RAIZ / d["verificar"]).is_dir()
             print("  presente." if ok else "  NÃO encontrado.\n" + d["manual"])
+            continue
+        if not pendentes(d["pastas"], args.forcar):
+            print("  já presente (ou sem módulo correspondente nesta branch): nada a baixar. "
+                  "Use --forcar para baixar de novo.")
             continue
         with tempfile.TemporaryDirectory() as tmp:
             baixar_kaggle(d["kaggle"], Path(tmp))
