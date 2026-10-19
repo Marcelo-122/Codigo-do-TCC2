@@ -1,3 +1,4 @@
+# Python 3.13 (testado com 3.13.9 no Windows: instala e carrega models/modelo_ocr.keras).
 absl-py==2.5.0
 ai-edge-litert==2.2.0
 astunparse==1.6.3

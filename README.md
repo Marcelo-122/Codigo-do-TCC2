@@ -17,6 +17,7 @@ O trabalho une duas frentes que se complementam:
 
 - [Visão geral da arquitetura](#visão-geral-da-arquitetura)
 - [Estrutura do repositório](#estrutura-do-repositório)
+- [Como reproduzir](#como-reproduzir)
 - [Hardware utilizado](#hardware-utilizado)
 - [1. Rede LoRaWAN (`Rede/`)](#1-rede-lorawan-rede)
 - [2. PoC de redução de imagem (`poc_diminuicao_imagem/`)](#2-poc-de-redução-de-imagem-poc_diminuicao_imagem)
@@ -63,21 +64,39 @@ final (OCR no dispositivo → só a leitura trafega por LoRaWAN) é um dos próx
 
 ```
 Codigo-do-TCC2/
-├── Rede/                          Enlace LoRaWAN (ESP32-CAM → Radioenge → LoRa32 → PC)
-│   ├── transmissor_esp32cam/      Firmware: captura JPEG, fatia em chunks e envia via Radioenge
+├── Rede/                          Firmwares do enlace LoRaWAN (Arduino IDE)
+│   ├── transmissor_esp32cam/      Sketch de TESTE DE ENLACE, sem câmera (payload fixo; SENDALL / RESEND / SEND)
 │   ├── receptor_lora32/           Firmware do receptor (Heltec/TTGO LoRa32)
-│   ├── teste_enlace_radioenge/    Firmware de teste de enlace (payload fixo, SENDALL/RESEND)
-│   ├── prototipo_serial_chirpstack/  Protótipo anterior: serial → ChirpStack (MQTT / simulador de gateway)
-│   ├── reconstrutor.py            PC: lê a serial do receptor, descriptografa e remonta o JPEG
-│   └── requirements.txt
+│   └── requirements.txt           Igual ao requirements.txt da raiz
+├── files/                         Versão COM CÂMERA do transmissor (comando CAPTURE) + cópias antigas
+│   ├── transmissor_esp32cam/      Transmissor com câmera: JPEG em chunks de 100 bytes (SEND_INTERVAL_MS = 7000)
+│   ├── transmissor_esp32cam.ino   Cópia solta da mesma versão, com intervalo de 2000 ms
+│   ├── receptor_lora32/           Cópia do receptor (idêntica à de Rede/, só muda o fim de linha)
+│   └── reconstrutor.py            Versão antiga do reconstrutor (use o da raiz)
+├── reconstrutor.py                PC: lê a serial do receptor, descriptografa e remonta o JPEG
+├── decode_lorawan.py              PC: decodifica/descriptografa uplinks e mostra quais chunks faltam
+├── orchestrator.py                PC: envia a imagem em chunks (SEND:), confere o recebimento e reenvia o que faltou
+├── esp32cam_jpeg_hex_chunks/      Sketch do protótipo antigo (serial → PC)
+├── main.py, decode.py             Protótipo antigo: gravam a serial em raw_data.txt e remontam image.jpg
+├── mqtt_bridge.py, mac_simulator.py  Protótipo antigo: serial → ChirpStack (MQTT / simulador de gateway)
+├── config.py, .env.example        Leitura do .env e modelo das variáveis (chaves, rede, portas)
+├── requirements.txt               Dependências dos scripts da raiz (pyserial, pycryptodome, paho-mqtt)
+├── scripts/download_datasets.py   Baixa os datasets públicos (eles não ficam no Git)
 ├── poc_diminuicao_imagem/         PoC em C++/OpenCV: redução/binarização de imagem p/ caber no LoRa
 ├── ocr_cloud/                     OCR em Python (PC/nuvem): segmentação TFLite + CNN de dígitos
 ├── TreinoEModelosOCRNaBorda/      Treino do detector (U-Net QAT) e do leitor CRNN+CTC p/ ESP32
 ├── ModeloEDataset/                Pipeline do classificador de dígitos (CNN) + datasets + relatórios
 ├── test_images/                   Fotos da ESP32-CAM + firmware de debug/calibração com OCR on-device
-├── .env.example                   Modelo das variáveis secretas (copie para .env)
+├── image.jpg, imagem_recebida.jpg, imagem_parcial.jpg, raw_data.txt, raw_image_data.txt
+│                                  Amostras/saídas dos scripts de enlace (exemplos de captura)
 └── README.md
 ```
+
+> **Atenção ao enlace:** a versão do transmissor **com câmera** (`CAPTURE`) está em
+> [`files/transmissor_esp32cam/`](files/transmissor_esp32cam/transmissor_esp32cam.ino), e não em
+> `Rede/`. O sketch de `Rede/transmissor_esp32cam/` é o de teste de enlace, que o
+> `orchestrator.py` usa pelo comando `SEND:`. Consolidar os dois em `Rede/` é um dos pendentes
+> (ver [Limitações](#limitações-conhecidas-e-próximos-passos)).
 
 > Cada pasta de OCR tem uma abordagem própria (ver tabela abaixo). Elas **não dependem umas das
 > outras** — cada uma tem seu próprio dataset, `requirements.txt` e scripts.
@@ -87,6 +106,60 @@ Codigo-do-TCC2/
 | `ocr_cloud/` | CNN de 1 caractere (68×68) sobre 6 recortes iguais; há também teste com CRNN+CTC | U-Net INT8 384×384 | PC / nuvem |
 | `TreinoEModelosOCRNaBorda/` | **CRNN + CTC** (visor inteiro 48×224, classe *blank* = 10), float e QAT | U-Net com QAT, 384×384 | Treino no PC → ESP32 |
 | `ModeloEDataset/` | CNN de dígito (28×28, 72 mil parâmetros) sobre N fatias | U-Net INT8 (`modelo_esp32.tflite`) | Treino no PC → ESP32-CAM |
+
+---
+
+## Como reproduzir
+
+### Python e dependências por pasta
+
+Cada pasta tem seu próprio ambiente (`.venv` + `requirements.txt`). Não instale tudo no mesmo venv.
+Os comandos abaixo usam a sintaxe do Windows (`.venv\Scripts\...`); no Linux/WSL troque por
+`.venv/bin/...`.
+
+| Pasta | Python | Dependências | O que foi verificado |
+|---|---|---|---|
+| Raiz (scripts do enlace e do protótipo) e `Rede/` | 3.9 ou superior | `requirements.txt` (pyserial, pycryptodome, paho-mqtt; igual ao de `Rede/`) | Rodado com 3.13.9 |
+| `ocr_cloud/` | **3.13** | `ocr_cloud/requirements.txt` (TensorFlow 2.21.0, Keras 3.15.1) | Instalado em venv limpo (3.13.9) e `modelo_ocr.keras` carregado com sucesso |
+| `TreinoEModelosOCRNaBorda/` | **Linux / WSL2** (GPU opcional) | `requirements.txt` da pasta: é um `pip freeze` com pacotes NVIDIA/CUDA que não têm wheel para Windows (TensorFlow 2.21.0, Keras 3.15.1, tf_keras 2.21.0) | Python **3.11 a 3.13**: a resolução dos wheels Linux x86_64 foi conferida nas três versões; o treino em si não foi reexecutado |
+| `ModeloEDataset/` | **3.10** (TensorFlow 2.16.1 só tem wheels até 3.12) | `ModeloEDataset/requirements.txt` | Instalado em venv limpo com Python 3.10.11 (versões fixadas, `pip check` sem erros); modelo `.h5` e `.tflite` carregados |
+| `poc_diminuicao_imagem/` | — | g++, OpenCV 4 e Qt6 em `/usr/include` (Linux/WSL, ver `makefile`) | — |
+| Firmwares `.ino` | — | Arduino IDE + core ESP32; biblioteca **LoRa** (Sandeep Mistry); para o firmware de debug, uma biblioteca de TensorFlow Lite Micro | Não compilados nesta revisão |
+
+### Passo a passo
+
+**1. Clonar e configurar o `.env`** (chaves, rede e portas; veja [Configuração de segredos](#configuração-de-segredos)):
+
+```bash
+git clone https://github.com/Marcelo-122/Codigo-do-TCC2.git
+cd Codigo-do-TCC2
+copy .env.example .env      # Linux/macOS: cp .env.example .env
+```
+
+**2. Baixar os datasets** (só é necessário para treinar; a inferência usa os modelos e as fotos
+versionados). Os datasets públicos **não ficam no Git**:
+
+```bash
+pip install kaggle          # e configure ~/.kaggle/kaggle.json (ou KAGGLE_USERNAME/KAGGLE_KEY no .env)
+python scripts/download_datasets.py --listar    # fontes e licenças
+python scripts/download_datasets.py             # baixa os do Kaggle
+```
+
+| Pasta | Precisa de | Onde fica |
+|---|---|---|
+| `ocr_cloud/` (treino) | Digits 0–9 | `ocr_cloud/num_dataset/` |
+| `TreinoEModelosOCRNaBorda/` | Yandex.Toloka + Digits 0–9 | `dataset/images/`, `dataset/masks/`, `dataset/num/`; depois `gerar_blackout.py` e `gerador_sintetico.py` criam `visores_blackout/` e `visores_sinteticos/` |
+| `ModeloEDataset/` | Yandex.Toloka + Word-Wheel (Dryad, **download manual**, 2,8 GB) | `dataset/images/`, `dataset/masks/`, `dataset/Word-Wheel_Water_Meter_Dataset/`. As fotos de cartaz do TCC I não estão no repo: use `--cartaz PASTA` em `preparar_dataset_dominio_esp32.py` |
+
+**3. Rodar cada parte** (detalhes nas seções abaixo):
+
+| Objetivo | Comandos |
+|---|---|
+| Receber e remontar a imagem (enlace) | `python -m venv .venv`, `.venv\Scripts\pip install -r requirements.txt`, `.venv\Scripts\python reconstrutor.py`; veja [seção 1](#1-rede-lorawan-rede) |
+| OCR no PC, só inferência | `cd ocr_cloud`, venv + `pip install -r requirements.txt`, `python src\test_model_ocr_cloud_poc.py` ([seção 3](#3-ocr-na-nuvempc-ocr_cloud)) |
+| Treinar o OCR do `ocr_cloud` | mesmo venv, depois do passo 2: `python src\train_model_ocr_cloud.py` |
+| Treinar detector e leitor CRNN+CTC | em WSL/Linux, `cd TreinoEModelosOCRNaBorda`, depois do passo 2 ([seção 4](#4-ocr-na-borda--treino-e-modelos-treinoemodelosocrnaborda)) |
+| Treinar o classificador de dígitos | `cd ModeloEDataset`, Python 3.10, depois do passo 2 ([seção 5](#5-classificador-de-dígitos--dataset-modeloedataset)) |
 
 ---
 
@@ -104,7 +177,7 @@ Codigo-do-TCC2/
 sync word `0x34`. Enquadramento pretendido: **item 10.3 do Ato Anatel nº 14448/2017**
 (modulação digital de banda larga ≥ 500 kHz, sem exigência de salto de frequência). A alternativa
 com salto de frequência (item 10.2.5.2, 35 canais de 125 kHz, `AT+DR=5`) está documentada nos
-comentários de [`teste_enlace_radioenge.ino`](Rede/teste_enlace_radioenge/teste_enlace_radioenge.ino).
+comentários do cabeçalho de [`transmissor_esp32cam.ino`](Rede/transmissor_esp32cam/transmissor_esp32cam.ino).
 
 > Atenção: **nunca** use `CHMASK` com menos de 35 canais em BW = 125 kHz — não se enquadra em
 > nenhum dos dois itens da regulamentação.
@@ -115,7 +188,7 @@ comentários de [`teste_enlace_radioenge.ino`](Rede/teste_enlace_radioenge/teste
 
 ### Fluxo
 
-1. A ESP32-CAM recebe `CAPTURE` pela serial, tira uma foto JPEG e a divide em **chunks de 100 bytes**.
+1. A ESP32-CAM (firmware em [`files/transmissor_esp32cam/`](files/transmissor_esp32cam/transmissor_esp32cam.ino)) recebe `CAPTURE` pela serial, tira uma foto JPEG e a divide em **chunks de 100 bytes**.
 2. Cada chunk vai com um cabeçalho binário de 4 bytes — `uint16 index` + `uint16 total`
    (big-endian) — e é enviado ao Radioenge com `AT+SENDB=01:<hex>` (FPort 1).
 3. O **receptor LoRa32** escuta em 915,9 MHz / SF8 / BW 500 kHz e escreve na serial uma linha por
@@ -129,23 +202,31 @@ comentários de [`teste_enlace_radioenge.ino`](Rede/teste_enlace_radioenge/teste
 
 | Sketch | Placa | Observações |
 |---|---|---|
-| `transmissor_esp32cam/` | AI Thinker ESP32-CAM | Comandos pela serial: `CAPTURE` (captura e envia) ou `AT...` (repassado direto ao Radioenge). Intervalo entre chunks: `SEND_INTERVAL_MS` (7000 ms). |
-| `receptor_lora32/` | TTGO/Heltec LoRa32 V2 | Biblioteca **LoRa** (Sandeep Mistry). Frequência fixa 915,9 MHz. |
-| `teste_enlace_radioenge/` | AI Thinker ESP32-CAM | Não usa câmera: envia um payload fixo. Comandos `SENDALL` e `RESEND:2,7,15` para testar perda/reenvio de chunks, com retentativas quando o módulo está ocupado. |
+| `files/transmissor_esp32cam/` | AI Thinker ESP32-CAM | **Versão com câmera.** Comandos pela serial: `CAPTURE` (captura e envia) ou `AT...` (repassado direto ao Radioenge). Intervalo entre chunks: `SEND_INTERVAL_MS` (7000 ms). |
+| `Rede/transmissor_esp32cam/` | AI Thinker ESP32-CAM | **Teste de enlace, sem câmera:** envia um payload fixo. Comandos `SENDALL:<n>`, `RESEND:2,7,15` e `SEND:<índice>:<total>:<hex>` (usado pelo `orchestrator.py`), com retentativas quando o módulo está ocupado. Intervalo: `SAFE_INTERVAL_MS` (2000 ms). |
+| `Rede/receptor_lora32/` | TTGO/Heltec LoRa32 V2 | Biblioteca **LoRa** (Sandeep Mistry). Frequência fixa 915,9 MHz. |
 
 ### Rodando o receptor no PC
 
+Na raiz do repositório (o `reconstrutor.py`, o `config.py` e o `requirements.txt` ficam lá):
+
 ```bash
-cd Rede
 python -m venv .venv
 # Windows
 .venv\Scripts\pip install -r requirements.txt
-# Configure o .env com as chaves e RX_SERIAL_PORT (ver "Configuração de segredos")
+# Preencha o .env com as chaves e RX_SERIAL_PORT (ver "Configuração de segredos")
 .venv\Scripts\python reconstrutor.py
 # Em outro terminal serial (ou no Monitor Serial do transmissor) envie:  CAPTURE
 ```
 
-### Protótipo anterior (`prototipo_serial_chirpstack/`)
+Para enviar uma imagem do PC pelo transmissor de teste (`Rede/transmissor_esp32cam/`), com o `.env`
+preenchido (`TX_SERIAL_PORT`, `RX_SERIAL_PORT`, chaves e `IMAGE_PATH`):
+
+```bash
+.venv\Scripts\python orchestrator.py
+```
+
+### Protótipo anterior (scripts na raiz)
 
 Primeira abordagem, **sem rádio real**: a ESP32-CAM manda os chunks por USB-serial e o PC os
 injeta num servidor ChirpStack.
@@ -191,13 +272,16 @@ foto ──▶ modelo_medidor.tflite (segmentação, INT8, 384×384) ──▶ r
 | `src/test_model_ocr_cloud_gustavo.py` | Variante que usa o modelo CRNN+CTC float (entrada 48×224, *blank* = 10) |
 | `models/` | `modelo_medidor.tflite`, `modelo_ocr.keras`, `modelo_digitos_float_ctc_sint.tflite` |
 | `metering_dataset/` | Fotos reais de hidrômetros para teste |
-| `num_dataset/` | Dígitos isolados 0–9 (uma pasta por classe) |
+| `num_dataset/` | Dígitos isolados 0–9 (uma pasta por classe). **Não versionado:** baixe com `scripts/download_datasets.py` |
+| `output_dataset/` | Saída da inferência (gerada, não versionada) |
+
+Python **3.13** (testado em venv limpo: instala e carrega `modelo_ocr.keras`).
 
 ```bash
 cd ocr_cloud
 python -m venv .venv && .venv\Scripts\pip install -r requirements.txt
-.venv\Scripts\python src\train_model_ocr_cloud.py        # treino
-.venv\Scripts\python src\test_model_ocr_cloud_poc.py     # inferência
+.venv\Scripts\python src\test_model_ocr_cloud_poc.py     # inferência (usa models/ e metering_dataset/, ambos versionados)
+.venv\Scripts\python src\train_model_ocr_cloud.py        # treino (antes: python ..\scripts\download_datasets.py --somente digitos)
 ```
 
 ---
@@ -224,11 +308,17 @@ treino (QAT)** para INT8:
 | `BDM.py` | Valida o modelo QAT (IoU, Dice, latência) em amostras do dataset, do conjunto de teste e do "mundo real" → `CSVs/tabela_provas_funcionamento.csv` |
 | `BDMwsl.cpp` | Teste do `.h` do modelo em **TFLite Micro** compilado no WSL/Linux (arena de 25 MB) |
 | `Modelos/gerar_header.py` | Converte `.tflite` em header C (`modelo_medidor.h`) para o firmware |
-| `Backups/`, `CSVs/`, `resultados_visuais/`, `ModeloBrutoAntigoParaTeste/` | Checkpoints, históricos de treino/validação, imagens de diagnóstico e modelos antigos |
+| `CSVs/`, `resultados_visuais/`, `ModeloBrutoAntigoParaTeste/` | Históricos de treino/validação, imagens de diagnóstico e modelos antigos |
+| `Backups/` | Checkpoints intermediários: **não versionados** (ficam só na máquina de quem treina) |
+
+Os datasets (`dataset/images`, `masks`, `num`) **não ficam no Git**: baixe com
+`python scripts/download_datasets.py` na raiz. Já `dataset/imagens_reais/` (fotos próprias) é
+versionado. Ambiente: **WSL2/Linux** (o `requirements.txt` é um `pip freeze` com pacotes CUDA/NVIDIA,
+sem wheel para Windows).
 
 ```bash
 cd TreinoEModelosOCRNaBorda
-python -m venv .venv && .venv\Scripts\pip install -r requirements.txt
+python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt   # WSL/Linux
 python gerar_blackout.py
 python gerador_sintetico.py
 python treinamento-detector.py
@@ -263,7 +353,7 @@ python -m venv .venv                 # Python 3.10 (TensorFlow sem wheel estáve
 .venv\Scripts\pip install -r requirements.txt
 .venv\Scripts\python preparar_dataset_digitos.py
 .venv\Scripts\python preparar_dataset_dryad.py          # requer o dataset Dryad local (2,8 GB, não versionado)
-.venv\Scripts\python preparar_dataset_dominio_esp32.py
+.venv\Scripts\python preparar_dataset_dominio_esp32.py --cartaz PASTA_COM_AS_FOTOS_DE_CARTAZ   # opcional; sem a pasta, essas amostras são rejeitadas
 .venv\Scripts\python treinar_classificador_digitos.py
 .venv\Scripts\python gerar_header.py --tflite modelos/modelo_digito.tflite --header modelos/modelo_digito.h --array-name modelo_digito_tflite
 ```
@@ -291,7 +381,7 @@ aceitável para calibração, mas precisa ser otimizada antes de uso em produç�
 ## Configuração de segredos
 
 Chaves de sessão LoRaWAN, endereços de rede, IDs do ChirpStack e portas seriais **não ficam no
-código**. Todos os scripts leem esses valores do arquivo `.env` (via `config.py`):
+código**. Todos os scripts da raiz leem esses valores do arquivo `.env` (via `config.py`):
 
 ```bash
 cp .env.example .env      # Windows: copy .env.example .env
@@ -299,7 +389,7 @@ cp .env.example .env      # Windows: copy .env.example .env
 
 Preencha o `.env` com os valores da sua máquina (o `.env.example` descreve cada variável e quais
 scripts a usam). O `.env` está no `.gitignore` e nunca deve ser commitado. Para descobrir as portas
-seriais disponíveis, rode `python verify.py`.
+seriais disponíveis, rode `python -m serial.tools.list_ports -v`.
 
 | Variável | Usada por |
 | --- | --- |
@@ -324,6 +414,16 @@ seriais disponíveis, rode `python verify.py`.
 | Word-Wheel Water Meter Dataset | Zhao et al., *Scientific Data* 13, 479 (2026) — [DOI 10.1038/s41597-026-06809-z](https://doi.org/10.1038/s41597-026-06809-z) | Dígitos rotulados (não versionado, 2,8 GB) | **CC BY-NC-ND 4.0** — uso acadêmico OK; reavaliar se virar produto comercial |
 | Fotos da ESP32-CAM | Próprio projeto | Fine-tuning de domínio e testes | — |
 
+Os três datasets públicos **não são versionados**. Use `python scripts/download_datasets.py --listar`
+para ver as fontes e licenças e `python scripts/download_datasets.py` para baixar os do Kaggle (o
+Dryad é manual, o script mostra os passos).
+
+> **Sobre a licença CC BY-NC-ND (Word-Wheel):** o uso aqui é acadêmico (TCC), mas os recortes de dígitos
+> gerados por `preparar_dataset_dryad.py` são uma versão adaptada dos dados, e a licença proíbe
+> redistribuir obras derivadas. Por isso nem o dataset nem os recortes ficam no repositório. Se os
+> **pesos treinados** com esses dados puderem ser distribuídos ainda precisa ser confirmado com o
+> orientador ou com os autores do dataset.
+
 Documentos regulatórios/técnicos usados como referência (fora do repositório): Anatel — Ato nº 14448/2017,
 Anatel — Resolução nº 715/2019 e o manual LoRaWAN.
 
@@ -335,7 +435,7 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 
 | Branch de origem | Conteúdo |
 |---|---|
-| `main` | Rede LoRaWAN (firmwares, `reconstrutor.py`), protótipo serial/ChirpStack, PoC de redução de imagem, `ocr_cloud/` |
+| `main` | Rede LoRaWAN (firmwares, `reconstrutor.py`, `files/`), protótipo serial/ChirpStack, PoC de redução de imagem, `ocr_cloud/` |
 | `Treino-Testes-e-Modelos` | `TreinoEModelosOCRNaBorda/` (treino do detector e do CRNN+CTC, modelos, datasets) |
 | `ocr` | `ModeloEDataset/` (classificador de dígitos) e `test_images/` (firmware de debug com OCR on-device) |
 
@@ -352,6 +452,13 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 - Perda de chunks no enlace: hoje o reenvio é manual (`CAPTURE` / `RESEND`); automatizar com confirmação.
 - Unificar as três abordagens de OCR (`ocr_cloud`, `TreinoEModelosOCRNaBorda`, `ModeloEDataset`) após
   comparar a acurácia de cada uma no mesmo conjunto de teste.
+- **Organização do repositório (pendente):** consolidar em `Rede/` a versão do transmissor com câmera
+  (hoje em `files/`), escolher qual dos dois intervalos (7000 ms ou 2000 ms) fica, e mover os scripts
+  de PC e do protótipo antigo (`reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py`, `main.py`,
+  `decode.py`, `mqtt_bridge.py`, `mac_simulator.py`) para subpastas de `Rede/`. Decidir também o que
+  fazer com as amostras na raiz (`image.jpg`, `imagem_*.jpg`, `raw_*.txt`).
+- Confirmar a versão exata do Python usada no treino de `TreinoEModelosOCRNaBorda/` (hoje só a faixa 3.11–3.13
+  está verificada) e validar o download do Kaggle em uma máquina limpa.
 - `mac_simulator.py` usa `FREQ = 868.1` (faixa EU868) com comentário de AU915; ajustar para o plano
   de canais realmente configurado no ChirpStack.
 

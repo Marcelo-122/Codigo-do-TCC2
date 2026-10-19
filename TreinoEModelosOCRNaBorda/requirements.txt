@@ -1,3 +1,5 @@
+# Linux / WSL2 (pip freeze com pacotes NVIDIA/CUDA, sem wheel para Windows).
+# Python 3.11 a 3.13: a resolução dos wheels Linux x86_64 foi conferida nas 3 versões; o treino não foi reexecutado.
 absl-py==1.4.0
 astunparse==1.6.3
 attrs==26.1.0
