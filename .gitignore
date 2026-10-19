@@ -224,3 +224,6 @@ ModeloEDataset/dataset/masks/
 ModeloEDataset/dataset/digits/
 ModeloEDataset/dataset/Word-Wheel_Water_Meter_Dataset/
 ModeloEDataset/_savedmodel_digito/
+
+# Arquivos de metadados do Windows (o ":" vira um caractere especial no nome)
+*Zone.Identifier*

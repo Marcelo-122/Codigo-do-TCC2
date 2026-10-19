@@ -17,11 +17,16 @@ Saídas (nesta mesma pasta):
 import csv
 import os
 import re
+import sys
 import time
 
 import serial
 
-PORTA_SERIAL = 'COM5'  # ajuste para a porta que a ESP32CAM está usando
+# config.py fica na raiz do repositório (duas pastas acima desta)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+import config
+
+PORTA_SERIAL = config.require("TX_SERIAL_PORT")  # porta da ESP32CAM, defina no .env
 BAUD_RATE = 115200
 
 PASTA_ATUAL = os.path.dirname(os.path.abspath(__file__))

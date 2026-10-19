@@ -255,7 +255,7 @@ python -m venv .venv
 # 2. Prepara os datasets de dígito (nesta ordem, cada um soma ao mesmo dataset/digits/)
 ./.venv/Scripts/python preparar_dataset_digitos.py        # Kaggle
 ./.venv/Scripts/python preparar_dataset_dryad.py           # Dryad (requer a pasta local)
-./.venv/Scripts/python preparar_dataset_dominio_esp32.py   # fotos reais da ESP32CAM
+./.venv/Scripts/python preparar_dataset_dominio_esp32.py   # fotos reais da ESP32CAM (use --cartaz PASTA para as fotos de cartaz do TCC I)
 
 # 3. Treina, converte e valida
 ./.venv/Scripts/python treinar_classificador_digitos.py

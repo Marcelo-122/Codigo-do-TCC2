@@ -1,3 +1,4 @@
+import argparse
 import os
 import csv
 import cv2
@@ -7,7 +8,9 @@ from PIL import Image
 from digitos_comum import segment_cells_iguais, save_digit_crops
 
 DIRETORIO_ATUAL = os.path.dirname(os.path.abspath(__file__))
-DIR_CARTAZ = r"E:\lição\7° Semestre\TCC I\imagens"
+# Fotos de cartaz (TCC I) não são versionadas: informe a pasta com --cartaz
+# (padrão: ModeloEDataset/Imagens_cartaz).
+DIR_CARTAZ_PADRAO = os.path.join(DIRETORIO_ATUAL, "Imagens_cartaz")
 DIR_CAMPO = os.path.join(DIRETORIO_ATUAL, "Imagens")
 DIR_OUT = os.path.join(DIRETORIO_ATUAL, "dataset", "digits_domain")
 LABELS_CSV = os.path.join(DIRETORIO_ATUAL, "dominio_labels.csv")
@@ -41,6 +44,11 @@ def extrair_tira(im_pil, nome_arquivo):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--cartaz", default=DIR_CARTAZ_PADRAO,
+                        help="pasta com as fotos de cartaz (source=cartaz em dominio_labels.csv)")
+    dir_cartaz = parser.parse_args().cartaz
+
     os.makedirs(DIR_OUT, exist_ok=True)
 
     with open(LABELS_CSV, newline="", encoding="utf-8") as f:
@@ -55,7 +63,7 @@ def main():
         origem = linha["source"]
         nome = linha["filename"]
         rotulo = linha["label"]
-        base_dir = DIR_CARTAZ if origem == "cartaz" else DIR_CAMPO
+        base_dir = dir_cartaz if origem == "cartaz" else DIR_CAMPO
         caminho = os.path.join(base_dir, nome)
 
         try:
