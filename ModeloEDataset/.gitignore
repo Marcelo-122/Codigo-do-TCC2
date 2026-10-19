@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+dataset/digits/
+dataset/digits_domain/
+dataset/Word-Wheel_Water_Meter_Dataset/
+_savedmodel_digito/
