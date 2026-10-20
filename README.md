@@ -50,7 +50,7 @@ flowchart TB
         RX -- "USB-serial<br/>HEX:frame|RSSI:n" --> PC["PC: reconstrutor.py<br/>descriptografa (AES-128 CTR)<br/>e remonta o JPEG"]
     end
 
-    OCR -. "imagem JPEG (ou leitura)<br/>em chunks de 100 bytes" .-> ENLACE
+    OCR -. "imagem JPEG (ou leitura)<br/>em chunks de 175 bytes" .-> ENLACE
 ```
 
 Os dois estágios de OCR já foram **testados juntos em uma ESP32-CAM real**
@@ -74,6 +74,7 @@ Codigo-do-TCC2/
 ├── reconstrutor.py                PC: lê a serial do receptor, descriptografa e remonta o JPEG
 ├── decode_lorawan.py              PC: decodifica/descriptografa uplinks e mostra quais chunks faltam
 ├── orchestrator.py                PC: envia a imagem em chunks (SEND:), confere o recebimento e reenvia o que faltou
+├── analise_tempo_no_ar.py         PC: calcula pacotes, tempo no ar e tempo total de envio (`--verificar` confere a fórmula)
 ├── esp32cam_jpeg_hex_chunks/      Sketch do protótipo antigo (serial → PC)
 ├── main.py, decode.py             Protótipo antigo: gravam a serial em raw_data.txt e remontam image.jpg
 ├── mqtt_bridge.py                 Protótipo antigo: serial → ChirpStack (MQTT)
@@ -166,19 +167,55 @@ python scripts/download_datasets.py             # baixa os do Kaggle
 
 | Peça | Função |
 |---|---|
-| **ESP32-CAM (AI-Thinker)** | Captura a imagem (QQVGA 160×120 em escala de cinza, convertida para JPEG qualidade 80) e, na versão de debug, roda o OCR |
+| **ESP32-CAM (AI-Thinker)** | Captura a imagem (QQVGA 160×120 em escala de cinza, convertida para JPEG qualidade 90) e, na versão de debug, roda o OCR |
 | **Radioenge RD49C** | Módulo LoRaWAN (comandos `AT+...`), ligado à ESP32-CAM por UART (RX = GPIO 15, TX = GPIO 14) |
 | **Heltec / TTGO LoRa32 V2** | Receptor LoRa: SS = 18, RST = 14, DIO0 = 26; imprime os frames recebidos na serial |
 | **PC** | Roda `reconstrutor.py`, treina os modelos e (no protótipo antigo) hospeda o ChirpStack |
 | **Gateway/ChirpStack** *(só protótipo antigo)* | Servidor LoRaWAN recebendo pacotes Semtech UDP / MQTT |
 
-**Parâmetros de rádio (AU915):** canal 64 fixo, **915,9 MHz**, **SF8 / BW 500 kHz (DR6)**,
-sync word `0x34`. Enquadramento pretendido: **item 10.3 do Ato Anatel nº 14448/2017**
-(modulação digital de banda larga ≥ 500 kHz, sem exigência de salto de frequência). A alternativa
-com salto de frequência (item 10.2.5.2, 35 canais de 125 kHz, `AT+DR=5`) está documentada nos
-comentários do cabeçalho de [`transmissor_esp32cam.ino`](Rede/transmissor_esp32cam/transmissor_esp32cam.ino).
+### Parâmetros do enlace (tabela única)
 
-> Atenção: **nunca** use `CHMASK` com menos de 35 canais em BW = 125 kHz — não se enquadra em
+Todos os componentes (Radioenge, transmissor, receptor, scripts do PC) usam estes valores.
+
+| Parâmetro | Valor | Onde é definido / fonte |
+|---|---|---|
+| **Plano de canais** | AU915 (915–928 MHz) | Manual Radioenge (RD49C); Ato 14.448, item 10.1 |
+| **Canal** | **Fixo, 500 kHz, 915,9 MHz**: canal 64 na numeração do RP002 (base 0) = canal 65 na do manual Radioenge (base 1) | `receptor_lora32.ino` (`FREQ_HZ`) |
+| **Máscara de canais** | `AT+CHMASK=0000:0000:0000:0000:0001:0000` | Manual, seção 5.2.15 |
+| **Datarate** | **DR6 = SF8 / BW 500 kHz**, `AT+DR=6` com `AT+ADR=0` (o `AT+DR` só vale com o ADR desligado) | Manual, Tabelas 7 e 5.2.2; `receptor_lora32.ino` |
+| **Camada física** | Código 4/5, preâmbulo de 8 símbolos, CRC ligado, cabeçalho explícito, sync word `0x34` | Padrão LoRaWAN; `receptor_lora32.ino` |
+| **Ativação / porta** | ABP, FPort 1 (`AT+SENDB=01:<hex>`) | `transmissor_esp32cam.ino` |
+| **Potência** | Máx. +20 dBm (100 mW), fixa no módulo (não há comando `AT` para mudar) | Manual, especificações |
+| **Payload máximo (DR6)** | 222 B | Manual, Tabela 8 |
+| **Bloco de imagem por pacote** | **175 B** de dados + 4 B de cabeçalho = **179 B** de payload (43 B de folga) | `CHUNK_DATA_SIZE` no `.ino` e em `enlace.py` |
+| **Cabeçalho do chunk** | `uint16` índice (base 0) + `uint16` total, big-endian | `enlace.py` |
+| **Intervalo entre pacotes** | 7 s | `SEND_INTERVAL_MS` no `.ino`; `orchestrator.py` |
+| **Captura** | QQVGA 160×120, escala de cinza, convertida em JPEG qualidade 90 (`fmt2jpg`, escala 1–100) | `JPEG_QUALITY` no `.ino` |
+| **Tamanho do JPEG** | Medido: 2.460 a 4.209 B (média 3.640 B, 4 capturas). **Referência de projeto: 4.300 B** | `analise_tempo_no_ar.py` |
+
+**Tempo no ar** (SF8 / 500 kHz, bloco de 175 B, imagem de referência de 4.300 B), calculado por
+[`analise_tempo_no_ar.py`](analise_tempo_no_ar.py) com a fórmula da Semtech (AN1200.13):
+
+| Grandeza | Valor |
+|---|---|
+| Pacotes | 25 |
+| Tempo no ar por pacote (192 B na camada física) | 135,8 ms |
+| **Tempo total de rádio** | **3,35 s** |
+| Tempo total de envio (com intervalo de 7 s) | ≈ 168 s |
+
+Para outros tamanhos de imagem ou bloco: `python analise_tempo_no_ar.py --imagem 3000 --bloco 175`.
+`--verificar` confere a fórmula com um valor de referência externo.
+
+**Enquadramento na regulamentação (Ato Anatel nº 14.448/2017, item 10.3):** sistemas de modulação
+digital precisam de largura de faixa a 6 dB ≥ 500 kHz (10.3.1), potência de pico ≤ 1 W (10.3.2) e
+densidade espectral ≤ 8 dBm em 3 kHz (10.3.3). Com +20 dBm espalhados em 500 kHz, a densidade fica
+em torno de −2 dBm em 3 kHz (estimativa que supõe espectro plano). Esse enquadramento dispensa o
+salto de frequência e o limite de ocupação por canal do item 10.2. A largura a 6 dB do LoRa de
+500 kHz nominais deve ser confirmada pela homologação do módulo, e antenas com ganho acima de
+6 dBi exigem reduzir a potência (item 10.5). A alternativa com salto de frequência (item 10.2.5.2,
+35 canais de 125 kHz, `AT+DR=5`) também seria válida, mas não é a usada aqui.
+
+> Atenção: **nunca** use `CHMASK` com menos de 35 canais em BW = 125 kHz: não se enquadra em
 > nenhum dos dois itens da regulamentação.
 
 ---
@@ -187,7 +224,7 @@ comentários do cabeçalho de [`transmissor_esp32cam.ino`](Rede/transmissor_esp3
 
 ### Fluxo
 
-1. A ESP32-CAM (firmware em [`Rede/transmissor_esp32cam/`](Rede/transmissor_esp32cam/transmissor_esp32cam.ino)) recebe `CAPTURE` pela serial, tira uma foto JPEG e a divide em **chunks de 100 bytes**.
+1. A ESP32-CAM (firmware em [`Rede/transmissor_esp32cam/`](Rede/transmissor_esp32cam/transmissor_esp32cam.ino)) recebe `CAPTURE` pela serial, tira uma foto JPEG e a divide em **chunks de 175 bytes**.
 2. Cada chunk vai com um cabeçalho binário de 4 bytes — `uint16 index` + `uint16 total`
    (big-endian) — e é enviado ao Radioenge com `AT+SENDB=01:<hex>` (FPort 1).
 3. O **receptor LoRa32** escuta em 915,9 MHz / SF8 / BW 500 kHz e escreve na serial uma linha por
@@ -232,7 +269,7 @@ injeta num servidor ChirpStack.
 
 | Arquivo | Função |
 |---|---|
-| `esp32cam_jpeg_hex_chunks/` | Sketch: captura JPEG e envia `BEGIN,<bytes>,<chunks>` / `CHUNK,<i>,<len>,<hex>` / `END,<crc32>` pela serial (85 bytes por chunk) |
+| `esp32cam_jpeg_hex_chunks/` | Sketch: captura JPEG e envia `BEGIN,<bytes>,<chunks>` / `CHUNK,<i>,<len>,<hex>` / `END,<crc32>` pela serial (85 bytes por chunk; protótipo antigo, fora do enlace final) |
 | `main.py` + `decode.py` | Gravam a saída serial em `raw_data.txt` e reconstroem `image.jpg` conferindo o CRC32 |
 | `mqtt_bridge.py` | Publica cada chunk como uplink no tópico MQTT do ChirpStack |
 

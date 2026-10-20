@@ -53,10 +53,11 @@ HardwareSerial LoRaSerial(1);
 // --- Configuracao de chunks ---
 // Payload maximo DR6 (AU915, SF8/500kHz): 222 bytes (manual Radioenge, Tabela 8)
 // Header binario: 4 bytes (uint16 index + uint16 total, big-endian)
-// Dados por chunk: 100 bytes -> payload total 104 bytes (118 B de folga).
-// Escolha validada no hardware; blocos menores perdem menos dados por pacote
-// perdido. Tempo no ar por pacote: ~87 ms (SF8/500 kHz).
-const int CHUNK_DATA_SIZE = 100;
+// Dados por chunk: 175 bytes -> payload total 179 bytes (43 B de folga).
+// Tempo no ar por pacote: ~136 ms (SF8/500 kHz). Metade dos pacotes que com
+// 100 B (bloco anterior, validado no hardware). Deve ser igual ao
+// CHUNK_DATA_SIZE de enlace.py.
+const int CHUNK_DATA_SIZE = 175;
 
 // Intervalo entre chunks (ms). O item 10.3 do Ato 14.448 nao define intervalo
 // minimo no canal fixo de 500 kHz; 7000 ms e um valor conservador.
@@ -66,11 +67,14 @@ const unsigned long SEND_INTERVAL_MS = 7000;
 // O sensor entrega 1 byte/pixel (19.200 B) e o JPEG e gerado por software.
 // ATENCAO: a escala de JPEG_QUALITY e a do fmt2jpg (1-100, MAIOR = melhor),
 // ao contrario do jpeg_quality da camera (0-63, menor = melhor).
-// Tamanho esperado do JPEG (PoC em poc_diminuicao_imagem/output.txt):
-// ~1,6 KB (q30), ~2,0 KB (q50), ~2,6 KB (q80).
+// Tamanho do JPEG (PoC em poc_diminuicao_imagem/output.txt, OpenCV):
+// ~1,6 KB (q30), ~2,0 KB (q50), ~2,6 KB (q80), ~3,2 KB (q90).
+// Capturas reais com q80: 1,9 a 2,6 KB. Com q90 espera-se ~22% a mais; meca
+// no hardware (a linha "JPEG cinza ... bytes" do CAPTURE) e refaca a
+// analise com analise_tempo_no_ar.py.
 const int CAM_W = 160;
 const int CAM_H = 120;
-const int JPEG_QUALITY = 80;
+const int JPEG_QUALITY = 90;
 
 // --- Buffer de imagem ---
 static uint8_t* imgBuf  = nullptr;

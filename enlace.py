@@ -19,7 +19,7 @@ import struct
 from Crypto.Cipher import AES
 
 # --- Parâmetros do enlace ----------------------------------------------------
-CHUNK_DATA_SIZE = 100            # bytes de imagem por chunk (= CHUNK_DATA_SIZE do .ino)
+CHUNK_DATA_SIZE = 175            # bytes de imagem por chunk (= CHUNK_DATA_SIZE do .ino)
 HEADER_FMT = ">HH"               # uint16 índice + uint16 total, big-endian (base 0)
 HEADER_SIZE = struct.calcsize(HEADER_FMT)   # 4 bytes
 FPORT = 1                        # AT+SENDB=01:...
