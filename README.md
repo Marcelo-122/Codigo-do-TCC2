@@ -70,12 +70,13 @@ Codigo-do-TCC2/
 │   └── requirements.txt           Igual ao requirements.txt da raiz
 ├── files/                         Cópias antigas
 │   └── reconstrutor.py            Versão antiga do reconstrutor (use o da raiz)
+├── enlace.py                      PC: parâmetros do enlace (bloco, cabeçalho) e parser LoRaWAN compartilhados
 ├── reconstrutor.py                PC: lê a serial do receptor, descriptografa e remonta o JPEG
 ├── decode_lorawan.py              PC: decodifica/descriptografa uplinks e mostra quais chunks faltam
 ├── orchestrator.py                PC: envia a imagem em chunks (SEND:), confere o recebimento e reenvia o que faltou
 ├── esp32cam_jpeg_hex_chunks/      Sketch do protótipo antigo (serial → PC)
 ├── main.py, decode.py             Protótipo antigo: gravam a serial em raw_data.txt e remontam image.jpg
-├── mqtt_bridge.py, mac_simulator.py  Protótipo antigo: serial → ChirpStack (MQTT / simulador de gateway)
+├── mqtt_bridge.py                 Protótipo antigo: serial → ChirpStack (MQTT)
 ├── config.py, .env.example        Leitura do .env e modelo das variáveis (chaves, rede, portas)
 ├── requirements.txt               Dependências dos scripts da raiz (pyserial, pycryptodome, paho-mqtt)
 ├── scripts/download_datasets.py   Baixa os datasets públicos (eles não ficam no Git)
@@ -91,9 +92,10 @@ Codigo-do-TCC2/
 
 > **Atenção ao enlace:** o transmissor é um sketch único,
 > [`Rede/transmissor_esp32cam/`](Rede/transmissor_esp32cam/transmissor_esp32cam.ino), que usa o
-> cabeçalho binário de 4 bytes. O `orchestrator.py` e o `decode_lorawan.py` ainda esperam o formato
-> antigo em texto (`CHUNK, i, n, <hex>`) e precisam ser alinhados (ver
-> [Limitações](#limitações-conhecidas-e-próximos-passos)).
+> cabeçalho binário de 4 bytes (índice base 0 + total). Os scripts do PC (`reconstrutor.py`,
+> `decode_lorawan.py`, `orchestrator.py`) usam o mesmo formato e o mesmo tamanho de bloco,
+> definidos em [`enlace.py`](enlace.py). Se mudar o `CHUNK_DATA_SIZE` do firmware, mude também o de
+> `enlace.py`.
 
 > Cada pasta de OCR tem uma abordagem própria (ver tabela abaixo). Elas **não dependem umas das
 > outras** — cada uma tem seu próprio dataset, `requirements.txt` e scripts.
@@ -192,8 +194,9 @@ comentários do cabeçalho de [`transmissor_esp32cam.ino`](Rede/transmissor_esp3
    frame: `HEX:<bytes do frame>|RSSI:<valor>`.
 4. O **`reconstrutor.py`** lê essas linhas, extrai o `FRMPayload`, **descriptografa com a AppSKey**
    (AES-128 em modo CTR, conforme a especificação LoRaWAN), junta os chunks e grava
-   `imagem_recebida.jpg`. Chunks faltantes geram `imagem_parcial.jpg` (com zeros nos buracos);
-   mandar `CAPTURE` de novo preenche apenas o que faltou.
+   `imagem_recebida.jpg`. Chunks faltantes geram `imagem_parcial.jpg` (com zeros nos buracos).
+   Para completar, mande `RESEND:<índices base 0>` no transmissor **com o script ainda rodando**: o
+   `RESEND` reenvia a mesma foto. Não use `CAPTURE` para isso, porque ele tira outra foto.
 
 ### Firmwares (Arduino IDE)
 
@@ -232,7 +235,10 @@ injeta num servidor ChirpStack.
 | `esp32cam_jpeg_hex_chunks/` | Sketch: captura JPEG e envia `BEGIN,<bytes>,<chunks>` / `CHUNK,<i>,<len>,<hex>` / `END,<crc32>` pela serial (85 bytes por chunk) |
 | `main.py` + `decode.py` | Gravam a saída serial em `raw_data.txt` e reconstroem `image.jpg` conferindo o CRC32 |
 | `mqtt_bridge.py` | Publica cada chunk como uplink no tópico MQTT do ChirpStack |
-| `mac_simulator.py` | "Finge" ser um gateway: monta o PHYPayload LoRaWAN (cifra + MIC) e envia via Semtech UDP (PUSH_DATA/PULL_DATA) ao ChirpStack |
+
+O `mac_simulator.py` (simulador de gateway via Semtech UDP, que usava `868.1` MHz / `SF7BW125`) foi
+removido: era só um teste e não faz parte do fluxo final, que usa o enlace real em
+AU915 / DR6 / 500 kHz.
 
 ---
 
@@ -389,10 +395,9 @@ seriais disponíveis, rode `python -m serial.tools.list_ports -v`.
 
 | Variável | Usada por |
 | --- | --- |
-| `TX_SERIAL_PORT` | `main.py`, `mqtt_bridge.py`, `mac_simulator.py`, `orchestrator.py`, `test_images/grab_image.py`, `test_images/debug_ocr_esp32cam/grab_image_debug.py` |
+| `TX_SERIAL_PORT` | `main.py`, `mqtt_bridge.py`, `orchestrator.py`, `test_images/grab_image.py`, `test_images/debug_ocr_esp32cam/grab_image_debug.py` |
 | `RX_SERIAL_PORT` | `reconstrutor.py`, `files/reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py` |
-| `LORA_DEV_ADDR`, `LORA_APP_SKEY` | `reconstrutor.py`, `files/reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py`, `mac_simulator.py` |
-| `LORA_NWK_SKEY`, `GATEWAY_UDP_IP`, `GATEWAY_UDP_PORT`, `GATEWAY_MAC` | `mac_simulator.py` |
+| `LORA_DEV_ADDR`, `LORA_APP_SKEY` | `reconstrutor.py`, `files/reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py` |
 | `MQTT_BROKER`, `MQTT_PORT`, `CHIRPSTACK_APPLICATION_ID`, `CHIRPSTACK_DEV_EUI` | `mqtt_bridge.py` |
 | `IMAGE_PATH` | `orchestrator.py` |
 
@@ -449,18 +454,17 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
   30–50 fotos por medidor, em condições variadas, separando uma fatia só para teste.
 - **Integração final**: levar o OCR do firmware de debug para um firmware de produção e enviar apenas a
   leitura (poucos bytes) pelo LoRaWAN, em vez da imagem inteira.
-- Perda de chunks no enlace: hoje o reenvio é manual (`CAPTURE` / `RESEND`); automatizar com confirmação.
+- Perda de chunks no enlace: hoje o reenvio é manual (`RESEND`, com o `reconstrutor.py` aberto) ou pelo
+  `orchestrator.py`; falta automatizar a captura com confirmação.
 - Unificar as três abordagens de OCR (`ocr_cloud`, `TreinoEModelosOCRNaBorda`, `ModeloEDataset`) após
   comparar a acurácia de cada uma no mesmo conjunto de teste.
 - **Organização do repositório (pendente):** mover os scripts
   de PC e do protótipo antigo (`reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py`, `main.py`,
-  `decode.py`, `mqtt_bridge.py`, `mac_simulator.py`) para subpastas de `Rede/`. Decidir também o que
+  `decode.py`, `mqtt_bridge.py`) para subpastas de `Rede/`. Decidir também o que
   fazer com as amostras na raiz (`image.jpg`, `imagem_*.jpg`, `raw_*.txt`).
 - Confirmar a versão exata do Python usada no treino de `TreinoEModelosOCRNaBorda/` (hoje só a faixa 3.11–3.13
   está verificada). O download dos datasets do Kaggle já foi validado; o do Dryad continua manual.
 - O **histórico do Git** não foi reescrito (decisão do grupo); um clone novo baixa ~440 MB.
-- `mac_simulator.py` usa `FREQ = 868.1` (faixa EU868) com comentário de AU915; ajustar para o plano
-  de canais realmente configurado no ChirpStack.
 
 ---
 

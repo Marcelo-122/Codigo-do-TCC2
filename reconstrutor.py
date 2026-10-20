@@ -2,16 +2,20 @@
 reconstrutor.py
 Lê a serial do Heltec, descriptografa o LoRaWAN e reconstrói a imagem JPEG.
 
+Parâmetros do enlace (tamanho do chunk, cabeçalho, parser): enlace.py.
+
+Chunks que não chegarem: mande RESEND:<índices> no transmissor enquanto este script
+está rodando. O RESEND reenvia a MESMA foto. Não use CAPTURE para completar: ele tira
+outra foto e os chunks dela não podem ser misturados com os da primeira.
+
 Requisitos:  pip install pyserial pycryptodome
 """
 
 import sys
-import re
-import struct
 import serial
-from Crypto.Cipher import AES
 
 import config
+import enlace
 
 # ---------------------------------------------------------------------------
 # Configuração: porta e chaves vêm do .env (veja .env.example), nunca do código
@@ -25,41 +29,13 @@ APP_SKEY_HEX = config.get("LORA_APP_SKEY", "")
 
 # ---------------------------------------------------------------------------
 
-LINE_RE = re.compile(r"HEX:([0-9A-Fa-f]+)\|RSSI:(-?\d+)")
-
-# --- Descriptografia LoRaWAN (AES-128 CTR) --------------------------------
-def aes_block(key: bytes, block: bytes) -> bytes:
-    return AES.new(key, AES.MODE_ECB).encrypt(block)
-
-def decrypt_payload(frm: bytes, key: bytes, dev_addr: bytes, fcnt: int) -> bytes:
-    out = bytearray()
-    for i in range(1, (len(frm) + 15) // 16 + 1):
-        a = bytes([0x01, 0,0,0,0, 0,
-                   dev_addr[0], dev_addr[1], dev_addr[2], dev_addr[3],
-                   fcnt & 0xFF, (fcnt>>8)&0xFF, (fcnt>>16)&0xFF, (fcnt>>24)&0xFF,
-                   0x00, i])
-        s = aes_block(key, a)
-        chunk = frm[(i-1)*16 : i*16]
-        out.extend(b ^ s_b for b, s_b in zip(chunk, s))
-    return bytes(out)
-
-def parse_lorawan(raw: bytes, app_skey: bytes) -> bytes:
-    """Extrai e descriptografa o FRMPayload de um frame LoRaWAN de uplink."""
-    fctrl     = raw[5]
-    fcnt      = raw[6] | (raw[7] << 8)
-    fopts_len = fctrl & 0x0F
-    idx       = 8 + fopts_len
-    # fport = raw[idx]  (ignorado — usamos fport 01 fixo)
-    frm_enc   = raw[idx + 1 : -4]          # exclui MIC (4 bytes finais)
-    dev_addr  = raw[1:5]             # DevAddr vem little-endian no frame
-    return decrypt_payload(frm_enc, app_skey, dev_addr, fcnt)
-
 # --- Main -----------------------------------------------------------------
 def main():
     if not APP_SKEY_HEX:
         sys.exit("APP_SKEY não configurada: defina LORA_APP_SKEY no .env (veja .env.example).")
     app_skey = bytes.fromhex(APP_SKEY_HEX)
-    dev_addr = bytes.fromhex(DEV_ADDR_HEX)   # usado só pra referência; parse usa o do frame
+    # Se LORA_DEV_ADDR estiver no .env, ignora frames de outros dispositivos
+    dev_addr = bytes.fromhex(DEV_ADDR_HEX) if DEV_ADDR_HEX else None
 
     chunks: dict[int, bytes] = {}
     total: int | None = None
@@ -70,37 +46,30 @@ def main():
         # (remanescente de sessões anteriores ou do boot do Heltec)
         ser.reset_input_buffer()
         print("Buffer limpo.")
-        print(">>> Mande CAPTURE no transmissor agora. <<<\n")
+        print(">>> Mande CAPTURE no transmissor agora. <<<")
+        print("Se faltar algum chunk, mande RESEND:<índices base 0> SEM fechar este script.\n")
         try:
             while True:
                 linha = ser.readline().decode(errors="ignore").strip()
                 if not linha:
                     continue
 
-                m = LINE_RE.search(linha)
+                m = enlace.LINE_RE.search(linha)
                 if not m:
                     print(linha)           # log normal do ESP32 (boot, debug)
                     continue
 
                 hex_frame, rssi = m.groups()
                 try:
-                    raw     = bytes.fromhex(hex_frame)
-                    payload = parse_lorawan(raw, app_skey)
-                except Exception as e:
-                    print(f"[erro ao decodificar] {e}")
+                    info = enlace.parse_uplink(bytes.fromhex(hex_frame), app_skey, dev_addr)
+                    chunk_idx, chunk_total, chunk_data = enlace.parse_chunk(info["payload"])
+                except ValueError as e:
+                    print(f"[ignorado] {e}")
                     continue
-
-                if len(payload) < 4:
-                    print(f"[aviso] payload curto demais: {payload.hex()}")
-                    continue
-
-                # Header binário: uint16 index + uint16 total (big-endian)
-                chunk_idx, chunk_total = struct.unpack(">HH", payload[:4])
-                chunk_data = payload[4:]
 
                 if total is None:
                     total = chunk_total
-                    print(f"[info] sessão detectada: {total} chunks de até 100 bytes")
+                    print(f"[info] sessão detectada: {total} chunks de até {enlace.CHUNK_DATA_SIZE} bytes")
                 elif chunk_total != total:
                     # Nova sessão começou (CAPTURE enviado de novo) - reseta tudo
                     print(f"\n[info] nova sessão detectada ({chunk_total} chunks) - descartando sessão anterior")
@@ -110,11 +79,11 @@ def main():
                 if chunk_idx not in chunks:
                     chunks[chunk_idx] = chunk_data
                     faltam = total - len(chunks)
-                    print(f"  [chunk {chunk_idx+1:>3}/{total}]  "
+                    print(f"  [chunk {chunk_idx:>3}/{total - 1}]  "
                           f"{len(chunk_data):>3} bytes  RSSI={rssi}  "
                           f"faltam {faltam}")
                 else:
-                    print(f"  [chunk {chunk_idx+1:>3}/{total}] duplicado, ignorado")
+                    print(f"  [chunk {chunk_idx:>3}/{total - 1}] duplicado, ignorado")
 
                 if total and len(chunks) == total:
                     print("\nTodos os chunks recebidos!")
@@ -134,11 +103,12 @@ def main():
     print(f"\nRecebidos: {recebidos}/{total_real}  |  Faltando: {len(faltando)}")
 
     if faltando:
-        print(f"Chunks faltando (índices 1-based): {[i+1 for i in faltando]}")
-        print("Para reenviar, mande CAPTURE no transmissor — o script manterá")
-        print("os chunks que já chegaram e preencherá os que faltam.\n")
+        # Índices base 0, os mesmos que o RESEND do transmissor usa
+        print(f"Chunks faltando (base 0): {faltando}")
+        print(f"Para completar, mande no transmissor ENQUANTO este script está rodando:  RESEND:{','.join(map(str, faltando))}")
+        print("(se já saiu do script, os chunks recebidos se perderam: rode de novo e mande CAPTURE)\n")
         # Salva versão parcial com zeros nos buracos (pode abrir como JPEG parcial)
-        partes = b"".join(chunks.get(i, b"\x00" * 100) for i in range(total_real))
+        partes = b"".join(chunks.get(i, b"\x00" * enlace.CHUNK_DATA_SIZE) for i in range(total_real))
         nome_parcial = "imagem_parcial.jpg"
         with open(nome_parcial, "wb") as f:
             f.write(partes)
