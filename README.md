@@ -164,7 +164,7 @@ python scripts/download_datasets.py             # baixa os do Kaggle
 
 | Peça | Função |
 |---|---|
-| **ESP32-CAM (AI-Thinker)** | Captura a imagem (QQVGA 160×120, JPEG qualidade 12) e, na versão de debug, roda o OCR |
+| **ESP32-CAM (AI-Thinker)** | Captura a imagem (QQVGA 160×120 em escala de cinza, convertida para JPEG qualidade 80) e, na versão de debug, roda o OCR |
 | **Radioenge RD49C** | Módulo LoRaWAN (comandos `AT+...`), ligado à ESP32-CAM por UART (RX = GPIO 15, TX = GPIO 14) |
 | **Heltec / TTGO LoRa32 V2** | Receptor LoRa: SS = 18, RST = 14, DIO0 = 26; imprime os frames recebidos na serial |
 | **PC** | Roda `reconstrutor.py`, treina os modelos e (no protótipo antigo) hospeda o ChirpStack |

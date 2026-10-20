@@ -24,6 +24,7 @@
 // (0 ou 1 como base) e o chamador; o firmware so repassa.
 // ============================================================
 #include "esp_camera.h"
+#include "img_converters.h"  // fmt2jpg()
 
 // --- Pinos camera (AI Thinker ESP32-CAM) ---
 #define PWDN_GPIO_NUM   32
@@ -50,14 +51,26 @@
 HardwareSerial LoRaSerial(1);
 
 // --- Configuracao de chunks ---
-// Payload maximo DR6 (AU915, SF8/500kHz): 250 bytes
+// Payload maximo DR6 (AU915, SF8/500kHz): 222 bytes (manual Radioenge, Tabela 8)
 // Header binario: 4 bytes (uint16 index + uint16 total, big-endian)
-// Dados por chunk: 100 bytes -> payload total 104 bytes (margem confortavel)
+// Dados por chunk: 100 bytes -> payload total 104 bytes (118 B de folga).
+// Escolha validada no hardware; blocos menores perdem menos dados por pacote
+// perdido. Tempo no ar por pacote: ~87 ms (SF8/500 kHz).
 const int CHUNK_DATA_SIZE = 100;
 
 // Intervalo entre chunks (ms). O item 10.3 do Ato 14.448 nao define intervalo
 // minimo no canal fixo de 500 kHz; 7000 ms e um valor conservador.
 const unsigned long SEND_INTERVAL_MS = 7000;
+
+// --- Captura: cinza 160x120 -> JPEG ---
+// O sensor entrega 1 byte/pixel (19.200 B) e o JPEG e gerado por software.
+// ATENCAO: a escala de JPEG_QUALITY e a do fmt2jpg (1-100, MAIOR = melhor),
+// ao contrario do jpeg_quality da camera (0-63, menor = melhor).
+// Tamanho esperado do JPEG (PoC em poc_diminuicao_imagem/output.txt):
+// ~1,6 KB (q30), ~2,0 KB (q50), ~2,6 KB (q80).
+const int CAM_W = 160;
+const int CAM_H = 120;
+const int JPEG_QUALITY = 80;
 
 // --- Buffer de imagem ---
 static uint8_t* imgBuf  = nullptr;
@@ -65,7 +78,9 @@ static size_t   imgSize = 0;
 
 // ----------------------------------------------------------------
 bool initCamera() {
-  camera_config_t cfg;
+  // Zerado explicitamente: campos nao setados (fb_location, grab_mode...)
+  // ficariam com lixo da pilha e o driver se comportaria de forma imprevisivel.
+  camera_config_t cfg = {};
   cfg.ledc_channel = LEDC_CHANNEL_0;
   cfg.ledc_timer   = LEDC_TIMER_0;
   cfg.pin_d0 = Y2_GPIO_NUM; cfg.pin_d1 = Y3_GPIO_NUM;
@@ -78,12 +93,13 @@ bool initCamera() {
   cfg.pin_pwdn  = PWDN_GPIO_NUM;  cfg.pin_reset = RESET_GPIO_NUM;
   cfg.xclk_freq_hz = 20000000;
 
-  // JPEG 160x120, qualidade 12 (~3-6 KB por imagem)
-  // Qualidade: 0-63; menor = melhor (arquivo maior). 12 e baixo mas legivel.
-  cfg.pixel_format = PIXFORMAT_JPEG;
+  // Cinza 160x120 direto do sensor (1 byte/pixel). O JPEG e gerado depois,
+  // em captureImage(), com fmt2jpg().
+  cfg.pixel_format = PIXFORMAT_GRAYSCALE;
   cfg.frame_size   = FRAMESIZE_QQVGA;  // 160x120
-  cfg.jpeg_quality = 12;
   cfg.fb_count     = 1;
+  cfg.fb_location  = CAMERA_FB_IN_PSRAM;
+  cfg.grab_mode    = CAMERA_GRAB_WHEN_EMPTY;
 
   esp_err_t err = esp_camera_init(&cfg);
   if (err != ESP_OK) {
@@ -91,17 +107,12 @@ bool initCamera() {
     return false;
   }
 
-  // Forca QQVGA e qualidade via API do sensor APOS o init.
-  // Necessario porque o driver ignora o frame_size do config quando PSRAM
-  // esta presente (AI Thinker ESP32-CAM tem 4 MB de PSRAM e sobe em resolucao
-  // maior silenciosamente se nao forcar aqui).
-  sensor_t* s = esp_camera_sensor_get();
-  if (s) {
-    s->set_framesize(s, FRAMESIZE_QQVGA);  // 160x120
-    s->set_quality(s, 12);                  // qualidade baixa = arquivo menor
-    Serial.println("[camera] sensor configurado: QQVGA 160x120 qualidade 12");
-  }
-  delay(300); // aguarda o sensor aplicar as novas configuracoes
+  // NAO chamar sensor->set_framesize() depois do init: em modo cinza isso
+  // fazia o driver falhar com "Failed to resize buffer" (a PSRAM nao tem folga
+  // para o buffer antigo e o novo ao mesmo tempo). O frame_size do config
+  // ja vale. Mesmo padrao do debug_ocr_esp32cam.ino.
+  Serial.println("[camera] sensor configurado: GRAYSCALE QQVGA 160x120");
+  delay(300); // aguarda o sensor estabilizar
   return true;
 }
 
@@ -112,27 +123,31 @@ bool captureImage() {
   camera_fb_t* fb = esp_camera_fb_get();
   if (!fb) { Serial.println("[camera] falha ao capturar"); return false; }
 
-  imgSize = fb->len;
-  imgBuf  = (uint8_t*)malloc(imgSize);
-  if (!imgBuf) {
-    Serial.println("[camera] sem memoria");
+  // Sanidade: tem que ser exatamente 160x120. Se vier outra resolucao, aborta
+  // para nao mandar centenas de chunks por engano.
+  if (fb->width != CAM_W || fb->height != CAM_H) {
+    Serial.printf("[ERRO] quadro %dx%d, esperado %dx%d. Verifique a inicializacao.\n",
+                  (int)fb->width, (int)fb->height, CAM_W, CAM_H);
     esp_camera_fb_return(fb);
     return false;
   }
-  memcpy(imgBuf, fb->buf, imgSize);
+
+  // Comprime o quadro cinza em JPEG; fmt2jpg aloca o buffer de saida (free()).
+  uint8_t* jpgBuf = nullptr;
+  size_t   jpgLen = 0;
+  bool ok = fmt2jpg(fb->buf, fb->len, fb->width, fb->height,
+                    PIXFORMAT_GRAYSCALE, JPEG_QUALITY, &jpgBuf, &jpgLen);
   esp_camera_fb_return(fb);
 
-  Serial.printf("[camera] JPEG capturado: %d bytes\n", imgSize);
-
-  // Sanidade: QQVGA JPEG com qualidade 12 fica entre ~1 KB e ~20 KB.
-  // Se passar disso, a camera nao esta em QQVGA - aborta pra nao mandar
-  // centenas de chunks por engano.
-  if (imgSize > 30000) {
-    Serial.printf("[ERRO] Imagem grande demais (%d bytes) - camera provavelmente"
-                  " nao esta em QQVGA. Verifique a inicializacao.\n", imgSize);
-    free(imgBuf); imgBuf = nullptr; imgSize = 0;
+  if (!ok || !jpgBuf || jpgLen == 0) {
+    Serial.println("[camera] fmt2jpg falhou");
     return false;
   }
+  imgBuf  = jpgBuf;
+  imgSize = jpgLen;
+
+  Serial.printf("[camera] JPEG cinza %dx%d qualidade %d: %d bytes\n",
+                CAM_W, CAM_H, JPEG_QUALITY, (int)imgSize);
 
   Serial.printf("[camera] ok: %d chunks de %d bytes serao enviados\n",
                 (imgSize + CHUNK_DATA_SIZE - 1) / CHUNK_DATA_SIZE, CHUNK_DATA_SIZE);
