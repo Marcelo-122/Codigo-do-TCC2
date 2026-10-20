@@ -65,13 +65,10 @@ final (OCR no dispositivo → só a leitura trafega por LoRaWAN) é um dos próx
 ```
 Codigo-do-TCC2/
 ├── Rede/                          Firmwares do enlace LoRaWAN (Arduino IDE)
-│   ├── transmissor_esp32cam/      Sketch de TESTE DE ENLACE, sem câmera (payload fixo; SENDALL / RESEND / SEND)
+│   ├── transmissor_esp32cam/      Transmissor único: câmera (CAPTURE), reenvio (RESEND), envio vindo do PC (SEND) e teste de enlace (SENDALL)
 │   ├── receptor_lora32/           Firmware do receptor (Heltec/TTGO LoRa32)
 │   └── requirements.txt           Igual ao requirements.txt da raiz
-├── files/                         Versão COM CÂMERA do transmissor (comando CAPTURE) + cópias antigas
-│   ├── transmissor_esp32cam/      Transmissor com câmera: JPEG em chunks de 100 bytes (SEND_INTERVAL_MS = 7000)
-│   ├── transmissor_esp32cam.ino   Cópia solta da mesma versão, com intervalo de 2000 ms
-│   ├── receptor_lora32/           Cópia do receptor (idêntica à de Rede/, só muda o fim de linha)
+├── files/                         Cópias antigas
 │   └── reconstrutor.py            Versão antiga do reconstrutor (use o da raiz)
 ├── reconstrutor.py                PC: lê a serial do receptor, descriptografa e remonta o JPEG
 ├── decode_lorawan.py              PC: decodifica/descriptografa uplinks e mostra quais chunks faltam
@@ -92,11 +89,11 @@ Codigo-do-TCC2/
 └── README.md
 ```
 
-> **Atenção ao enlace:** a versão do transmissor **com câmera** (`CAPTURE`) está em
-> [`files/transmissor_esp32cam/`](files/transmissor_esp32cam/transmissor_esp32cam.ino), e não em
-> `Rede/`. O sketch de `Rede/transmissor_esp32cam/` é o de teste de enlace, que o
-> `orchestrator.py` usa pelo comando `SEND:`. Consolidar os dois em `Rede/` é um dos pendentes
-> (ver [Limitações](#limitações-conhecidas-e-próximos-passos)).
+> **Atenção ao enlace:** o transmissor é um sketch único,
+> [`Rede/transmissor_esp32cam/`](Rede/transmissor_esp32cam/transmissor_esp32cam.ino), que usa o
+> cabeçalho binário de 4 bytes. O `orchestrator.py` e o `decode_lorawan.py` ainda esperam o formato
+> antigo em texto (`CHUNK, i, n, <hex>`) e precisam ser alinhados (ver
+> [Limitações](#limitações-conhecidas-e-próximos-passos)).
 
 > Cada pasta de OCR tem uma abordagem própria (ver tabela abaixo). Elas **não dependem umas das
 > outras** — cada uma tem seu próprio dataset, `requirements.txt` e scripts.
@@ -188,7 +185,7 @@ comentários do cabeçalho de [`transmissor_esp32cam.ino`](Rede/transmissor_esp3
 
 ### Fluxo
 
-1. A ESP32-CAM (firmware em [`files/transmissor_esp32cam/`](files/transmissor_esp32cam/transmissor_esp32cam.ino)) recebe `CAPTURE` pela serial, tira uma foto JPEG e a divide em **chunks de 100 bytes**.
+1. A ESP32-CAM (firmware em [`Rede/transmissor_esp32cam/`](Rede/transmissor_esp32cam/transmissor_esp32cam.ino)) recebe `CAPTURE` pela serial, tira uma foto JPEG e a divide em **chunks de 100 bytes**.
 2. Cada chunk vai com um cabeçalho binário de 4 bytes — `uint16 index` + `uint16 total`
    (big-endian) — e é enviado ao Radioenge com `AT+SENDB=01:<hex>` (FPort 1).
 3. O **receptor LoRa32** escuta em 915,9 MHz / SF8 / BW 500 kHz e escreve na serial uma linha por
@@ -202,8 +199,7 @@ comentários do cabeçalho de [`transmissor_esp32cam.ino`](Rede/transmissor_esp3
 
 | Sketch | Placa | Observações |
 |---|---|---|
-| `files/transmissor_esp32cam/` | AI Thinker ESP32-CAM | **Versão com câmera.** Comandos pela serial: `CAPTURE` (captura e envia) ou `AT...` (repassado direto ao Radioenge). Intervalo entre chunks: `SEND_INTERVAL_MS` (7000 ms). |
-| `Rede/transmissor_esp32cam/` | AI Thinker ESP32-CAM | **Teste de enlace, sem câmera:** envia um payload fixo. Comandos `SENDALL:<n>`, `RESEND:2,7,15` e `SEND:<índice>:<total>:<hex>` (usado pelo `orchestrator.py`), com retentativas quando o módulo está ocupado. Intervalo: `SAFE_INTERVAL_MS` (2000 ms). |
+| `Rede/transmissor_esp32cam/` | AI Thinker ESP32-CAM | **Transmissor único.** Comandos pela serial: `CAPTURE` (captura e envia), `RESEND:2,7,15` (reenvia chunks da última captura), `SEND:<índice>:<total>:<hex>` (dados vindos do PC, usado pelo `orchestrator.py`), `SENDALL:<n>` (teste de enlace sem câmera, payload fixo) ou `AT...` (repassado ao Radioenge). Retentativas quando o módulo está ocupado. Intervalo entre chunks: `SEND_INTERVAL_MS` (7000 ms). |
 | `Rede/receptor_lora32/` | TTGO/Heltec LoRa32 V2 | Biblioteca **LoRa** (Sandeep Mistry). Frequência fixa 915,9 MHz. |
 
 ### Rodando o receptor no PC
@@ -456,8 +452,7 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 - Perda de chunks no enlace: hoje o reenvio é manual (`CAPTURE` / `RESEND`); automatizar com confirmação.
 - Unificar as três abordagens de OCR (`ocr_cloud`, `TreinoEModelosOCRNaBorda`, `ModeloEDataset`) após
   comparar a acurácia de cada uma no mesmo conjunto de teste.
-- **Organização do repositório (pendente):** consolidar em `Rede/` a versão do transmissor com câmera
-  (hoje em `files/`), escolher qual dos dois intervalos (7000 ms ou 2000 ms) fica, e mover os scripts
+- **Organização do repositório (pendente):** mover os scripts
   de PC e do protótipo antigo (`reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py`, `main.py`,
   `decode.py`, `mqtt_bridge.py`, `mac_simulator.py`) para subpastas de `Rede/`. Decidir também o que
   fazer com as amostras na raiz (`image.jpg`, `imagem_*.jpg`, `raw_*.txt`).
