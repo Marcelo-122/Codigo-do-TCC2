@@ -5,7 +5,7 @@ O que ele faz:
 1. Le a serial do ESP32 (linhas no formato "HEX:<bytes em hex>|RSSI:<valor>",
    produzidas pelo receptor_lora32.ino).
 2. Separa o frame LoRaWAN e descriptografa o FRMPayload com o AppSKey (enlace.py).
-3. Le o cabecalho binario do chunk (indice base 0 + total) e mostra o que falta.
+3. Le o cabecalho binario do chunk (id da leitura + indice base 0 + total) e mostra o que falta.
    Ao sair (Ctrl+C), grava faltando.txt com os indices prontos para um RESEND.
 
 Requisitos:
@@ -45,6 +45,7 @@ def main():
     # Rastreio de chunks recebidos (indices base 0, como no RESEND do transmissor)
     received_indices = set()
     total_chunks = None
+    leitura = None   # id da foto em andamento
 
     def faltando():
         return sorted(set(range(total_chunks)) - received_indices)
@@ -76,17 +77,18 @@ def main():
                 hex_payload, rssi = match.groups()
                 try:
                     info = enlace.parse_uplink(bytes.fromhex(hex_payload), app_skey, dev_addr)
-                    idx, total, dados = enlace.parse_chunk(info["payload"])
+                    leitura_id, idx, total, dados = enlace.parse_chunk(info["payload"])
                 except ValueError as e:
                     print(f"[ignorado] {e} | frame bruto: {hex_payload}")
                     continue
 
                 print(f"RSSI={rssi} | FCnt={info['fcnt']} | FPort={info['fport']} | "
-                      f"chunk {idx}/{total - 1} ({len(dados)} bytes)")
+                      f"leitura {leitura_id} | chunk {idx}/{total - 1} ({len(dados)} bytes)")
 
-                if total_chunks is not None and total != total_chunks:
-                    print(f"[status] novo lote detectado ({total} chunks) - zerando o rastreio")
+                if leitura is not None and (leitura_id != leitura or total != total_chunks):
+                    print(f"[status] nova leitura {leitura_id} ({total} chunks) - zerando o rastreio")
                     received_indices.clear()
+                leitura = leitura_id
                 total_chunks = total
                 if idx in received_indices:
                     print(f"[status] chunk {idx} repetido (já tinha sido recebido)")

@@ -39,6 +39,7 @@ def main():
 
     chunks: dict[int, bytes] = {}
     total: int | None = None
+    leitura: int | None = None   # id da foto em andamento (sorteado pelo transmissor a cada CAPTURE)
 
     print(f"Abrindo {RX_SERIAL_PORT} @ {BAUD_RATE}...")
     with serial.Serial(RX_SERIAL_PORT, BAUD_RATE, timeout=1) as ser:
@@ -62,18 +63,20 @@ def main():
                 hex_frame, rssi = m.groups()
                 try:
                     info = enlace.parse_uplink(bytes.fromhex(hex_frame), app_skey, dev_addr)
-                    chunk_idx, chunk_total, chunk_data = enlace.parse_chunk(info["payload"])
+                    leitura_id, chunk_idx, chunk_total, chunk_data = enlace.parse_chunk(info["payload"])
                 except ValueError as e:
                     print(f"[ignorado] {e}")
                     continue
 
-                if total is None:
+                if leitura is None:
+                    leitura = leitura_id
                     total = chunk_total
-                    print(f"[info] sessão detectada: {total} chunks de até {enlace.CHUNK_DATA_SIZE} bytes")
-                elif chunk_total != total:
-                    # Nova sessão começou (CAPTURE enviado de novo) - reseta tudo
-                    print(f"\n[info] nova sessão detectada ({chunk_total} chunks) - descartando sessão anterior")
+                    print(f"[info] leitura {leitura} detectada: {total} chunks de até {enlace.CHUNK_DATA_SIZE} bytes")
+                elif leitura_id != leitura or chunk_total != total:
+                    # Nova foto (CAPTURE enviado de novo) - reseta tudo
+                    print(f"\n[info] nova leitura {leitura_id} ({chunk_total} chunks) - descartando a anterior ({leitura})")
                     chunks = {}
+                    leitura = leitura_id
                     total = chunk_total
 
                 if chunk_idx not in chunks:

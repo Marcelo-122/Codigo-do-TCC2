@@ -20,8 +20,8 @@ from Crypto.Cipher import AES
 
 # --- Parâmetros do enlace ----------------------------------------------------
 CHUNK_DATA_SIZE = 175            # bytes de imagem por chunk (= CHUNK_DATA_SIZE do .ino)
-HEADER_FMT = ">HH"               # uint16 índice + uint16 total, big-endian (base 0)
-HEADER_SIZE = struct.calcsize(HEADER_FMT)   # 4 bytes
+HEADER_FMT = ">HHH"              # uint16 id da leitura + uint16 índice (base 0) + uint16 total, big-endian
+HEADER_SIZE = struct.calcsize(HEADER_FMT)   # 6 bytes
 FPORT = 1                        # AT+SENDB=01:...
 
 # Linha que o receptor imprime na serial: HEX:<frame LoRaWAN em hex>|RSSI:<dBm>
@@ -82,21 +82,22 @@ def parse_uplink(raw: bytes, app_skey: bytes, dev_addr_esperado: bytes | None = 
     }
 
 
-def montar_payload(indice: int, total: int, dados: bytes) -> bytes:
+def montar_payload(leitura_id: int, indice: int, total: int, dados: bytes) -> bytes:
     """Monta o payload de um chunk (o mesmo que o firmware envia)."""
-    return struct.pack(HEADER_FMT, indice, total) + dados
+    return struct.pack(HEADER_FMT, leitura_id, indice, total) + dados
 
 
-def parse_chunk(payload: bytes) -> tuple[int, int, bytes]:
-    """Lê o cabeçalho binário e devolve (índice base 0, total, dados).
+def parse_chunk(payload: bytes) -> tuple[int, int, int, bytes]:
+    """Lê o cabeçalho binário e devolve (id da leitura, índice base 0, total, dados).
 
+    O id da leitura é sorteado a cada CAPTURE: chunks de fotos diferentes nunca se misturam.
     Levanta ValueError se o payload não parecer um chunk válido."""
     if len(payload) < HEADER_SIZE:
         raise ValueError(f"payload curto demais ({payload.hex()})")
-    indice, total = struct.unpack(HEADER_FMT, payload[:HEADER_SIZE])
+    leitura_id, indice, total = struct.unpack(HEADER_FMT, payload[:HEADER_SIZE])
     dados = payload[HEADER_SIZE:]
     if total == 0 or indice >= total:
         raise ValueError(f"cabeçalho inválido (índice {indice}, total {total})")
     if len(dados) > CHUNK_DATA_SIZE:
         raise ValueError(f"chunk com {len(dados)} bytes de dados (máximo {CHUNK_DATA_SIZE})")
-    return indice, total, dados
+    return leitura_id, indice, total, dados

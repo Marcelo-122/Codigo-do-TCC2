@@ -5,9 +5,10 @@ Fecha o loop que hoje era manual (rodar decode_lorawan.py, olhar faltando.txt,
 digitar RESEND: no ESP32-CAM). Aqui o PC controla as duas pontas ao mesmo tempo:
 
 - Abre a serial do ESP32-CAM (bridge para o Radioenge) e manda comandos
-  "SEND:<indice>:<total>:<dados-hex>" para cada chunk (indice base 0).
+  "SEND:<id>:<indice>:<total>:<dados-hex>" para cada chunk (indice base 0; o id
+  da leitura e sorteado aqui, uma vez por execucao).
 - Abre a serial do Heltec (receptor) e decodifica cada pacote LoRaWAN que
-  chegar, lendo o cabecalho binario (indice + total) do chunk (enlace.py).
+  chegar, lendo o cabecalho binario (id + indice + total) do chunk (enlace.py).
 - Repete rodadas mandando só o que ainda falta, ate ter todos os chunks.
 - No final, junta os chunks na ordem certa e salva a imagem remontada.
 
@@ -18,6 +19,7 @@ Parametros do enlace (tamanho do chunk, cabecalho): enlace.py.
 """
 
 import os
+import random
 import time
 
 import serial
@@ -54,7 +56,8 @@ def main():
 
     chunks = carregar_chunks(IMAGE_PATH, enlace.CHUNK_DATA_SIZE)
     total = len(chunks)
-    print(f"Imagem dividida em {total} chunks de ate {enlace.CHUNK_DATA_SIZE} bytes.")
+    leitura_id = random.randrange(0x10000)   # identifica esta foto no cabecalho dos chunks
+    print(f"Imagem dividida em {total} chunks de ate {enlace.CHUNK_DATA_SIZE} bytes (leitura id {leitura_id}).")
 
     recebidos = {}  # indice (base 0) -> bytes do chunk
 
@@ -85,13 +88,14 @@ def main():
             hex_frame, rssi = match.groups()
             try:
                 info = enlace.parse_uplink(bytes.fromhex(hex_frame), app_skey, dev_addr)
-                idx, total_rx, dados = enlace.parse_chunk(info["payload"])
+                id_rx, idx, total_rx, dados = enlace.parse_chunk(info["payload"])
             except ValueError as e:
                 print(f"  [ignorado] {e}")
                 continue
 
-            if total_rx != total:
-                print(f"  [ignorado] chunk de outro lote (total {total_rx}, esperado {total})")
+            if id_rx != leitura_id or total_rx != total:
+                print(f"  [ignorado] chunk de outra leitura (id {id_rx}, total {total_rx}; "
+                      f"esperado id {leitura_id}, total {total})")
                 continue
 
             if idx not in recebidos:
@@ -109,7 +113,7 @@ def main():
                 continue  # pode ter chegado durante a escuta de outro envio nesta rodada
 
             dados_hex = chunks[idx].hex().upper()
-            cmd = f"SEND:{idx}:{total}:{dados_hex}\n"
+            cmd = f"SEND:{leitura_id}:{idx}:{total}:{dados_hex}\n"
 
             print(f"[enviando] chunk {idx}/{total - 1} ({len(dados_hex)} chars hex)")
             tx.write(cmd.encode())

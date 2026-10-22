@@ -13,15 +13,17 @@
 // Comandos pela Serial (115200):
 //   CAPTURE                          captura uma foto e envia todos os chunks
 //   RESEND:<i1>,<i2>,...             reenvia so esses chunks da ultima captura
-//   SEND:<indice>:<total>:<hex>      envia UM chunk com dados vindos do PC
+//   SEND:<id>:<indice>:<total>:<hex> envia UM chunk com dados vindos do PC
 //                                    (usado pelo orchestrator.py)
 //   SENDALL:<n>                      teste de enlace SEM camera: envia n chunks
 //                                    com payload fixo
 //   AT...                            qualquer outra linha vai direto ao Radioenge
 //
-// Formato do payload (FPort 1): [index hi][index lo][total hi][total lo][dados...]
-// (cabecalho binario de 4 bytes, big-endian). Quem monta o numero do indice
-// (0 ou 1 como base) e o chamador; o firmware so repassa.
+// Formato do payload (FPort 1):
+//   [id hi][id lo][index hi][index lo][total hi][total lo][dados...]
+// (cabecalho binario de 6 bytes, big-endian). O id da leitura e sorteado a cada
+// CAPTURE e identifica a foto: o receptor nunca mistura chunks de fotos diferentes.
+// Indice com base 0.
 // ============================================================
 #include "esp_camera.h"
 #include "img_converters.h"  // fmt2jpg()
@@ -52,8 +54,8 @@ HardwareSerial LoRaSerial(1);
 
 // --- Configuracao de chunks ---
 // Payload maximo DR6 (AU915, SF8/500kHz): 222 bytes (manual Radioenge, Tabela 8)
-// Header binario: 4 bytes (uint16 index + uint16 total, big-endian)
-// Dados por chunk: 175 bytes -> payload total 179 bytes (43 B de folga).
+// Header binario: 6 bytes (uint16 id da leitura + uint16 index + uint16 total, big-endian)
+// Dados por chunk: 175 bytes -> payload total 181 bytes (41 B de folga).
 // Tempo no ar por pacote: ~136 ms (SF8/500 kHz). Metade dos pacotes que com
 // 100 B (bloco anterior, validado no hardware). Deve ser igual ao
 // CHUNK_DATA_SIZE de enlace.py.
@@ -79,6 +81,7 @@ const int JPEG_QUALITY = 90;
 // --- Buffer de imagem ---
 static uint8_t* imgBuf  = nullptr;
 static size_t   imgSize = 0;
+static uint16_t leituraId = 0;  // id da ultima captura (vai no cabecalho de cada chunk)
 
 // ----------------------------------------------------------------
 bool initCamera() {
@@ -149,9 +152,10 @@ bool captureImage() {
   }
   imgBuf  = jpgBuf;
   imgSize = jpgLen;
+  leituraId = (uint16_t)esp_random();  // uma foto nova = um id novo
 
-  Serial.printf("[camera] JPEG cinza %dx%d qualidade %d: %d bytes\n",
-                CAM_W, CAM_H, JPEG_QUALITY, (int)imgSize);
+  Serial.printf("[camera] JPEG cinza %dx%d qualidade %d: %d bytes (leitura id %u)\n",
+                CAM_W, CAM_H, JPEG_QUALITY, (int)imgSize, (unsigned)leituraId);
 
   Serial.printf("[camera] ok: %d chunks de %d bytes serao enviados\n",
                 (imgSize + CHUNK_DATA_SIZE - 1) / CHUNK_DATA_SIZE, CHUNK_DATA_SIZE);
@@ -189,13 +193,14 @@ int fromHex(const String& hex, uint8_t* out, int maxLen) {
 
 // ----------------------------------------------------------------
 // Envia um chunk com retry automatico em caso de BUSY_ERROR
-bool sendChunk(int idx, int total, const uint8_t* data, int dataLen) {
-  // Payload binario: [idx_hi][idx_lo][total_hi][total_lo][dados...]
-  uint8_t header[4] = {
+bool sendChunk(uint16_t id, int idx, int total, const uint8_t* data, int dataLen) {
+  // Payload binario: [id_hi][id_lo][idx_hi][idx_lo][total_hi][total_lo][dados...]
+  uint8_t header[6] = {
+    (uint8_t)(id    >> 8), (uint8_t)(id    & 0xFF),
     (uint8_t)(idx   >> 8), (uint8_t)(idx   & 0xFF),
     (uint8_t)(total >> 8), (uint8_t)(total & 0xFF)
   };
-  String hexPayload = toHex(header, 4) + toHex(data, dataLen);
+  String hexPayload = toHex(header, 6) + toHex(data, dataLen);
   String cmd = "AT+SENDB=01:" + hexPayload;
 
   const int MAX_TENT = 5;
@@ -204,7 +209,7 @@ bool sendChunk(int idx, int total, const uint8_t* data, int dataLen) {
 
     LoRaSerial.println(cmd);
     Serial.printf("[chunk %d/%d tent %d] %d bytes payload\n",
-                  idx, total, t, 4 + dataLen);
+                  idx, total, t, 6 + dataLen);
 
     // Aguarda resposta real do modulo (TX_OK ou ERROR)
     String resp = "";
@@ -244,7 +249,7 @@ bool sendImageChunk(int idx) {
   }
   int offset  = idx * CHUNK_DATA_SIZE;
   int dataLen = min(CHUNK_DATA_SIZE, (int)(imgSize - offset));
-  return sendChunk(idx, total, imgBuf + offset, dataLen);
+  return sendChunk(leituraId, idx, total, imgBuf + offset, dataLen);
 }
 
 // ----------------------------------------------------------------
@@ -290,25 +295,27 @@ void reenviar(const String& lista) {
 }
 
 // ----------------------------------------------------------------
-// SEND:<indice>:<total>:<dados-hex> - dados vindos do PC (orchestrator.py).
+// SEND:<id>:<indice>:<total>:<dados-hex> - dados vindos do PC (orchestrator.py).
 void enviarDoPc(const String& resto) {
   int p1 = resto.indexOf(':');
   int p2 = (p1 == -1) ? -1 : resto.indexOf(':', p1 + 1);
-  if (p1 == -1 || p2 == -1) {
-    Serial.println("[ERRO] formato invalido. Use SEND:<indice>:<total>:<dados-hex>");
+  int p3 = (p2 == -1) ? -1 : resto.indexOf(':', p2 + 1);
+  if (p1 == -1 || p2 == -1 || p3 == -1) {
+    Serial.println("[ERRO] formato invalido. Use SEND:<id>:<indice>:<total>:<dados-hex>");
     return;
   }
 
-  int idx   = resto.substring(0, p1).toInt();
-  int total = resto.substring(p1 + 1, p2).toInt();
+  uint16_t id = (uint16_t)resto.substring(0, p1).toInt();
+  int idx     = resto.substring(p1 + 1, p2).toInt();
+  int total   = resto.substring(p2 + 1, p3).toInt();
 
   uint8_t dados[CHUNK_DATA_SIZE];
-  int dataLen = fromHex(resto.substring(p2 + 1), dados, CHUNK_DATA_SIZE);
+  int dataLen = fromHex(resto.substring(p3 + 1), dados, CHUNK_DATA_SIZE);
   if (dataLen < 0) {
     Serial.printf("[ERRO] dados-hex invalidos ou maiores que %d bytes\n", CHUNK_DATA_SIZE);
     return;
   }
-  sendChunk(idx, total, dados, dataLen);
+  sendChunk(id, idx, total, dados, dataLen);
 }
 
 // ----------------------------------------------------------------
@@ -317,10 +324,11 @@ void enviarTeste(int total) {
   uint8_t dados[CHUNK_DATA_SIZE];
   for (int i = 0; i < CHUNK_DATA_SIZE; i++) dados[i] = (uint8_t)i;
 
-  Serial.printf("Teste de enlace: %d chunks de %d bytes (payload fixo)\n",
-                total, CHUNK_DATA_SIZE);
+  uint16_t id = (uint16_t)esp_random();
+  Serial.printf("Teste de enlace: %d chunks de %d bytes (payload fixo, leitura id %u)\n",
+                total, CHUNK_DATA_SIZE, (unsigned)id);
   for (int idx = 0; idx < total; idx++) {
-    sendChunk(idx, total, dados, CHUNK_DATA_SIZE);
+    sendChunk(id, idx, total, dados, CHUNK_DATA_SIZE);
     if (idx < total - 1) delay(SEND_INTERVAL_MS);
   }
   Serial.println("Teste concluido.");
@@ -333,7 +341,7 @@ void setup() {
   delay(1000);
 
   Serial.println("ESP32-CAM LoRa Image Sender - TCC");
-  Serial.println("Comandos: CAPTURE | RESEND:<i,j,...> | SEND:<i>:<total>:<hex> | SENDALL:<n> | AT<cmd>");
+  Serial.println("Comandos: CAPTURE | RESEND:<i,j,...> | SEND:<id>:<i>:<total>:<hex> | SENDALL:<n> | AT<cmd>");
 
   if (initCamera()) Serial.println("[camera] pronta.");
   else Serial.println("[camera] falhou - so bridge AT e SEND/SENDALL disponiveis.");

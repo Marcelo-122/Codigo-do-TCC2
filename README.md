@@ -93,7 +93,7 @@ Codigo-do-TCC2/
 
 > **Atenção ao enlace:** o transmissor é um sketch único,
 > [`Rede/transmissor_esp32cam/`](Rede/transmissor_esp32cam/transmissor_esp32cam.ino), que usa o
-> cabeçalho binário de 4 bytes (índice base 0 + total). Os scripts do PC (`reconstrutor.py`,
+> cabeçalho binário de 6 bytes (id da leitura + índice base 0 + total). Os scripts do PC (`reconstrutor.py`,
 > `decode_lorawan.py`, `orchestrator.py`) usam o mesmo formato e o mesmo tamanho de bloco,
 > definidos em [`enlace.py`](enlace.py). Se mudar o `CHUNK_DATA_SIZE` do firmware, mude também o de
 > `enlace.py`.
@@ -187,8 +187,8 @@ Todos os componentes (Radioenge, transmissor, receptor, scripts do PC) usam este
 | **Ativação / porta** | ABP, FPort 1 (`AT+SENDB=01:<hex>`) | `transmissor_esp32cam.ino` |
 | **Potência** | Máx. +20 dBm (100 mW), fixa no módulo (não há comando `AT` para mudar) | Manual, especificações |
 | **Payload máximo (DR6)** | 222 B | Manual, Tabela 8 |
-| **Bloco de imagem por pacote** | **175 B** de dados + 4 B de cabeçalho = **179 B** de payload (43 B de folga) | `CHUNK_DATA_SIZE` no `.ino` e em `enlace.py` |
-| **Cabeçalho do chunk** | `uint16` índice (base 0) + `uint16` total, big-endian | `enlace.py` |
+| **Bloco de imagem por pacote** | **175 B** de dados + 6 B de cabeçalho = **181 B** de payload (41 B de folga) | `CHUNK_DATA_SIZE` no `.ino` e em `enlace.py` |
+| **Cabeçalho do chunk** | `uint16` id da leitura (sorteado a cada `CAPTURE`) + `uint16` índice (base 0) + `uint16` total, big-endian | `enlace.py` |
 | **Intervalo entre pacotes** | 7 s | `SEND_INTERVAL_MS` no `.ino`; `orchestrator.py` |
 | **Captura** | QQVGA 160×120, escala de cinza, convertida em JPEG qualidade 90 (`fmt2jpg`, escala 1–100) | `JPEG_QUALITY` no `.ino` |
 | **Tamanho do JPEG** | Medido: 2.460 a 4.209 B (média 3.640 B, 4 capturas). **Referência de projeto: 4.300 B** | `analise_tempo_no_ar.py` |
@@ -199,7 +199,7 @@ Todos os componentes (Radioenge, transmissor, receptor, scripts do PC) usam este
 | Grandeza | Valor |
 |---|---|
 | Pacotes | 25 |
-| Tempo no ar por pacote (192 B na camada física) | 135,8 ms |
+| Tempo no ar por pacote (194 B na camada física) | 135,8 ms |
 | **Tempo total de rádio** | **3,35 s** |
 | Tempo total de envio (com intervalo de 7 s) | ≈ 168 s |
 
@@ -225,8 +225,8 @@ salto de frequência e o limite de ocupação por canal do item 10.2. A largura 
 ### Fluxo
 
 1. A ESP32-CAM (firmware em [`Rede/transmissor_esp32cam/`](Rede/transmissor_esp32cam/transmissor_esp32cam.ino)) recebe `CAPTURE` pela serial, tira uma foto JPEG e a divide em **chunks de 175 bytes**.
-2. Cada chunk vai com um cabeçalho binário de 4 bytes — `uint16 index` + `uint16 total`
-   (big-endian) — e é enviado ao Radioenge com `AT+SENDB=01:<hex>` (FPort 1).
+2. Cada chunk vai com um cabeçalho binário de 6 bytes — `uint16 id` (da leitura) + `uint16 index` +
+   `uint16 total` (big-endian) — e é enviado ao Radioenge com `AT+SENDB=01:<hex>` (FPort 1).
 3. O **receptor LoRa32** escuta em 915,9 MHz / SF8 / BW 500 kHz e escreve na serial uma linha por
    frame: `HEX:<bytes do frame>|RSSI:<valor>`.
 4. O **`reconstrutor.py`** lê essas linhas, extrai o `FRMPayload`, **descriptografa com a AppSKey**
@@ -239,7 +239,7 @@ salto de frequência e o limite de ocupação por canal do item 10.2. A largura 
 
 | Sketch | Placa | Observações |
 |---|---|---|
-| `Rede/transmissor_esp32cam/` | AI Thinker ESP32-CAM | **Transmissor único.** Comandos pela serial: `CAPTURE` (captura e envia), `RESEND:2,7,15` (reenvia chunks da última captura), `SEND:<índice>:<total>:<hex>` (dados vindos do PC, usado pelo `orchestrator.py`), `SENDALL:<n>` (teste de enlace sem câmera, payload fixo) ou `AT...` (repassado ao Radioenge). Retentativas quando o módulo está ocupado. Intervalo entre chunks: `SEND_INTERVAL_MS` (7000 ms). |
+| `Rede/transmissor_esp32cam/` | AI Thinker ESP32-CAM | **Transmissor único.** Comandos pela serial: `CAPTURE` (captura e envia), `RESEND:2,7,15` (reenvia chunks da última captura), `SEND:<id>:<índice>:<total>:<hex>` (dados vindos do PC, usado pelo `orchestrator.py`), `SENDALL:<n>` (teste de enlace sem câmera, payload fixo) ou `AT...` (repassado ao Radioenge). Retentativas quando o módulo está ocupado. Intervalo entre chunks: `SEND_INTERVAL_MS` (7000 ms). |
 | `Rede/receptor_lora32/` | TTGO/Heltec LoRa32 V2 | Biblioteca **LoRa** (Sandeep Mistry). Frequência fixa 915,9 MHz. |
 
 ### Rodando o receptor no PC
