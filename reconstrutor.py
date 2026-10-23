@@ -1,127 +1,186 @@
 """
 reconstrutor.py
-Lê a serial do Heltec, descriptografa o LoRaWAN e reconstrói a imagem JPEG.
+Lê a serial do Heltec, descriptografa o LoRaWAN, remonta a imagem JPEG e REGISTRA a medição
+(PDR, tempo de rádio, latência) em medicoes/. Veja registro.py para o que é gravado.
 
-Parâmetros do enlace (tamanho do chunk, cabeçalho, parser): enlace.py.
+Dois modos:
 
-Chunks que não chegarem: mande RESEND:<índices> no transmissor enquanto este script
-está rodando. O RESEND reenvia a MESMA foto. Não use CAPTURE para completar: ele tira
-outra foto e os chunks dela não podem ser misturados com os da primeira.
+  Só receptor (padrão)  Escuta o Heltec. Você manda CAPTURE no transmissor por outro terminal.
+                        A leitura é identificada pelo id que vem no cabeçalho de cada chunk. A
+                        latência conta a partir do primeiro chunk (subestima: falta o tempo de
+                        captura) e os "blocos enviados" vêm da contagem de FCnt.
+  --tx                  O PC também controla o nó (TX_SERIAL_PORT): manda CAPTURE, lê o log do
+                        nó e repete --envios vezes. Latência a partir do disparo e blocos
+                        enviados/tempo de rádio vindos do log do nó. Use este modo nas
+                        medições da issue.
 
-Requisitos:  pip install pyserial pycryptodome
+Cada leitura vira uma linha em medicoes/transmissao.csv e a imagem (completa ou parcial) vai
+para medicoes/imagens/. Chunks que não chegarem: mande RESEND:<índices> no transmissor
+(só no modo sem --tx) enquanto este script está rodando. O RESEND reenvia a MESMA foto; não
+use CAPTURE para completar, porque ele tira outra foto e abre outra leitura.
+
+Exemplos:
+    python reconstrutor.py                                   # só escuta
+    python reconstrutor.py --tx --envios 30 --distancia 50   # mede 30 envios a 50 m
+
+Requisitos:  pip install pyserial pycryptodome   (portas e chaves no .env, veja .env.example)
 """
 
+import argparse
 import sys
+import time
+
 import serial
 
 import config
-import enlace
+import registro
 
-# ---------------------------------------------------------------------------
-# Configuração: porta e chaves vêm do .env (veja .env.example), nunca do código
-# ---------------------------------------------------------------------------
-RX_SERIAL_PORT = config.require("RX_SERIAL_PORT")   # porta do Heltec
-BAUD_RATE      = 115200
-OUTPUT_FILE    = "imagem_recebida.jpg"
 
-DEV_ADDR_HEX = config.get("LORA_DEV_ADDR", "")
-APP_SKEY_HEX = config.get("LORA_APP_SKEY", "")
+def _argumentos():
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--tx", action="store_true",
+                   help="controla o nó (TX_SERIAL_PORT): manda CAPTURE e lê o log dele")
+    p.add_argument("--envios", type=int, default=None,
+                   help="para depois de N leituras (com --tx o padrão é 1; sem --tx, sem limite)")
+    p.add_argument("--distancia", type=float, default=None, metavar="M",
+                   help="distância entre nó e receptor em metros (vai no CSV)")
+    p.add_argument("--rotulo", default="", help="texto livre (ambiente, antena...) que vai no CSV")
+    p.add_argument("--pausa-s", type=float, default=10.0,
+                   help="com --tx: espera entre um envio e o próximo (padrão 10)")
+    p.add_argument("--grace-s", type=float, default=3.0,
+                   help="com --tx: espera pelo fim do envio do nó depois da imagem completa (padrão 3)")
+    p.add_argument("--timeout-inatividade-s", type=float, default=300.0,
+                   help="sem --tx: fecha a leitura sem frames novos por este tempo (padrão 300)")
+    p.add_argument("--timeout-leitura-s", type=float, default=900.0,
+                   help="com --tx: tempo máximo de uma leitura (padrão 900)")
+    p.add_argument("--timeout-foto-s", type=float, default=30.0,
+                   help="com --tx: tempo máximo para o nó responder ao CAPTURE (padrão 30)")
+    p.add_argument("--sem-imagens", action="store_true", help="não grava as imagens em medicoes/imagens/")
+    p.add_argument("--pasta-medicoes", default=str(registro.PASTA_MEDICOES), help=argparse.SUPPRESS)
+    return p.parse_args()
 
-# ---------------------------------------------------------------------------
 
-# --- Main -----------------------------------------------------------------
 def main():
-    if not APP_SKEY_HEX:
-        sys.exit("APP_SKEY não configurada: defina LORA_APP_SKEY no .env (veja .env.example).")
-    app_skey = bytes.fromhex(APP_SKEY_HEX)
+    args = _argumentos()
+    app_skey = config.require_hex("LORA_APP_SKEY", 16)
+    dev_addr_hex = config.get("LORA_DEV_ADDR")
     # Se LORA_DEV_ADDR estiver no .env, ignora frames de outros dispositivos
-    dev_addr = bytes.fromhex(DEV_ADDR_HEX) if DEV_ADDR_HEX else None
+    dev_addr = bytes.fromhex(dev_addr_hex) if dev_addr_hex else None
 
-    chunks: dict[int, bytes] = {}
-    total: int | None = None
-    leitura: int | None = None   # id da foto em andamento (sorteado pelo transmissor a cada CAPTURE)
+    portas = {"rx": config.require("RX_SERIAL_PORT")}
+    if args.tx:
+        portas["tx"] = config.require("TX_SERIAL_PORT")
+        if args.distancia is None:
+            print("[aviso] sem --distancia: a coluna distancia_m do CSV ficará vazia.")
+    envios = args.envios if args.envios is not None else (1 if args.tx else 0)
 
-    print(f"Abrindo {RX_SERIAL_PORT} @ {BAUD_RATE}...")
-    with serial.Serial(RX_SERIAL_PORT, BAUD_RATE, timeout=1) as ser:
-        # Descarta qualquer dado antigo que ficou no buffer do sistema operacional
-        # (remanescente de sessões anteriores ou do boot do Heltec)
-        ser.reset_input_buffer()
-        print("Buffer limpo.")
-        print(">>> Mande CAPTURE no transmissor agora. <<<")
-        print("Se faltar algum chunk, mande RESEND:<índices base 0> SEM fechar este script.\n")
+    ex = registro.Execucao(
+        modo="tx_controlado" if args.tx else "so_receptor", rotulo=args.rotulo,
+        distancia_m=args.distancia, pasta_medicoes=args.pasta_medicoes,
+        extras={"portas": portas, "envios_pedidos": envios or None,
+                "grace_s": args.grace_s if args.tx else 0.0,
+                "timeout_inatividade_s": args.timeout_inatividade_s,
+                "timeout_leitura_s": args.timeout_leitura_s})
+    sessao = registro.Sessao(
+        ex, app_skey, dev_addr, grace_s=args.grace_s if args.tx else 0.0,
+        timeout_inatividade_s=args.timeout_inatividade_s, timeout_leitura_s=args.timeout_leitura_s,
+        timeout_foto_s=args.timeout_foto_s, salvar_imagens=not args.sem_imagens)
+
+    seriais, leitores = {}, {}
+
+    def abrir(nome):
+        seriais[nome] = registro.abrir_serial(portas[nome])
+        leitores[nome] = registro.LinhasSerial(seriais[nome])
+
+    def reabrir(nome, erro):
+        """A USB caiu: tenta reabrir por ~20 s. Os frames desse intervalo ficam perdidos e isso
+        aparece no log (evento serial_erro) e na lacuna de FCnt."""
+        ex.contadores["serial_erros"] += 1
+        ex.evento("serial_erro", canal=nome, erro=str(erro))
+        print(f"[!] Serial {nome} ({portas[nome]}) falhou: {erro}. Reabrindo...")
         try:
-            while True:
-                linha = ser.readline().decode(errors="ignore").strip()
-                if not linha:
-                    continue
+            seriais[nome].close()
+        except (serial.SerialException, OSError):
+            pass
+        for _ in range(20):
+            time.sleep(1)
+            try:
+                abrir(nome)
+                ex.evento("serial_reaberta", canal=nome)
+                print(f"[ok] Serial {nome} reaberta.")
+                return
+            except (serial.SerialException, OSError):
+                continue
+        raise RuntimeError(f"não foi possível reabrir a serial {nome} ({portas[nome]})")
 
-                m = enlace.LINE_RE.search(linha)
-                if not m:
-                    print(linha)           # log normal do ESP32 (boot, debug)
-                    continue
+    def passo():
+        """Uma volta: lê as seriais, alimenta a sessão, aplica timeouts."""
+        for nome in list(leitores):
+            try:
+                linhas = leitores[nome].ler()
+            except (serial.SerialException, OSError) as e:
+                reabrir(nome, e)
+                continue
+            for t, texto in linhas:
+                if nome == "tx":
+                    print(f"  [esp32-cam] {texto}")
+                    sessao.linha_tx(texto, t)
+                elif sessao.linha_rx(texto, t) is None:
+                    print(texto)            # log normal do ESP32 receptor (boot, debug)
+        sessao.verificar(time.perf_counter())
+        time.sleep(0.005)
 
-                hex_frame, rssi = m.groups()
-                try:
-                    info = enlace.parse_uplink(bytes.fromhex(hex_frame), app_skey, dev_addr)
-                    leitura_id, chunk_idx, chunk_total, chunk_data = enlace.parse_chunk(info["payload"])
-                except ValueError as e:
-                    print(f"[ignorado] {e}")
-                    continue
+    motivo_fim = "fim_da_execucao"
+    erro = None
+    try:
+        for nome in portas:
+            print(f"Abrindo {nome.upper()} {portas[nome]} @ 115200...")
+            abrir(nome)
+        print(f"Registro desta execução: {ex.pasta}")
+        time.sleep(1)                       # deixa o que já estava no buffer chegar e ser descartado
+        for leitor in leitores.values():
+            leitor.ler()
 
-                if leitura is None:
-                    leitura = leitura_id
-                    total = chunk_total
-                    print(f"[info] leitura {leitura} detectada: {total} chunks de até {enlace.CHUNK_DATA_SIZE} bytes")
-                elif leitura_id != leitura or chunk_total != total:
-                    # Nova foto (CAPTURE enviado de novo) - reseta tudo
-                    print(f"\n[info] nova leitura {leitura_id} ({chunk_total} chunks) - descartando a anterior ({leitura})")
-                    chunks = {}
-                    leitura = leitura_id
-                    total = chunk_total
+        if args.tx:
+            for i in range(1, envios + 1):
+                print(f"\n=== Envio {i}/{envios} ===")
+                t0 = time.perf_counter()
+                sessao.disparar(t0)
+                seriais["tx"].write(b"CAPTURE\n")
+                ex.evento("capture_enviado", t0, n=i)
+                while sessao.atual is not None:
+                    passo()
+                if i < envios:
+                    fim_pausa = time.perf_counter() + args.pausa_s
+                    while time.perf_counter() < fim_pausa:
+                        passo()             # ainda registra o que sobrar da leitura anterior
+        else:
+            print(">>> Mande CAPTURE no transmissor agora (Ctrl+C encerra e mostra o resumo). <<<")
+            print("Se faltar algum chunk, mande RESEND:<índices base 0> SEM fechar este script.\n")
+            while not envios or len(sessao.resumos) < envios:
+                passo()
+    except KeyboardInterrupt:
+        motivo_fim = "interrompido"
+        print("\nInterrompido pelo usuário.")
+    except (RuntimeError, serial.SerialException, OSError) as e:
+        motivo_fim = "erro_serial"
+        erro = str(e)
+        print(f"\n[ERRO] {e}")
+    finally:
+        sessao.encerrar(motivo_fim, time.perf_counter())
+        print()
+        for linha in registro.estatisticas(sessao.resumos):
+            print(linha)
+        print(f"\nLogs em {ex.pasta}\nCSV acumulado em {ex.arquivo_transmissao}")
+        ex.fechar(motivo_fim=motivo_fim, erro=erro, leituras=len(sessao.resumos))
+        for s in seriais.values():
+            try:
+                s.close()
+            except (serial.SerialException, OSError):
+                pass
+    if erro:
+        sys.exit(1)
 
-                if chunk_idx not in chunks:
-                    chunks[chunk_idx] = chunk_data
-                    faltam = total - len(chunks)
-                    print(f"  [chunk {chunk_idx:>3}/{total - 1}]  "
-                          f"{len(chunk_data):>3} bytes  RSSI={rssi}  "
-                          f"faltam {faltam}")
-                else:
-                    print(f"  [chunk {chunk_idx:>3}/{total - 1}] duplicado, ignorado")
-
-                if total and len(chunks) == total:
-                    print("\nTodos os chunks recebidos!")
-                    break
-
-        except KeyboardInterrupt:
-            print("\nInterrompido pelo usuário.")
-
-    if not chunks:
-        print("Nenhum chunk recebido. Encerrando.")
-        return
-
-    recebidos = len(chunks)
-    total_real = total or max(chunks.keys()) + 1
-    faltando = [i for i in range(total_real) if i not in chunks]
-
-    print(f"\nRecebidos: {recebidos}/{total_real}  |  Faltando: {len(faltando)}")
-
-    if faltando:
-        # Índices base 0, os mesmos que o RESEND do transmissor usa
-        print(f"Chunks faltando (base 0): {faltando}")
-        print(f"Para completar, mande no transmissor ENQUANTO este script está rodando:  RESEND:{','.join(map(str, faltando))}")
-        print("(se já saiu do script, os chunks recebidos se perderam: rode de novo e mande CAPTURE)\n")
-        # Salva versão parcial com zeros nos buracos (pode abrir como JPEG parcial)
-        partes = b"".join(chunks.get(i, b"\x00" * enlace.CHUNK_DATA_SIZE) for i in range(total_real))
-        nome_parcial = "imagem_parcial.jpg"
-        with open(nome_parcial, "wb") as f:
-            f.write(partes)
-        print(f"Imagem parcial salva em: {nome_parcial}")
-        return
-
-    imagem = b"".join(chunks[i] for i in range(total_real))
-    with open(OUTPUT_FILE, "wb") as f:
-        f.write(imagem)
-    print(f"Imagem completa salva em: {OUTPUT_FILE}  ({len(imagem)} bytes)")
 
 if __name__ == "__main__":
     main()

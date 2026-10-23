@@ -1,4 +1,3 @@
-# Scripts do enlace e do protótipo (raiz). Python 3.9 ou superior; testado com 3.13.9.
-paho-mqtt==2.1.0
+# Scripts do enlace (raiz). Python 3.9 ou superior; testado com 3.13.9.
 pycryptodome==3.23.0
 pyserial==3.5

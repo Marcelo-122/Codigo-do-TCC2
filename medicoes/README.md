@@ -62,5 +62,5 @@ mantidos por serem medições reais, mas **não entram** na contagem do critéri
 ## Ainda não medido
 
 - Corrente por estado (sleep, captura, inferência, transmissão) e mAh por leitura (procedimento e scripts prontos em [`medir_corrente.md`](medir_corrente.md), ainda sem medições).
-- Latência ponta a ponta (disparo no nó até o dado no servidor), nos dois fluxos.
+- Latência ponta a ponta (disparo no nó até o dado no servidor), nos dois fluxos: script pronto para o fluxo de imagem em [`medir_latencia.md`](medir_latencia.md), ainda sem medições; o fluxo de OCR na borda não tem firmware.
 - Deep sleep entre leituras: implementado em `Rede/transmissor_esp32cam` (comandos `AUTO`, `STOP`, `SLEEP`), **ainda não testado em placa** — roteiro em [`teste_deep_sleep.md`](teste_deep_sleep.md).

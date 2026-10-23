@@ -68,26 +68,24 @@ Codigo-do-TCC2/
 │   ├── transmissor_esp32cam/      Transmissor único: câmera (CAPTURE), reenvio (RESEND), envio vindo do PC (SEND), teste de enlace (SENDALL) e modo autônomo com deep sleep (AUTO/STOP/SLEEP, ainda não testado em placa)
 │   ├── receptor_lora32/           Firmware do receptor (Heltec/TTGO LoRa32)
 │   └── requirements.txt           Igual ao requirements.txt da raiz
-├── files/                         Cópias antigas
-│   └── reconstrutor.py            Versão antiga do reconstrutor (use o da raiz)
+├── legado/                        Protótipo antigo, sem rádio real (serial USB → ChirpStack); fora do fluxo atual (ver legado/README.md)
 ├── enlace.py                      PC: parâmetros do enlace (bloco, cabeçalho) e parser LoRaWAN compartilhados
-├── reconstrutor.py                PC: lê a serial do receptor, descriptografa e remonta o JPEG
+├── registro.py                    PC: registro das medições (logs completos + medicoes/transmissao.csv); usado pelos dois scripts abaixo
+├── reconstrutor.py                PC: lê a serial do receptor, descriptografa, remonta o JPEG e registra PDR, tempo de rádio e latência (`--tx` controla o nó)
 ├── decode_lorawan.py              PC: decodifica/descriptografa uplinks e mostra quais chunks faltam
-├── orchestrator.py                PC: envia a imagem em chunks (SEND:), confere o recebimento e reenvia o que faltou
+├── orchestrator.py                PC: envia a imagem em chunks (SEND:), confere o recebimento, reenvia o que faltou e registra a medição
 ├── analise_tempo_no_ar.py         PC: calcula pacotes, tempo no ar e tempo total de envio (`--verificar` confere a fórmula)
-├── esp32cam_jpeg_hex_chunks/      Sketch do protótipo antigo (serial → PC)
-├── main.py, decode.py             Protótipo antigo: gravam a serial em raw_data.txt e remontam image.jpg
-├── mqtt_bridge.py                 Protótipo antigo: serial → ChirpStack (MQTT)
+├── medicoes/                      Medições em hardware: `transmissao.csv` + `logs/` + `imagens/` do enlace (ver medicoes/medir_transmissao.md) e as de OCR/energia
 ├── config.py, .env.example        Leitura do .env e modelo das variáveis (chaves, rede, portas)
-├── requirements.txt               Dependências dos scripts da raiz (pyserial, pycryptodome, paho-mqtt)
+├── requirements.txt               Dependências dos scripts da raiz (pyserial, pycryptodome)
 ├── scripts/download_datasets.py   Baixa os datasets públicos (eles não ficam no Git)
 ├── poc_diminuicao_imagem/         PoC em C++/OpenCV: redução/binarização de imagem p/ caber no LoRa
 ├── ocr_cloud/                     OCR em Python (PC/nuvem): segmentação TFLite + CNN de dígitos
 ├── TreinoEModelosOCRNaBorda/      Treino do detector (U-Net QAT) e do leitor CRNN+CTC p/ ESP32
 ├── ModeloEDataset/                Pipeline do classificador de dígitos (CNN) + datasets + relatórios
 ├── test_images/                   Fotos da ESP32-CAM + firmware de debug/calibração com OCR on-device
-├── image.jpg, imagem_recebida.jpg, imagem_parcial.jpg, raw_data.txt, raw_image_data.txt
-│                                  Amostras/saídas dos scripts de enlace (exemplos de captura)
+├── image.jpg, imagem_recebida.jpg, imagem_parcial.jpg
+│                                  Imagem de teste do `orchestrator.py` e saídas de execuções antigas (hoje as imagens vão para `medicoes/imagens/`)
 └── README.md
 ```
 
@@ -119,7 +117,8 @@ Os comandos abaixo usam a sintaxe do Windows (`.venv\Scripts\...`); no Linux/WSL
 
 | Pasta | Python | Dependências | O que foi verificado |
 |---|---|---|---|
-| Raiz (scripts do enlace e do protótipo) e `Rede/` | 3.9 ou superior | `requirements.txt` (pyserial, pycryptodome, paho-mqtt; igual ao de `Rede/`) | Rodado com 3.13.9 |
+| Raiz (scripts do enlace) e `Rede/` | 3.9 ou superior | `requirements.txt` (pyserial, pycryptodome; igual ao de `Rede/`) | Rodado com 3.13.9 |
+| `legado/` (protótipo antigo) | 3.9 ou superior | `legado/requirements.txt` (pyserial, paho-mqtt) | `decode.py` rodado com 3.13.9 (CRC confere) |
 | `ocr_cloud/` | **3.13** | `ocr_cloud/requirements.txt` (TensorFlow 2.21.0, Keras 3.15.1) | Instalado em venv limpo (3.13.9) e `modelo_ocr.keras` carregado com sucesso |
 | `TreinoEModelosOCRNaBorda/` | **Linux / WSL2** (GPU opcional) | `requirements.txt` da pasta: é um `pip freeze` com pacotes NVIDIA/CUDA que não têm wheel para Windows (TensorFlow 2.21.0, Keras 3.15.1, tf_keras 2.21.0) | Python **3.11 a 3.13**: a resolução dos wheels Linux x86_64 foi conferida nas três versões; o treino em si não foi reexecutado |
 | `ModeloEDataset/` | **3.10** (TensorFlow 2.16.1 só tem wheels até 3.12) | `ModeloEDataset/requirements.txt` | Instalado em venv limpo com Python 3.10.11 (versões fixadas, `pip check` sem erros); modelo `.h5` e `.tflite` carregados |
@@ -170,8 +169,7 @@ python scripts/download_datasets.py             # baixa os do Kaggle
 | **ESP32-CAM (AI-Thinker)** | Captura a imagem (QQVGA 160×120 em escala de cinza, convertida para JPEG qualidade 90) e, na versão de debug, roda o OCR |
 | **Radioenge RD49C** | Módulo LoRaWAN (comandos `AT+...`), ligado à ESP32-CAM por UART (RX = GPIO 15, TX = GPIO 14) |
 | **Heltec / TTGO LoRa32 V2** | Receptor LoRa: SS = 18, RST = 14, DIO0 = 26; imprime os frames recebidos na serial |
-| **PC** | Roda `reconstrutor.py`, treina os modelos e (no protótipo antigo) hospeda o ChirpStack |
-| **Gateway/ChirpStack** *(só protótipo antigo)* | Servidor LoRaWAN recebendo pacotes Semtech UDP / MQTT |
+| **PC** | Roda `reconstrutor.py` (remonta a imagem e registra as medições) e treina os modelos |
 
 ### Parâmetros do enlace (tabela única)
 
@@ -230,10 +228,13 @@ salto de frequência e o limite de ocupação por canal do item 10.2. A largura 
 3. O **receptor LoRa32** escuta em 915,9 MHz / SF8 / BW 500 kHz e escreve na serial uma linha por
    frame: `HEX:<bytes do frame>|RSSI:<valor>`.
 4. O **`reconstrutor.py`** lê essas linhas, extrai o `FRMPayload`, **descriptografa com a AppSKey**
-   (AES-128 em modo CTR, conforme a especificação LoRaWAN), junta os chunks e grava
-   `imagem_recebida.jpg`. Chunks faltantes geram `imagem_parcial.jpg` (com zeros nos buracos).
+   (AES-128 em modo CTR, conforme a especificação LoRaWAN), junta os chunks e grava a imagem em
+   `medicoes/imagens/` (chunks faltantes geram um arquivo `_parcial.jpg`, com zeros nos buracos).
    Para completar, mande `RESEND:<índices base 0>` no transmissor **com o script ainda rodando**: o
    `RESEND` reenvia a mesma foto. Não use `CAPTURE` para isso, porque ele tira outra foto.
+5. Cada leitura vira uma linha em `medicoes/transmissao.csv` (PDR, tempo de rádio, latência...) e
+   cada execução deixa logs completos em `medicoes/logs/<execução>/`. Veja
+   [`medicoes/medir_transmissao.md`](medicoes/medir_transmissao.md).
 
 ### Firmwares (Arduino IDE)
 
@@ -255,26 +256,31 @@ python -m venv .venv
 # Em outro terminal serial (ou no Monitor Serial do transmissor) envie:  CAPTURE
 ```
 
-Para enviar uma imagem do PC pelo transmissor de teste (`Rede/transmissor_esp32cam/`), com o `.env`
-preenchido (`TX_SERIAL_PORT`, `RX_SERIAL_PORT`, chaves e `IMAGE_PATH`):
+Para **medir** (a issue pede ≥ 30 envios a distâncias fixas), deixe o PC controlar o nó também:
+feche o Monitor Serial e rode, por exemplo,
 
 ```bash
-.venv\Scripts\python orchestrator.py
+.venv\Scripts\python reconstrutor.py --tx --envios 30 --distancia 50
 ```
 
-### Protótipo anterior (scripts na raiz)
+Isso manda `CAPTURE` 30 vezes, lê o log do nó e do receptor com um único relógio e grava tudo em
+`medicoes/`. Definições das colunas, o que cada log guarda e limitações em
+[`medicoes/medir_transmissao.md`](medicoes/medir_transmissao.md).
 
-Primeira abordagem, **sem rádio real**: a ESP32-CAM manda os chunks por USB-serial e o PC os
-injeta num servidor ChirpStack.
+Para enviar uma imagem do PC pelo transmissor de teste (`Rede/transmissor_esp32cam/`), com o `.env`
+preenchido (`TX_SERIAL_PORT`, `RX_SERIAL_PORT`, chaves e `IMAGE_PATH`); também registra a medição:
 
-| Arquivo | Função |
-|---|---|
-| `esp32cam_jpeg_hex_chunks/` | Sketch: captura JPEG e envia `BEGIN,<bytes>,<chunks>` / `CHUNK,<i>,<len>,<hex>` / `END,<crc32>` pela serial (85 bytes por chunk; protótipo antigo, fora do enlace final) |
-| `main.py` + `decode.py` | Gravam a saída serial em `raw_data.txt` e reconstroem `image.jpg` conferindo o CRC32 |
-| `mqtt_bridge.py` | Publica cada chunk como uplink no tópico MQTT do ChirpStack |
+```bash
+.venv\Scripts\python orchestrator.py --distancia 50
+```
 
-O `mac_simulator.py` (simulador de gateway via Semtech UDP, que usava `868.1` MHz / `SF7BW125`) foi
-removido: era só um teste e não faz parte do fluxo final, que usa o enlace real em
+### Protótipo anterior ([`legado/`](legado/README.md))
+
+Primeira abordagem, **sem rádio real**: a ESP32-CAM mandava os chunks por USB-serial e o PC os
+injetava num servidor ChirpStack. O ChirpStack só servia como simulador de teste e **saiu do
+trabalho**; o fluxo atual não usa servidor de rede. Os scripts, o sketch e as capturas de exemplo
+desse protótipo ficam em [`legado/`](legado/README.md). O `mac_simulator.py` (simulador de gateway
+via Semtech UDP, `868.1` MHz / `SF7BW125`) já havia sido removido: o fluxo final usa o enlace real em
 AU915 / DR6 / 500 kHz.
 
 ---
@@ -434,10 +440,10 @@ seriais disponíveis, rode `python -m serial.tools.list_ports -v`.
 
 | Variável | Usada por |
 | --- | --- |
-| `TX_SERIAL_PORT` | `main.py`, `mqtt_bridge.py`, `orchestrator.py`, `test_images/grab_image.py`, `test_images/debug_ocr_esp32cam/grab_image_debug.py` |
-| `RX_SERIAL_PORT` | `reconstrutor.py`, `files/reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py` |
-| `LORA_DEV_ADDR`, `LORA_APP_SKEY` | `reconstrutor.py`, `files/reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py` |
-| `MQTT_BROKER`, `MQTT_PORT`, `CHIRPSTACK_APPLICATION_ID`, `CHIRPSTACK_DEV_EUI` | `mqtt_bridge.py` |
+| `TX_SERIAL_PORT` | `reconstrutor.py` (com `--tx`), `orchestrator.py`, `legado/main.py`, `legado/mqtt_bridge.py`, `test_images/grab_image.py`, `test_images/debug_ocr_esp32cam/grab_image_debug.py` |
+| `RX_SERIAL_PORT` | `reconstrutor.py`, `legado/reconstrutor_antigo.py`, `decode_lorawan.py`, `orchestrator.py` |
+| `LORA_DEV_ADDR`, `LORA_APP_SKEY` | `reconstrutor.py`, `legado/reconstrutor_antigo.py`, `decode_lorawan.py`, `orchestrator.py` (o `registro.py` nunca grava esses valores nos logs) |
+| `MQTT_BROKER`, `MQTT_PORT`, `CHIRPSTACK_APPLICATION_ID`, `CHIRPSTACK_DEV_EUI` | só `legado/mqtt_bridge.py` |
 | `IMAGE_PATH` | `orchestrator.py` |
 
 > **Histórico do Git mantido.** Commits antigos ainda trazem as chaves, o IP e os IDs do dispositivo de
@@ -479,7 +485,7 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 
 | Branch de origem | Conteúdo |
 |---|---|
-| `main` | Rede LoRaWAN (firmwares, `reconstrutor.py`, `files/`), protótipo serial/ChirpStack, PoC de redução de imagem, `ocr_cloud/` |
+| `main` | Rede LoRaWAN (firmwares, `reconstrutor.py`, `registro.py`), protótipo serial/ChirpStack (`legado/`), PoC de redução de imagem, `ocr_cloud/` |
 | `Treino-Testes-e-Modelos` | `TreinoEModelosOCRNaBorda/` (treino do detector e do CRNN+CTC, modelos, datasets) |
 | `ocr` | `ModeloEDataset/` (classificador de dígitos) e `test_images/` (firmware de debug com OCR on-device) |
 
@@ -497,10 +503,10 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
   `orchestrator.py`; falta automatizar a captura com confirmação.
 - Unificar as três abordagens de OCR (`ocr_cloud`, `TreinoEModelosOCRNaBorda`, `ModeloEDataset`) após
   comparar a acurácia de cada uma no mesmo conjunto de teste.
-- **Organização do repositório (pendente):** mover os scripts
-  de PC e do protótipo antigo (`reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py`, `main.py`,
-  `decode.py`, `mqtt_bridge.py`) para subpastas de `Rede/`. Decidir também o que
-  fazer com as amostras na raiz (`image.jpg`, `imagem_*.jpg`, `raw_*.txt`).
+- **Organização do repositório (pendente):** o protótipo antigo já foi para `legado/`; falta mover
+  os scripts do enlace (`reconstrutor.py`, `registro.py`, `enlace.py`, `decode_lorawan.py`,
+  `orchestrator.py`, `analise_tempo_no_ar.py`) para uma subpasta de `Rede/`. Decidir também o que
+  fazer com as amostras na raiz (`image.jpg`, `imagem_recebida.jpg`, `imagem_parcial.jpg`).
 - Confirmar a versão exata do Python usada no treino de `TreinoEModelosOCRNaBorda/` (hoje só a faixa 3.11–3.13
   está verificada). O download dos datasets do Kaggle já foi validado; o do Dryad continua manual.
 - O **histórico do Git** não foi reescrito (decisão do grupo); um clone novo baixa ~440 MB.

@@ -24,6 +24,13 @@ HEADER_FMT = ">HHH"              # uint16 id da leitura + uint16 índice (base 0
 HEADER_SIZE = struct.calcsize(HEADER_FMT)   # 6 bytes
 FPORT = 1                        # AT+SENDB=01:...
 
+# Rádio (AU915, canal fixo, DR6). Só informativos para os scripts: quem fixa esses valores é
+# o firmware (AT+CHMASK / AT+DR no Radioenge, receptor_lora32.ino) e o texto da issue.
+SF = 8                           # spreading factor
+BW_KHZ = 500                     # largura de banda
+FREQ_MHZ = 915.9                 # canal 64 do AU915
+INTERVALO_ENVIO_S = 7.0          # = SEND_INTERVAL_MS do .ino, em segundos
+
 # Linha que o receptor imprime na serial: HEX:<frame LoRaWAN em hex>|RSSI:<dBm>
 LINE_RE = re.compile(r"HEX:([0-9A-Fa-f]+)\|RSSI:(-?\d+)")
 
