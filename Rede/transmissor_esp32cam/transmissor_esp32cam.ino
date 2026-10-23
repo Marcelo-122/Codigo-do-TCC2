@@ -17,6 +17,13 @@
 //                                    (usado pelo orchestrator.py)
 //   SENDALL:<n>                      teste de enlace SEM camera: envia n chunks
 //                                    com payload fixo
+//   AUTO[:<s>]                       modo autonomo: acorda, captura, envia todos os
+//                                    chunks e entra em deep sleep por <s> segundos
+//                                    (padrao 600). Repete ate receber STOP.
+//   STOP                             sai do modo autonomo (so e lido na janela de
+//                                    JANELA_STOP_MS logo apos cada despertar)
+//   SLEEP:<s>                        deep sleep unico de <s> segundos, sem captura
+//                                    (para medir a corrente de sleep)
 //   AT...                            qualquer outra linha vai direto ao Radioenge
 //
 // Formato do payload (FPort 1):
@@ -27,6 +34,8 @@
 // ============================================================
 #include "esp_camera.h"
 #include "img_converters.h"  // fmt2jpg()
+#include "driver/rtc_io.h"
+#include "esp_sleep.h"
 
 // --- Pinos camera (AI Thinker ESP32-CAM) ---
 #define PWDN_GPIO_NUM   32
@@ -77,6 +86,25 @@ const unsigned long SEND_INTERVAL_MS = 7000;
 const int CAM_W = 160;
 const int CAM_H = 120;
 const int JPEG_QUALITY = 90;
+
+// --- Deep sleep (modo autonomo) ---
+// Desligue o flash (GPIO4) e a camera (PWDN, GPIO32, ativo em nivel alto) antes de
+// dormir e segure esses niveis com hold: sem isso os pinos flutuam e a corrente de
+// sleep sobe. O Radioenge continua alimentado (so o ESP32 dorme), entao a sessao
+// LoRaWAN e o contador de quadros ficam no modulo.
+#define FLASH_LED_GPIO GPIO_NUM_4
+#define AUTO_AO_LIGAR  0                      // 1 = modo autonomo ja no power-on
+const uint32_t INTERVALO_PADRAO_S = 600;      // dormida padrao do AUTO
+const uint32_t INTERVALO_MIN_S    = 10;
+const unsigned long JANELA_STOP_MS = 1500;    // tempo acordado esperando STOP; ponha 0
+                                              // para medir o consumo de producao
+
+// RTC_DATA_ATTR sobrevive ao deep sleep (nao ao power-on reset).
+RTC_DATA_ATTR static bool     autoAtivo      = (AUTO_AO_LIGAR != 0);
+RTC_DATA_ATTR static uint32_t autoIntervaloS = INTERVALO_PADRAO_S;
+RTC_DATA_ATTR static uint32_t cicloN         = 0;
+
+static bool camPronta = false;
 
 // --- Buffer de imagem ---
 static uint8_t* imgBuf  = nullptr;
@@ -253,8 +281,8 @@ bool sendImageChunk(int idx) {
 }
 
 // ----------------------------------------------------------------
-void enviarImagem() {
-  if (!imgBuf || imgSize == 0) { Serial.println("Sem imagem."); return; }
+int enviarImagem() {  // retorna o numero de chunks que falharam (-1 se nao havia imagem)
+  if (!imgBuf || imgSize == 0) { Serial.println("Sem imagem."); return -1; }
 
   int total = (imgSize + CHUNK_DATA_SIZE - 1) / CHUNK_DATA_SIZE;
   Serial.printf("[envio] %d bytes -> %d chunks de %d bytes\n",
@@ -268,6 +296,7 @@ void enviarImagem() {
   }
 
   Serial.printf("[envio] concluido: %d ok, %d falhas\n", ok, fail);
+  return fail;
 }
 
 // ----------------------------------------------------------------
@@ -334,17 +363,116 @@ void enviarTeste(int total) {
   Serial.println("Teste concluido.");
 }
 
+// Segura um pino em nivel fixo durante o deep sleep.
+static void pinoSegurar(gpio_num_t pino, int nivel) {
+  rtc_gpio_init(pino);
+  rtc_gpio_set_direction(pino, RTC_GPIO_MODE_OUTPUT_ONLY);
+  rtc_gpio_set_level(pino, nivel);
+  rtc_gpio_hold_en(pino);
+}
+
+// Devolve o pino ao controle normal (obrigatorio antes de esp_camera_init).
+static void pinoLiberar(gpio_num_t pino) {
+  rtc_gpio_hold_dis(pino);
+  rtc_gpio_deinit(pino);
+}
+
+// ----------------------------------------------------------------
+// Entra em deep sleep por `segundos`. Nao retorna: ao acordar o ESP32 reinicia
+// e executa setup() de novo.
+void dormir(uint32_t segundos) {
+  if (imgBuf) { free(imgBuf); imgBuf = nullptr; imgSize = 0; }
+  esp_camera_deinit();  // erro se a camera nao foi iniciada: pode ser ignorado
+  pinoSegurar((gpio_num_t)PWDN_GPIO_NUM, 1);  // camera em power-down
+  pinoSegurar(FLASH_LED_GPIO, 0);             // flash apagado
+
+  Serial.printf("[sleep] deep sleep por %u s\n", (unsigned)segundos);
+  Serial.flush();
+  LoRaSerial.flush();
+
+  esp_sleep_enable_timer_wakeup((uint64_t)segundos * 1000000ULL);
+  esp_deep_sleep_start();
+}
+
+// ----------------------------------------------------------------
+// Um ciclo do modo autonomo: captura, envia todos os chunks e dorme. Mesmo se a
+// camera ou o envio falharem, o no dorme (nao fica acordado gastando bateria).
+// Tempos em ms contados desde o despertar (millis() zera a cada boot); o boot da
+// ROM antes do setup() nao esta incluido.
+void cicloAutonomo() {
+  cicloN++;
+  unsigned long t_inicio = millis();
+  int total = 0, falhas = -1;
+  unsigned long t_captura = 0, t_envio = 0;
+  size_t jpegBytes = 0;
+
+  if (camPronta) {
+    unsigned long t0 = millis();
+    bool capturou = captureImage();
+    t_captura = millis() - t0;
+    if (capturou) {
+      jpegBytes = imgSize;
+      total = (imgSize + CHUNK_DATA_SIZE - 1) / CHUNK_DATA_SIZE;
+      t0 = millis();
+      falhas = enviarImagem();
+      t_envio = millis() - t0;
+    }
+  } else {
+    Serial.println("[ciclo] camera indisponivel, nada a enviar");
+  }
+
+  uint32_t dorme = autoIntervaloS;
+  Serial.printf("[CICLO_FIM] ciclo=%u ok=%d chunks=%d falhas=%d jpeg_bytes=%u "
+                "t_ate_ciclo_ms=%lu t_captura_ms=%lu t_envio_ms=%lu t_ativo_ms=%lu sleep_s=%u\n",
+                (unsigned)cicloN, (falhas == 0) ? 1 : 0, total, falhas, (unsigned)jpegBytes,
+                t_inicio, t_captura, t_envio, millis(), (unsigned)dorme);
+  dormir(dorme);
+}
+
+// ----------------------------------------------------------------
+// Janela curta apos o despertar para o PC mandar STOP e sair do modo autonomo.
+void janelaStop() {
+  Serial.printf("[auto] ciclo %u em %lu ms; envie STOP para sair\n",
+                (unsigned)(cicloN + 1), JANELA_STOP_MS);
+  unsigned long ini = millis();
+  while (millis() - ini < JANELA_STOP_MS) {
+    if (Serial.available()) {
+      String linha = Serial.readStringUntil('\n');
+      linha.trim();
+      if (linha == "STOP") {
+        autoAtivo = false;
+        Serial.println("[auto] modo autonomo desligado");
+        return;
+      }
+    }
+    delay(10);
+  }
+}
+
 // ================================================================
 void setup() {
+  bool acordouDoSleep = (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER);
+  // Os holds do sleep seguram PWDN/flash; precisam sair antes de usar a camera.
+  pinoLiberar((gpio_num_t)PWDN_GPIO_NUM);
+  pinoLiberar(FLASH_LED_GPIO);
+
   Serial.begin(115200);
   LoRaSerial.begin(9600, SERIAL_8N1, LORA_RX_PIN, LORA_TX_PIN);
-  delay(1000);
+  if (!acordouDoSleep) delay(1000);  // so no power-on: espera o monitor serial abrir
 
   Serial.println("ESP32-CAM LoRa Image Sender - TCC");
-  Serial.println("Comandos: CAPTURE | RESEND:<i,j,...> | SEND:<id>:<i>:<total>:<hex> | SENDALL:<n> | AT<cmd>");
+  Serial.println("Comandos: CAPTURE | RESEND:<i,j,...> | SEND:<id>:<i>:<total>:<hex> | SENDALL:<n> | AUTO[:<s>] | STOP | SLEEP:<s> | AT<cmd>");
+  Serial.printf("[boot] causa=%s ciclo=%u auto=%d intervalo=%u s\n",
+                acordouDoSleep ? "timer" : "power-on/reset", (unsigned)cicloN,
+                autoAtivo ? 1 : 0, (unsigned)autoIntervaloS);
 
-  if (initCamera()) Serial.println("[camera] pronta.");
+  if (autoAtivo) janelaStop();
+
+  camPronta = initCamera();
+  if (camPronta) Serial.println("[camera] pronta.");
   else Serial.println("[camera] falhou - so bridge AT e SEND/SENDALL disponiveis.");
+
+  if (autoAtivo) cicloAutonomo();  // nao retorna: termina em deep sleep
 }
 
 void loop() {
@@ -363,6 +491,19 @@ void loop() {
       enviarDoPc(linha.substring(5));
     } else if (linha.startsWith("SENDALL:")) {
       enviarTeste(linha.substring(8).toInt());
+    } else if (linha == "AUTO" || linha.startsWith("AUTO:")) {
+      long s = (linha == "AUTO") ? (long)INTERVALO_PADRAO_S : linha.substring(5).toInt();
+      autoIntervaloS = (s >= (long)INTERVALO_MIN_S) ? (uint32_t)s : INTERVALO_PADRAO_S;
+      autoAtivo = true;
+      Serial.printf("[auto] ligado, intervalo %u s\n", (unsigned)autoIntervaloS);
+      cicloAutonomo();
+    } else if (linha == "STOP") {
+      autoAtivo = false;
+      Serial.println("[auto] modo autonomo desligado");
+    } else if (linha.startsWith("SLEEP:")) {
+      long s = linha.substring(6).toInt();
+      if (s > 0) dormir((uint32_t)s);
+      else Serial.println("[ERRO] use SLEEP:<segundos> com segundos > 0");
     } else {
       LoRaSerial.println(linha);  // passa AT direto ao Radioenge
     }

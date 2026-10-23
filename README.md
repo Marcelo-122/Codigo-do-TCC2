@@ -65,7 +65,7 @@ final (OCR no dispositivo → só a leitura trafega por LoRaWAN) é um dos próx
 ```
 Codigo-do-TCC2/
 ├── Rede/                          Firmwares do enlace LoRaWAN (Arduino IDE)
-│   ├── transmissor_esp32cam/      Transmissor único: câmera (CAPTURE), reenvio (RESEND), envio vindo do PC (SEND) e teste de enlace (SENDALL)
+│   ├── transmissor_esp32cam/      Transmissor único: câmera (CAPTURE), reenvio (RESEND), envio vindo do PC (SEND), teste de enlace (SENDALL) e modo autônomo com deep sleep (AUTO/STOP/SLEEP, ainda não testado em placa)
 │   ├── receptor_lora32/           Firmware do receptor (Heltec/TTGO LoRa32)
 │   └── requirements.txt           Igual ao requirements.txt da raiz
 ├── files/                         Cópias antigas
