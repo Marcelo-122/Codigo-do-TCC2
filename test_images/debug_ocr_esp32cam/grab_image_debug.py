@@ -12,7 +12,13 @@ Saídas (nesta mesma pasta):
   - debug_frame_latest.jpg   -> sempre a imagem mais recente (pra ficar
                                  olhando enquanto ajusta a posição da câmera)
   - debug_frames/frame_N.jpg -> histórico de todas as imagens recebidas
-  - debug_metricas.csv       -> uma linha por captura, todas as métricas
+
+Saída fora desta pasta:
+  - ../../medicoes/debug_metricas.csv -> uma linha por captura, todas as
+                                 métricas (versionado). Se o firmware mudar
+                                 as colunas, o arquivo antigo é renomeado
+                                 em vez de receber linhas sob o cabeçalho
+                                 errado.
 """
 import csv
 import os
@@ -32,9 +38,11 @@ BAUD_RATE = 115200
 PASTA_ATUAL = os.path.dirname(os.path.abspath(__file__))
 ARQUIVO_LATEST = os.path.join(PASTA_ATUAL, 'debug_frame_latest.jpg')
 PASTA_HISTORICO = os.path.join(PASTA_ATUAL, 'debug_frames')
-ARQUIVO_METRICAS = os.path.join(PASTA_ATUAL, 'debug_metricas.csv')
+PASTA_MEDICOES = os.path.join(PASTA_ATUAL, '..', '..', 'medicoes')
+ARQUIVO_METRICAS = os.path.join(PASTA_MEDICOES, 'debug_metricas.csv')
 
 os.makedirs(PASTA_HISTORICO, exist_ok=True)
+os.makedirs(PASTA_MEDICOES, exist_ok=True)
 
 IMG_START = b'<IMG_START>'
 IMG_END = b'<IMG_END>'
@@ -70,6 +78,14 @@ def parse_metricas(texto):
 
 
 def preparar_csv(cabecalho):
+    if os.path.exists(ARQUIVO_METRICAS):
+        with open(ARQUIVO_METRICAS, newline='', encoding='utf-8') as f:
+            cabecalho_antigo = next(csv.reader(f), None)
+        if cabecalho_antigo != cabecalho:
+            # Firmware com colunas diferentes: anexar sob o cabeçalho antigo
+            # desalinharia as linhas, então o arquivo antigo é preservado.
+            sufixo = time.strftime('%Y%m%d_%H%M%S')
+            os.replace(ARQUIVO_METRICAS, ARQUIVO_METRICAS.replace('.csv', f'_{sufixo}.csv'))
     novo = not os.path.exists(ARQUIVO_METRICAS)
     f = open(ARQUIVO_METRICAS, 'a', newline='', encoding='utf-8')
     writer = csv.DictWriter(f, fieldnames=cabecalho)

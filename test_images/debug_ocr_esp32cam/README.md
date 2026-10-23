@@ -28,9 +28,9 @@ A cada 5 segundos a ESP32CAM:
 
 **Onde ver a leitura:** ela aparece de duas formas — direto no Monitor
 Serial (`Leitura: 007704`) e como uma coluna nova `leitura` em
-`debug_metricas.csv` (o `grab_image_debug.py` não precisou de nenhuma
-mudança pra isso: ele já lê qualquer `chave=valor` da linha de métricas e
-monta o CSV dinamicamente a partir das chaves que aparecerem).
+`medicoes/debug_metricas.csv` na raiz do repositório (o `grab_image_debug.py`
+já lê qualquer `chave=valor` da linha de métricas e monta o CSV
+dinamicamente a partir das chaves que aparecerem).
 
 Se a segmentação não achar nenhuma caixa naquele frame, a leitura vem como
 `"--------"` (8 traços) — sinal claro de "não deu pra tentar", em vez de
@@ -52,17 +52,25 @@ inventar uma leitura sem base nenhuma.
    imagens que atualize sozinho (ou dê refresh manual) e vá ajustando a
    posição até a janela de dígitos real do hidrômetro cair dentro do
    retângulo/linhas desenhados.
-5. `debug_metricas.csv` acumula uma linha por captura com todas as
+5. `../../medicoes/debug_metricas.csv` acumula uma linha por captura com todas as
    métricas — RAM livre, PSRAM livre, tempo de captura/inferência/encode,
    temperatura do chip, se achou a caixa ou não, coordenadas da caixa, etc.
 6. Histórico completo de frames fica em `debug_frames/frame_N.jpg`, caso
    quiera revisar depois.
 
-## O que eu NÃO consegui verificar
+## Estado dos testes em hardware
 
-Não tenho acesso ao hardware nem ao toolchain do Arduino/ESP-IDF nesta
-sessão, então **este `.ino` não foi compilado nem testado em placa real**.
-Pontos mais prováveis de precisar de ajuste na primeira tentativa:
+**Testado em placa real** (AI-Thinker ESP32-CAM, 240 MHz, 4 MB de PSRAM): o
+sketch compila, os dois modelos (segmentação + classificador de dígito)
+rodam juntos e a leitura sai pela serial. A evidência está em
+[`medicoes/debug_metricas.csv`](../../medicoes/debug_metricas.csv) (61
+capturas de 2026-09-27, ver [`medicoes/README.md`](../../medicoes/README.md)):
+`arena_digito_bytes` = 28.556 e `leitura=046663` repetida no medidor de teste.
+O que **ainda não foi medido** em placa: consumo de corrente, deep sleep e
+latência ponta a ponta (issue de medições de H2/H3).
+
+Os pontos abaixo são os que mais costumam precisar de ajuste **ao recompilar
+com outra biblioteca/versão**:
 
 - **Caminhos de `#include` do TFLite Micro** — variam entre as bibliotecas
   disponíveis (`TensorFlowLite_ESP32` vs `Chirale_TensorFlowLite` vs
@@ -80,19 +88,17 @@ Pontos mais prováveis de precisar de ajuste na primeira tentativa:
   usada aqui é a mais comum, mas confira contra a versão instalada se não
   compilar de primeira.
 - **Tamanho do `DIGIT_ARENA_SIZE` (768 KB, classificador de dígito)** —
-  extrapolado a partir do maior tensor intermediário medido em Python
-  (~110 KB) usando a mesma proporção de folga que descobrimos ser
-  necessária pro modelo de segmentação (~5,5x), mas **isso ainda não foi
-  testado em hardware real** — o modelo classificador é novo nesta
-  integração. Se `[tflite] digito: AllocateTensors falhou` aparecer, é só
+  foi extrapolado a partir do maior tensor intermediário medido em Python
+  (~110 KB), e a medição em placa mostrou que está **superdimensionado**:
+  `arena_digito_bytes` = 28.556 em todas as capturas. Dá para reduzi-lo e
+  liberar PSRAM. Se `[tflite] digito: AllocateTensors falhou` aparecer, é só
   aumentar essa constante (o log já diferencia qual dos dois modelos
   falhou).
 - **Operadores do resolver do classificador** (`AddConv2D/AddMaxPool2D/
   AddShape/AddStridedSlice/AddPack/AddReshape/AddFullyConnected/
-  AddSoftmax`) — também conferidos por introspecção do
-  `modelo_digito.tflite`, mas com mais operadores que o de segmentação (8
-  em vez de 4), então mais chance de algum nome de método não bater com a
-  versão instalada da biblioteca.
+  AddSoftmax`) — conferidos por introspecção do `modelo_digito.tflite`; com
+  mais operadores que o de segmentação (8 em vez de 4), é o ponto mais
+  provável de quebrar se a versão da biblioteca mudar.
 - **Operadores do resolver** (`AddConv2D/AddMaxPool2D/AddTransposeConv/
   AddLogistic`) — conferidos por introspecção direta do
   `modelo_esp32.tflite` (script Python, ver
@@ -145,16 +151,17 @@ Depois desta segunda correção, testado em hardware real e funcionou:
 overhead do próprio interpretador), confirmando que a estimativa de 2 MB
 tinha folga suficiente.
 
-**Tentativa 3** (segundo modelo, ainda não testado em hardware): com a
+**Tentativa 3** (segundo modelo, testado em hardware em 2026-09-27): com a
 segmentação funcionando, adicionamos o classificador de dígito
 (`modelo_digito.h`) como um segundo interpretador TFLite Micro
 independente (`DIGIT_ARENA_SIZE = 768 KB`, própria alocação de PSRAM), que
-roda 8 vezes por frame (uma por fatia da caixa detectada) e monta a
-leitura completa. O orçamento de PSRAM some assim: câmera (~19 KB) +
-arena de segmentação (2 MB) + arena de dígito (768 KB) ≈ 2,79 MB de 4 MB
-disponíveis — folga de ~1,4 MB pro resto (heap do programa, etc.), mas
-**isso ainda não foi testado em hardware real** — o `DIGIT_ARENA_SIZE` foi
-extrapolado, não medido (ver "O que eu NÃO consegui verificar" acima).
+roda uma vez por fatia da caixa detectada (8 fatias nas primeiras
+capturas, 6 depois da calibração) e monta a leitura completa. Orçamento de
+PSRAM medido: câmera (~19 KB) + arena de segmentação (2 MB) + arena de dígito
+(768 KB) deixam `psram_free` = 1.289.292 bytes (~1,29 MB) em todas as
+capturas. O classificador usou só 28.556 bytes de arena
+(`arena_digito_bytes`) e levou ~2 s por frame com 6 fatias
+(`t_digitos_ms`, mediana 1.995 ms).
 
 ## Depois de calibrar a posição
 

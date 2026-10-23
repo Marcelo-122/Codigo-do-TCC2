@@ -224,16 +224,17 @@ RAM/PSRAM/tempo) pela Serial USB.
 
 **Testado em hardware real (AI-Thinker ESP32-CAM)** — não é só teoria:
 - Câmera + segmentação + classificador de dígito rodando juntos, sem estourar os 4 MB de
-  PSRAM (orçamento medido: ~19 KB câmera + 1.623.852 bytes arena de segmentação + arena do
-  classificador de dígito, folga de ~1,4 MB sobrando).
+  PSRAM (orçamento medido: ~19 KB câmera + 1.623.852 bytes arena de segmentação + 28.556 bytes
+  de arena usada pelo classificador de dígito; `psram_free` = 1.289.292 bytes com as duas arenas
+  alocadas). Dados em [`../medicoes/`](../medicoes/README.md).
 - `N_FATIAS` é só um parâmetro de pós-processamento (divide a caixa detectada em N partes
   iguais) — **não precisa bater** com a convenção "5+3=8" usada pra montar o dataset de
   treino do classificador, já que o classificador só lê um dígito por vez. Calibrado pra
   **6** depois de conferir visualmente que o medidor de teste (marca Tianjin, leitura real
   "046663") tem 6 rodinhas pretas e nenhuma vermelha — ajuste essa constante pro medidor-alvo
   real (é só contar as rodinhas na imagem de debug).
-- Achado real de performance: a inferência do modelo de **segmentação** demorou **~15,5s por
-  frame** em hardware real (bem mais que os poucos milissegundos típicos de TFLite Micro em
+- Achado real de performance: a inferência do modelo de **segmentação** demorou **~15,6s por
+  frame** (mediana de 15.564 ms em 61 capturas) em hardware real (bem mais que os poucos milissegundos típicos de TFLite Micro em
   modelos pequenos) — provavelmente por rodar em kernels de referência puros em C, sem
   otimização pra Xtensa, num input relativamente grande (192×192). Isso é aceitável pra essa
   ferramenta de debug (roda a cada 5s de qualquer forma), mas é um ponto a otimizar antes de
@@ -299,7 +300,7 @@ Conferir sempre antes de confiar no dataset gerado:
   os `*_report.csv`, mas não é 100% livre de ruído (~1-4% estimado).
 - Dimensionamento exato de RAM/flash/latência em hardware real **já foi confirmado** — ver
   a seção "Firmware / ferramenta de calibração no ESP32CAM real" abaixo. Inferência da
-  segmentação ficou bem mais lenta que o esperado (~15,5s por frame) — aceitável pra uma
+  segmentação ficou bem mais lenta que o esperado (~15,6s por frame) — aceitável pra uma
   ferramenta de debug que roda a cada 5s, mas precisa de otimização antes de virar produção
   (ver "Firmware" para detalhes e hipóteses).
 
@@ -314,7 +315,7 @@ Conferir sempre antes de confiar no dataset gerado:
    - Separar uma fatia (ex.: 30%) como teste real, nunca usada no fine-tuning, pra medir a
      acurácia de verdade.
    - Se houver mais de um medidor físico a monitorar, pelo menos 5-10 fotos de cada.
-2. **Otimizar a latência da inferência de segmentação** (~15,5s/frame medido em hardware
+2. **Otimizar a latência da inferência de segmentação** (~15,6s/frame medido em hardware
    real — ver seção "Firmware" abaixo) antes de qualquer uso em produção: candidatos são
    reduzir a entrada do modelo de segmentação (192×192 é grande pra TFLite Micro sem
    aceleração de hardware), usar uma resolução intermediária menor, ou investigar se a

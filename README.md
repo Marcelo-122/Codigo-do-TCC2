@@ -406,14 +406,16 @@ diretamente na ESP32-CAM** (TFLite Micro, 4 MB de PSRAM): a cada 5 s captura uma
 localiza a janela de dígitos, classifica cada fatia (`N_FATIAS` ajustável por medidor — 6 no
 medidor de teste) e envia pela serial a imagem anotada, a leitura e métricas (RAM, PSRAM, tempos,
 temperatura). O PC recebe tudo com `grab_image_debug.py`, que gera `debug_frame_latest.jpg` e
-`debug_metricas.csv`. Detalhes, erros de memória encontrados e correções no
+[`medicoes/debug_metricas.csv`](medicoes/debug_metricas.csv). Detalhes, erros de memória encontrados e correções no
 [README da pasta](test_images/debug_ocr_esp32cam/README.md).
 
 `test_images/grab_image.py` é o capturador simples de fotos pela serial (usado para montar os
 conjuntos de imagens reais `imagem_capturada_N.jpg`).
 
-Achado importante: a inferência da segmentação levou **~15,5 s por frame** em hardware real —
-aceitável para calibração, mas precisa ser otimizada antes de uso em produção.
+Achado importante: a inferência da segmentação levou **~15,6 s por frame** em hardware real
+(mediana de 15.564 ms em 61 capturas, ver [`medicoes/`](medicoes/README.md)) — aceitável para
+calibração, mas precisa ser otimizada antes de uso em produção. Consumo de corrente, deep sleep e
+latência ponta a ponta **ainda não foram medidos**.
 
 ---
 
@@ -485,7 +487,7 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 
 ## Limitações conhecidas e próximos passos
 
-- **Latência da segmentação** no ESP32 (~15,5 s/frame): reduzir a resolução de entrada ou usar kernels
+- **Latência da segmentação** no ESP32 (~15,6 s/frame, ver `medicoes/`): reduzir a resolução de entrada ou usar kernels
   otimizados para Xtensa.
 - **Poucas fotos reais** da ESP32-CAM (dígitos 4, 5 e 6 ausentes no conjunto de domínio); coletar
   30–50 fotos por medidor, em condições variadas, separando uma fatia só para teste.
