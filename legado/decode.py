@@ -1,7 +1,9 @@
 import binascii
+from pathlib import Path
 
-INPUT_FILE = 'raw_data.txt'
-OUTPUT_FILE = 'image.jpg'
+# Arquivos ao lado deste script (legado/), não no diretório de onde você o chamou
+INPUT_FILE = str(Path(__file__).resolve().with_name('raw_data.txt'))
+OUTPUT_FILE = str(Path(__file__).resolve().with_name('image.jpg'))
 
 def decode_image():
     image_bytes = bytearray()

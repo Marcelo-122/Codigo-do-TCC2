@@ -1,11 +1,16 @@
+import sys
+from pathlib import Path
+
 import serial
 
+# config.py fica na raiz do repositório (uma pasta acima desta)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import config
 
 # Porta do ESP32-CAM: defina TX_SERIAL_PORT no .env (veja .env.example)
 SERIAL_PORT = config.require("TX_SERIAL_PORT")
 BAUD_RATE = 115200
-OUTPUT_FILE = 'raw_image_data.txt'
+OUTPUT_FILE = str(Path(__file__).resolve().with_name('raw_image_data.txt'))
 
 def capture_frame():
     try:

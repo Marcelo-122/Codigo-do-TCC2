@@ -1,9 +1,14 @@
+import sys
+from pathlib import Path
+
 import serial
 import json
 import base64
 import time
 import paho.mqtt.client as mqtt
 
+# config.py fica na raiz do repositório (uma pasta acima desta)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import config
 
 # --- Configuration (valores no .env, veja .env.example) ---

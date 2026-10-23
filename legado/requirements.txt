@@ -1,0 +1,3 @@
+# Só para os scripts desta pasta (protótipo antigo com ChirpStack). Python 3.9 ou superior.
+paho-mqtt==2.1.0
+pyserial==3.5
