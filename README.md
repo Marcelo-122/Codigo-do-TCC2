@@ -53,13 +53,25 @@ Evidências: [`medicoes/README.md`](medicoes/README.md) (B em hardware),
 [`ModeloEDataset/relatorios/`](ModeloEDataset/relatorios/RESULTADOS.md) (acurácia de B). O descarte de A vale
 **para o modelo como exportado, na TFLM do core 3.0.7**: não prova que a ideia de CTC não funciona.
 
+**Como B será usado: câmera fixa e janela calibrada na instalação.** O modelo de segmentação não localiza a
+janela dos dígitos fora do enquadramento calibrado: no conjunto de teste comum (fotos do mostrador inteiro) ele
+errou a caixa nas 39 fotos e não leu nenhuma. Como a câmera fica parada diante do medidor, a janela cai sempre na
+mesma região do quadro; então, em vez de segmentar a cada leitura, a região (ROI) e a inclinação são **ajustadas
+uma vez na instalação** e o classificador lê as N fatias dessa ROI. O que se mediu ([`ocr/README.md`](ocr/README.md)):
+com a janela certa e o quadro endireitado, a leitura chega a 74–77 % das leituras e 90–94 % dos dígitos; a ROI
+precisa de precisão de cerca de **±1 a ±2 px** no quadro 160×120 (com erro de ±4 px caem para 47–62 %, e com ±6 px
+para 25–34 %). Consequência **estimada, não medida** (o firmware ainda não foi alterado): sem a segmentação, a
+leitura dispensaria os ≈ 15,6 s dela e a arena de 1,6 MB, ficando nos ≈ 2 s do classificador.
+
 **Limitações de B assumidas:**
-- **Latência alta**: a segmentação leva ≈ 15,6 s por frame, quase todo o tempo da leitura, e pesa na comparação
-  de energia com a nuvem.
+- **Calibração da ROI**: a ROI e a inclinação precisam ser ajustadas na instalação com ±1 a ±2 px de precisão, e ainda
+  não existe uma etapa ou ferramenta para isso (o firmware de debug serve para posicionar a câmera à mão).
 - **Fatiamento calibrado à mão**: `N_FATIAS` (número de rodinhas) é ajustado por medidor; B não lê sozinho um
   medidor desconhecido.
-- **Avaliação ainda fraca**: os 100 % de domínio são sobre as mesmas 24 fotos do *fine-tuning*, e ainda não há
-  acurácia de leitura completa em conjunto de teste separado (necessária para a comparação borda × nuvem).
+- **Avaliação ainda fraca**: os 100 % de domínio são sobre as mesmas 24 fotos do *fine-tuning*, e a acurácia de
+  leitura completa foi medida só por **emulação** em fotos de um monitor (`ocr/teste_comum/`), não em hardware.
+- **Última rodinha**: é o dígito que mais erra (a rodinha gira); o classificador dá menos confiança nele, o que
+  permite sinalizá-lo como duvidoso.
 
 ### Mapa de pastas e branches
 
@@ -72,7 +84,8 @@ O trabalho foi unificado na `main`; as branches `ocr` e `Treino-Testes-e-Modelos
 | `legado/TreinoEModelosOCRNaBorda/` | Pipeline A (U-Net 384×384 + CRNN/CTC) | Arquivado | `Treino-Testes-e-Modelos` |
 | `legado/ocr_cloud/` | Pipeline C (U-Net de A + CNN 68×68, no PC) | Arquivado | `main` |
 | `ocr/colab_poc/` | Teste de viabilidade: um OCR genérico (Tesseract/EasyOCR) lê uma imagem 160×120. **Não será usado no trabalho** | Concluído (uma foto de entrada versionada) | `main` |
-| `ocr/pipeline_nuvem.py` | Lado da nuvem da comparação (o que roda no servidor ainda será definido) | **Decisão pendente** | — |
+| `ocr/pipeline_nuvem.py`, `ocr/avaliar.py` | Lado da nuvem: **os mesmos modelos de B** rodando no servidor sobre o JPEG remontado; avaliação borda × nuvem | Implementado ([`ocr/README.md`](ocr/README.md)) | — |
+| `ocr/teste_comum/` | Conjunto de teste comum: 39 fotos, 19 leituras, com gabarito (a conferir) | Primeira versão | — |
 
 ---
 
@@ -112,7 +125,8 @@ Codigo-do-TCC2/
 │   ├── receptor_lora32/           Firmware do receptor (Heltec/TTGO LoRa32)
 │   └── requirements.txt           Igual ao requirements.txt da raiz
 ├── legado/                        Fora do fluxo atual (ver legado/README.md): protótipo serial → ChirpStack e os pipelines de OCR arquivados (`ocr_cloud/` = C, `TreinoEModelosOCRNaBorda/` = A)
-├── ocr/colab_poc/                 Teste de viabilidade de OCR genérico em imagem 160×120 (Tesseract/EasyOCR no Colab; não será usado no trabalho)
+├── ocr/                           Lado da nuvem (modelos de B no servidor), avaliação borda × nuvem e conjunto de teste comum (ver ocr/README.md)
+│   └── colab_poc/                 Teste de viabilidade de OCR genérico em imagem 160×120 (Tesseract/EasyOCR no Colab; não será usado no trabalho)
 ├── enlace.py                      PC: parâmetros do enlace (bloco, cabeçalho) e parser LoRaWAN compartilhados
 ├── registro.py                    PC: registro das medições (logs completos + medicoes/transmissao.csv); usado pelos dois scripts abaixo
 ├── reconstrutor.py                PC: lê a serial do receptor, descriptografa, remonta o JPEG e registra PDR, tempo de rádio e latência (`--tx` controla o nó)
@@ -547,17 +561,20 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 
 ## Limitações conhecidas e próximos passos
 
-- **Latência da segmentação** no ESP32 (~15,6 s/frame, ver `medicoes/`): reduzir a resolução de entrada ou usar kernels
-  otimizados para Xtensa.
+- **Tirar a segmentação do firmware**: com câmera fixa, usar uma ROI calibrada (ver [Decisão](#decisão-pipeline-de-ocr-na-borda)),
+  implementar a calibração no firmware e **medir** a latência e a energia sem a segmentação (hoje ≈ 15,6 s de 17,8 s).
 - **Poucas fotos reais** da ESP32-CAM (dígitos 4, 5 e 6 ausentes no conjunto de domínio); coletar
   30–50 fotos por medidor, em condições variadas, separando uma fatia só para teste.
 - **Integração final**: levar o OCR do firmware de debug para um firmware de produção e enviar apenas a
   leitura (poucos bytes) pelo LoRaWAN, em vez da imagem inteira.
 - Perda de chunks no enlace: hoje o reenvio é manual (`RESEND`, com o `reconstrutor.py` aberto) ou pelo
   `orchestrator.py`; falta automatizar a captura com confirmação.
-- Comparar borda × nuvem **no mesmo conjunto de teste**; o conjunto comum ainda não existe.
-- Definir e implementar o lado da nuvem (`ocr/pipeline_nuvem.py`): o Tesseract foi só um teste de viabilidade e não será
-  usado, então falta decidir o que roda no servidor e ajustar o texto do trabalho conforme essa decisão.
+- **Comparação borda × nuvem em hardware**: o conjunto comum (`ocr/teste_comum/`) só permite emulação. Para medir a
+  acurácia de verdade, capturar frames 160×120 nativos com o firmware de debug, com a câmera fixa e a ROI calibrada.
+- **Gabarito do conjunto de teste comum**: foi lido por inspeção visual e precisa de conferência humana (ver
+  `ocr/teste_comum/verificacao/`).
+- Ajustar o texto do trabalho: o lado da nuvem usa os mesmos modelos de B no servidor (muda a pergunta de pesquisa
+  para "onde rodar o OCR"), e o Tesseract foi só um teste de viabilidade.
 - **Organização do repositório (pendente):** o protótipo antigo já foi para `legado/`; falta mover
   os scripts do enlace (`reconstrutor.py`, `registro.py`, `enlace.py`, `decode_lorawan.py`,
   `orchestrator.py`, `analise_tempo_no_ar.py`) para uma subpasta de `Rede/`. Decidir também o que

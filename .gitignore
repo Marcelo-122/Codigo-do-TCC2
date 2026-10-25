@@ -244,3 +244,6 @@ legado/TreinoEModelosOCRNaBorda/dataset/visores_blackout/
 # Mantenha versionados só os modelos finais (legado/ocr_cloud/models/ e Modelos/ escolhidos)
 legado/TreinoEModelosOCRNaBorda/Backups/
 Backups/
+
+# Headers gerados por gerar_headers.py do teste do pipeline A (~7,5 MB; rode o script antes de compilar o sketch)
+legado/TreinoEModelosOCRNaBorda/teste_esp32cam_pipeline_a/a_*.h
