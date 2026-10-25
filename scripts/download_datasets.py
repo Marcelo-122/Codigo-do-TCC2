@@ -16,7 +16,7 @@ Requisitos para os datasets do Kaggle:
     `kaggle auth login`.
 
 O destino depende da branch: só são preenchidas as pastas de módulo que existem
-no checkout atual (legado/ocr_cloud/, TreinoEModelosOCRNaBorda/, ModeloEDataset/).
+no checkout atual (legado/ocr_cloud/, legado/TreinoEModelosOCRNaBorda/, ModeloEDataset/).
 """
 
 import argparse
@@ -39,8 +39,8 @@ DATASETS = {
                      "gerar_blackout.py, preparar_dataset_digitos.py)",
         # (pasta a procurar dentro do download, destino relativo à raiz do repo)
         "pastas": [
-            ("images", "TreinoEModelosOCRNaBorda/dataset/images"),
-            ("masks", "TreinoEModelosOCRNaBorda/dataset/masks"),
+            ("images", "legado/TreinoEModelosOCRNaBorda/dataset/images"),
+            ("masks", "legado/TreinoEModelosOCRNaBorda/dataset/masks"),
             ("images", "ModeloEDataset/dataset/images"),
             ("masks", "ModeloEDataset/dataset/masks"),
         ],
@@ -54,7 +54,7 @@ DATASETS = {
         # pasta com as subpastas 0..9
         "pastas": [
             ("<digitos>", "legado/ocr_cloud/num_dataset"),
-            ("<digitos>", "TreinoEModelosOCRNaBorda/dataset/num"),
+            ("<digitos>", "legado/TreinoEModelosOCRNaBorda/dataset/num"),
         ],
     },
     "dryad": {
@@ -76,8 +76,8 @@ DATASETS = {
 
 GERADOS = (
     "Conjuntos gerados a partir dos de cima (não baixe, gere):\n"
-    "  python TreinoEModelosOCRNaBorda/gerador_sintetico.py   -> dataset/visores_sinteticos\n"
-    "  python TreinoEModelosOCRNaBorda/gerar_blackout.py      -> dataset/visores_blackout"
+    "  python legado/TreinoEModelosOCRNaBorda/gerador_sintetico.py   -> dataset/visores_sinteticos\n"
+    "  python legado/TreinoEModelosOCRNaBorda/gerar_blackout.py      -> dataset/visores_blackout"
 )
 
 

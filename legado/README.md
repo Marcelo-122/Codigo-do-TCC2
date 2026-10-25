@@ -22,13 +22,19 @@ O `mac_simulator.py` (simulador de gateway Semtech UDP) já havia sido removido 
 
 ## `ocr_cloud/` (OCR em PC, arquivado)
 
-Pipeline C da comparação de OCR: U-Net INT8 384×384 (a mesma de `TreinoEModelosOCRNaBorda/`) e uma CNN de
+Pipeline C da comparação de OCR: U-Net INT8 384×384 (a mesma de `TreinoEModelosOCRNaBorda/`, abaixo) e uma CNN de
 dígito 68×68 treinada em `num_dataset/` (dígitos de fontes impressas e manuscritas, não de hidrômetros).
-Foi arquivado por não ser pipeline de borda (roda só no PC) nem o fluxo de nuvem do texto (OpenCV + Tesseract).
+Foi arquivado por não ser pipeline de borda (roda só no PC).
 Detalhes e como rodar na [seção 3 do README da raiz](../README.md#3-ocr-em-pc-arquivado-legadoocr_cloud).
 
-## `testes_colab/` (prova de conceito com Tesseract/EasyOCR)
+## `TreinoEModelosOCRNaBorda/` (Pipeline A, arquivado)
 
-`Teste_OCR.ipynb`: testes de Tesseract e EasyOCR no Google Colab. Ainda sem imagens de entrada nem versões registradas.
+U-Net 384×384 (QAT/INT8) + leitor CRNN+CTC 48×224. Foi descartado como OCR de borda: o teste em hardware
+([`medicoes/teste_pipeline_a_esp32cam.md`](../medicoes/teste_pipeline_a_esp32cam.md)) mostrou que o detector pede
+15,3 MB de arena (a PSRAM da ESP32-CAM tem 4 MB) e que os leitores CTC usam o operador `REDUCE_PROD`, que a TFLM do
+core 3.0.7 não tem. `teste_esp32cam_pipeline_a/` é o firmware desse teste. Detalhes e como treinar na
+[seção 4 do README da raiz](../README.md#4-pipeline-a-arquivado-legadotreinoemodelosocrnaborda).
+
+O teste de viabilidade de OCR genérico (Tesseract/EasyOCR) no Colab saiu daqui e está em [`ocr/colab_poc/`](../ocr/colab_poc/).
 
 Dependências deste diretório (`pip install -r legado/requirements.txt`): `pyserial` e `paho-mqtt`.

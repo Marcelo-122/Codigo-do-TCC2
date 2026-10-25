@@ -232,15 +232,15 @@ ModeloEDataset/_savedmodel_digito/
 # Baixe com: python scripts/download_datasets.py  (fontes e licenças: --listar)
 legado/ocr_cloud/num_dataset/
 legado/ocr_cloud/output_dataset/
-TreinoEModelosOCRNaBorda/dataset/images/
-TreinoEModelosOCRNaBorda/dataset/masks/
-TreinoEModelosOCRNaBorda/dataset/num/
-TreinoEModelosOCRNaBorda/dataset/test_images/
-TreinoEModelosOCRNaBorda/dataset/test_masks/
-TreinoEModelosOCRNaBorda/dataset/visores_sinteticos/
-TreinoEModelosOCRNaBorda/dataset/visores_blackout/
+legado/TreinoEModelosOCRNaBorda/dataset/images/
+legado/TreinoEModelosOCRNaBorda/dataset/masks/
+legado/TreinoEModelosOCRNaBorda/dataset/num/
+legado/TreinoEModelosOCRNaBorda/dataset/test_images/
+legado/TreinoEModelosOCRNaBorda/dataset/test_masks/
+legado/TreinoEModelosOCRNaBorda/dataset/visores_sinteticos/
+legado/TreinoEModelosOCRNaBorda/dataset/visores_blackout/
 
 # --- Backups e modelos intermediários ----------------------------------------
 # Mantenha versionados só os modelos finais (legado/ocr_cloud/models/ e Modelos/ escolhidos)
-TreinoEModelosOCRNaBorda/Backups/
+legado/TreinoEModelosOCRNaBorda/Backups/
 Backups/
