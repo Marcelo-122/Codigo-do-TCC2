@@ -16,7 +16,7 @@ Requisitos para os datasets do Kaggle:
     `kaggle auth login`.
 
 O destino depende da branch: só são preenchidas as pastas de módulo que existem
-no checkout atual (ocr_cloud/, TreinoEModelosOCRNaBorda/, ModeloEDataset/).
+no checkout atual (legado/ocr_cloud/, TreinoEModelosOCRNaBorda/, ModeloEDataset/).
 """
 
 import argparse
@@ -50,10 +50,10 @@ DATASETS = {
         "fonte": "https://www.kaggle.com/datasets/aquibiqbal/digits-09",
         "kaggle": "aquibiqbal/digits-09",
         "licenca": "ver a página do dataset no Kaggle antes de redistribuir",
-        "usado_por": "ocr_cloud/src/train_model_ocr_cloud.py e gerador_sintetico.py",
+        "usado_por": "legado/ocr_cloud/src/train_model_ocr_cloud.py e gerador_sintetico.py",
         # pasta com as subpastas 0..9
         "pastas": [
-            ("<digitos>", "ocr_cloud/num_dataset"),
+            ("<digitos>", "legado/ocr_cloud/num_dataset"),
             ("<digitos>", "TreinoEModelosOCRNaBorda/dataset/num"),
         ],
     },

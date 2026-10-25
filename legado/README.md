@@ -20,4 +20,15 @@ rodando a partir desta pasta (acham o `config.py` na raiz e os arquivos de dados
 
 O `mac_simulator.py` (simulador de gateway Semtech UDP) já havia sido removido antes.
 
+## `ocr_cloud/` (OCR em PC, arquivado)
+
+Pipeline C da comparação de OCR: U-Net INT8 384×384 (a mesma de `TreinoEModelosOCRNaBorda/`) e uma CNN de
+dígito 68×68 treinada em `num_dataset/` (dígitos de fontes impressas e manuscritas, não de hidrômetros).
+Foi arquivado por não ser pipeline de borda (roda só no PC) nem o fluxo de nuvem do texto (OpenCV + Tesseract).
+Detalhes e como rodar na [seção 3 do README da raiz](../README.md#3-ocr-em-pc-arquivado-legadoocr_cloud).
+
+## `testes_colab/` (prova de conceito com Tesseract/EasyOCR)
+
+`Teste_OCR.ipynb`: testes de Tesseract e EasyOCR no Google Colab. Ainda sem imagens de entrada nem versões registradas.
+
 Dependências deste diretório (`pip install -r legado/requirements.txt`): `pyserial` e `paho-mqtt`.

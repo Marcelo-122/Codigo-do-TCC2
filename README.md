@@ -21,7 +21,7 @@ O trabalho une duas frentes que se complementam:
 - [Hardware utilizado](#hardware-utilizado)
 - [1. Rede LoRaWAN (`Rede/`)](#1-rede-lorawan-rede)
 - [2. PoC de redução de imagem (`poc_diminuicao_imagem/`)](#2-poc-de-redução-de-imagem-poc_diminuicao_imagem)
-- [3. OCR "na nuvem"/PC (`ocr_cloud/`)](#3-ocr-na-nuvempc-ocr_cloud)
+- [3. OCR em PC, arquivado (`legado/ocr_cloud/`)](#3-ocr-em-pc-arquivado-legadoocr_cloud)
 - [4. OCR na borda — treino e modelos (`TreinoEModelosOCRNaBorda/`)](#4-ocr-na-borda--treino-e-modelos-treinoemodelosocrnaborda)
 - [5. Classificador de dígitos + dataset (`ModeloEDataset/`)](#5-classificador-de-dígitos--dataset-modeloedataset)
 - [6. Firmware de debug/calibração (`test_images/`)](#6-firmware-de-debugcalibração-test_images)
@@ -68,7 +68,7 @@ Codigo-do-TCC2/
 │   ├── transmissor_esp32cam/      Transmissor único: câmera (CAPTURE), reenvio (RESEND), envio vindo do PC (SEND), teste de enlace (SENDALL) e modo autônomo com deep sleep (AUTO/STOP/SLEEP, ainda não testado em placa)
 │   ├── receptor_lora32/           Firmware do receptor (Heltec/TTGO LoRa32)
 │   └── requirements.txt           Igual ao requirements.txt da raiz
-├── legado/                        Protótipo antigo, sem rádio real (serial USB → ChirpStack); fora do fluxo atual (ver legado/README.md)
+├── legado/                        Fora do fluxo atual (ver legado/README.md): protótipo serial → ChirpStack e o OCR em PC `ocr_cloud/` (pipeline arquivado)
 ├── enlace.py                      PC: parâmetros do enlace (bloco, cabeçalho) e parser LoRaWAN compartilhados
 ├── registro.py                    PC: registro das medições (logs completos + medicoes/transmissao.csv); usado pelos dois scripts abaixo
 ├── reconstrutor.py                PC: lê a serial do receptor, descriptografa, remonta o JPEG e registra PDR, tempo de rádio e latência (`--tx` controla o nó)
@@ -80,7 +80,6 @@ Codigo-do-TCC2/
 ├── requirements.txt               Dependências dos scripts da raiz (pyserial, pycryptodome)
 ├── scripts/download_datasets.py   Baixa os datasets públicos (eles não ficam no Git)
 ├── poc_diminuicao_imagem/         PoC em C++/OpenCV: redução/binarização de imagem p/ caber no LoRa
-├── ocr_cloud/                     OCR em Python (PC/nuvem): segmentação TFLite + CNN de dígitos
 ├── TreinoEModelosOCRNaBorda/      Treino do detector (U-Net QAT) e do leitor CRNN+CTC p/ ESP32
 ├── ModeloEDataset/                Pipeline do classificador de dígitos (CNN) + datasets + relatórios
 ├── test_images/                   Fotos da ESP32-CAM + firmware de debug/calibração com OCR on-device
@@ -101,7 +100,7 @@ Codigo-do-TCC2/
 
 | Pasta | Abordagem de leitura | Segmentação | Onde roda |
 |---|---|---|---|
-| `ocr_cloud/` | CNN de 1 caractere (68×68) sobre 6 recortes iguais; há também teste com CRNN+CTC | U-Net INT8 384×384 | PC / nuvem |
+| `legado/ocr_cloud/` (arquivado) | CNN de 1 caractere (68×68) sobre 6 recortes iguais; há também teste com CRNN+CTC | U-Net INT8 384×384 | PC |
 | `TreinoEModelosOCRNaBorda/` | **CRNN + CTC** (visor inteiro 48×224, classe *blank* = 10), float e QAT | U-Net com QAT, 384×384 | Treino no PC → ESP32 |
 | `ModeloEDataset/` | CNN de dígito (28×28, 72 mil parâmetros) sobre N fatias | U-Net INT8 (`modelo_esp32.tflite`) | Treino no PC → ESP32-CAM |
 
@@ -119,7 +118,7 @@ Os comandos abaixo usam a sintaxe do Windows (`.venv\Scripts\...`); no Linux/WSL
 |---|---|---|---|
 | Raiz (scripts do enlace) e `Rede/` | 3.9 ou superior | `requirements.txt` (pyserial, pycryptodome; igual ao de `Rede/`) | Rodado com 3.13.9 |
 | `legado/` (protótipo antigo) | 3.9 ou superior | `legado/requirements.txt` (pyserial, paho-mqtt) | `decode.py` rodado com 3.13.9 (CRC confere) |
-| `ocr_cloud/` | **3.13** | `ocr_cloud/requirements.txt` (TensorFlow 2.21.0, Keras 3.15.1) | Instalado em venv limpo (3.13.9) e `modelo_ocr.keras` carregado com sucesso |
+| `legado/ocr_cloud/` | **3.13** | `legado/ocr_cloud/requirements.txt` (TensorFlow 2.21.0, Keras 3.15.1) | Instalado em venv limpo (3.13.9) e `modelo_ocr.keras` carregado com sucesso |
 | `TreinoEModelosOCRNaBorda/` | **Linux / WSL2** (GPU opcional) | `requirements.txt` da pasta: é um `pip freeze` com pacotes NVIDIA/CUDA que não têm wheel para Windows (TensorFlow 2.21.0, Keras 3.15.1, tf_keras 2.21.0) | Python **3.11 a 3.13**: a resolução dos wheels Linux x86_64 foi conferida nas três versões; o treino em si não foi reexecutado |
 | `ModeloEDataset/` | **3.10** (TensorFlow 2.16.1 só tem wheels até 3.12) | `ModeloEDataset/requirements.txt` | Instalado em venv limpo com Python 3.10.11 (versões fixadas, `pip check` sem erros); modelo `.h5` e `.tflite` carregados |
 | `poc_diminuicao_imagem/` | — | g++, OpenCV 4 e Qt6 em `/usr/include` (Linux/WSL, ver `makefile`) | — |
@@ -146,7 +145,7 @@ python scripts/download_datasets.py             # baixa os do Kaggle
 
 | Pasta | Precisa de | Onde fica |
 |---|---|---|
-| `ocr_cloud/` (treino) | Digits 0–9 | `ocr_cloud/num_dataset/` |
+| `legado/ocr_cloud/` (treino) | Digits 0–9 | `legado/ocr_cloud/num_dataset/` |
 | `TreinoEModelosOCRNaBorda/` | Yandex.Toloka + Digits 0–9 | `dataset/images/`, `dataset/masks/`, `dataset/num/`; depois `gerar_blackout.py` e `gerador_sintetico.py` criam `visores_blackout/` e `visores_sinteticos/` |
 | `ModeloEDataset/` | Yandex.Toloka + Word-Wheel (Dryad, **download manual**, 2,8 GB) | `dataset/images/`, `dataset/masks/`, `dataset/Word-Wheel_Water_Meter_Dataset/`. As fotos de cartaz do TCC I não estão no repo: use `--cartaz PASTA` em `preparar_dataset_dominio_esp32.py` |
 
@@ -155,8 +154,8 @@ python scripts/download_datasets.py             # baixa os do Kaggle
 | Objetivo | Comandos |
 |---|---|
 | Receber e remontar a imagem (enlace) | `python -m venv .venv`, `.venv\Scripts\pip install -r requirements.txt`, `.venv\Scripts\python reconstrutor.py`; veja [seção 1](#1-rede-lorawan-rede) |
-| OCR no PC, só inferência | `cd ocr_cloud`, venv + `pip install -r requirements.txt`, `python src\test_model_ocr_cloud_poc.py` ([seção 3](#3-ocr-na-nuvempc-ocr_cloud)) |
-| Treinar o OCR do `ocr_cloud` | mesmo venv, depois do passo 2: `python src\train_model_ocr_cloud.py` |
+| OCR no PC, só inferência | `cd legado\ocr_cloud`, venv + `pip install -r requirements.txt`, `python src\test_model_ocr_cloud_poc.py` ([seção 3](#3-ocr-em-pc-arquivado-legadoocr_cloud)) |
+| Treinar o OCR do `legado/ocr_cloud` | mesmo venv, depois do passo 2: `python src\train_model_ocr_cloud.py` |
 | Treinar detector e leitor CRNN+CTC | em WSL/Linux, `cd TreinoEModelosOCRNaBorda`, depois do passo 2 ([seção 4](#4-ocr-na-borda--treino-e-modelos-treinoemodelosocrnaborda)) |
 | Treinar o classificador de dígitos | `cd ModeloEDataset`, Python 3.10, depois do passo 2 ([seção 5](#5-classificador-de-dígitos--dataset-modeloedataset)) |
 
@@ -300,10 +299,14 @@ make
 
 ---
 
-## 3. OCR "na nuvem"/PC (`ocr_cloud/`)
+## 3. OCR em PC, arquivado (`legado/ocr_cloud/`)
 
-Pipeline em Python/TensorFlow que roda no PC (ou em um servidor), pensado como alternativa quando
-o dispositivo apenas envia a foto:
+> **Arquivado.** Não é o pipeline de borda do trabalho nem o fluxo de nuvem (que não usa estes modelos):
+> é a U-Net de `TreinoEModelosOCRNaBorda/` mais uma CNN de dígito treinada em fontes de dígitos, não em
+> hidrômetros. Fica em `legado/` como registro.
+
+Pipeline em Python/TensorFlow que roda no PC, pensado como alternativa quando o dispositivo apenas
+envia a foto:
 
 ```
 foto ──▶ modelo_medidor.tflite (segmentação, INT8, 384×384) ──▶ recorte da janela
@@ -323,10 +326,10 @@ foto ──▶ modelo_medidor.tflite (segmentação, INT8, 384×384) ──▶ r
 Python **3.13** (testado em venv limpo: instala e carrega `modelo_ocr.keras`).
 
 ```bash
-cd ocr_cloud
+cd legado/ocr_cloud
 python -m venv .venv && .venv\Scripts\pip install -r requirements.txt
 .venv\Scripts\python src\test_model_ocr_cloud_poc.py     # inferência (usa models/ e metering_dataset/, ambos versionados)
-.venv\Scripts\python src\train_model_ocr_cloud.py        # treino (antes: python ..\scripts\download_datasets.py --somente digitos)
+.venv\Scripts\python src\train_model_ocr_cloud.py        # treino (antes: python ..\..\scripts\download_datasets.py --somente digitos)
 ```
 
 ---
@@ -485,7 +488,7 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 
 | Branch de origem | Conteúdo |
 |---|---|
-| `main` | Rede LoRaWAN (firmwares, `reconstrutor.py`, `registro.py`), protótipo serial/ChirpStack (`legado/`), PoC de redução de imagem, `ocr_cloud/` |
+| `main` | Rede LoRaWAN (firmwares, `reconstrutor.py`, `registro.py`), protótipo serial/ChirpStack e OCR em PC `ocr_cloud/` (ambos em `legado/`), PoC de redução de imagem |
 | `Treino-Testes-e-Modelos` | `TreinoEModelosOCRNaBorda/` (treino do detector e do CRNN+CTC, modelos, datasets) |
 | `ocr` | `ModeloEDataset/` (classificador de dígitos) e `test_images/` (firmware de debug com OCR on-device) |
 
@@ -501,7 +504,7 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
   leitura (poucos bytes) pelo LoRaWAN, em vez da imagem inteira.
 - Perda de chunks no enlace: hoje o reenvio é manual (`RESEND`, com o `reconstrutor.py` aberto) ou pelo
   `orchestrator.py`; falta automatizar a captura com confirmação.
-- Unificar as três abordagens de OCR (`ocr_cloud`, `TreinoEModelosOCRNaBorda`, `ModeloEDataset`) após
+- Unificar as três abordagens de OCR (`legado/ocr_cloud`, `TreinoEModelosOCRNaBorda`, `ModeloEDataset`) após
   comparar a acurácia de cada uma no mesmo conjunto de teste.
 - **Organização do repositório (pendente):** o protótipo antigo já foi para `legado/`; falta mover
   os scripts do enlace (`reconstrutor.py`, `registro.py`, `enlace.py`, `decode_lorawan.py`,
@@ -517,5 +520,5 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 
 - **Marcelo Fernandes** — enlace LoRaWAN, integração com a ESP32-CAM, `ModeloEDataset/` e `test_images/`
 - **Gustavo Santos** — `TreinoEModelosOCRNaBorda/` (treino e modelos de OCR na borda; autor do modelo de segmentação original citado em `ModeloEDataset/`)
-- **ChristianDev123** — `poc_diminuicao_imagem/` e `ocr_cloud/`
+- **ChristianDev123** — `poc_diminuicao_imagem/` e `legado/ocr_cloud/`
 

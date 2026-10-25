@@ -230,8 +230,8 @@ ModeloEDataset/_savedmodel_digito/
 
 # --- Datasets públicos e dados gerados: NÃO versionar ------------------------
 # Baixe com: python scripts/download_datasets.py  (fontes e licenças: --listar)
-ocr_cloud/num_dataset/
-ocr_cloud/output_dataset/
+legado/ocr_cloud/num_dataset/
+legado/ocr_cloud/output_dataset/
 TreinoEModelosOCRNaBorda/dataset/images/
 TreinoEModelosOCRNaBorda/dataset/masks/
 TreinoEModelosOCRNaBorda/dataset/num/
@@ -241,6 +241,6 @@ TreinoEModelosOCRNaBorda/dataset/visores_sinteticos/
 TreinoEModelosOCRNaBorda/dataset/visores_blackout/
 
 # --- Backups e modelos intermediários ----------------------------------------
-# Mantenha versionados só os modelos finais (ocr_cloud/models/ e Modelos/ escolhidos)
+# Mantenha versionados só os modelos finais (legado/ocr_cloud/models/ e Modelos/ escolhidos)
 TreinoEModelosOCRNaBorda/Backups/
 Backups/
