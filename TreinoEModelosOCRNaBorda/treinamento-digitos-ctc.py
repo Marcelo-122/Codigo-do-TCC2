@@ -11,7 +11,8 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow.keras import layers, models
 import tensorflow_model_optimization as tfmot
-from diagnostico_colapso_ctc import diagnosticar_colapso
+from diagnostico_colapso_ctc import diagnosticar_colapso, acuracia_valor, acuracia_por_parte
+from estimar_memoria_modelo import estimar_memoria
 
 for gpu in tf.config.list_physical_devices('GPU'):
     tf.config.experimental.set_memory_growth(gpu, True)
@@ -36,7 +37,11 @@ DIR_BACKUPS = os.path.join(DIRETORIO_ATUAL, "Backups")
 
 FRACAO_SINTETICA = 0.4
 FRACAO_SINTETICA_QAT = 0.15     
-SUFIXO_SAIDA = "_ctc_sint" if FRACAO_SINTETICA > 0.0 else "_ctc"
+# "padrao": arquitetura que chegou a ~61% (referência, ~420 KiB de pico de ativações int8)
+# "leve":   stem com stride 2 e menos canais (~4x menos pico de ativações, ~2.5x menos MACs).
+PERFIL_MODELO = "padrao"  
+TAG_DATASET = "_8d"        
+SUFIXO_SAIDA = ("_ctc_sint" if FRACAO_SINTETICA > 0.0 else "_ctc") + TAG_DATASET + ("" if PERFIL_MODELO == "padrao" else "_" + PERFIL_MODELO)
 
 IMG_HEIGHT = 48                 
 IMG_WIDTH = 224                 
@@ -92,7 +97,6 @@ if not mapa_sinteticos: print("   [AVISO] Nenhuma imagem sintética encontrada. 
 rotulos_reais = sorted(mapa_reais.keys())
 random.shuffle(rotulos_reais)
 
-# Separa apenas os DADOS REAIS para a validação (para termos uma métrica honesta do mundo real)
 corte = int(len(rotulos_reais) * 0.8)
 rotulos_treino_reais, rotulos_val_reais = rotulos_reais[:corte], rotulos_reais[corte:]
 
@@ -213,43 +217,64 @@ class AcuraciaSequenciaCallback(tf.keras.callbacks.Callback):
         self.dataset = dataset
 
     def on_epoch_end(self, epoch, logs=None):
-        acc = acuracia_sequencia(avaliar(self.model, self.dataset))
-        if logs is not None: logs['val_seq_acc'] = acc
-        print(f" - val_seq_acc (real): {acc:.4f}")
+        resultados = avaliar(self.model, self.dataset)
+        acc = acuracia_sequencia(resultados)
+        acc_valor = acuracia_valor(resultados)      # ignora diferenças só nos zeros à esquerda
+        if logs is not None:
+            logs['val_seq_acc'] = acc
+            logs['val_valor_acc'] = acc_valor
+        print(f" - val_seq_acc (real): {acc:.4f} | ignorando zeros à esquerda: {acc_valor:.4f}")
 
 # ==========================================
 # 5. ARQUITETURA CRNN SEM RECORRÊNCIA
 # ==========================================
 print("\n-> Construindo a rede CRNN (conv-only + CTC)...")
 
-def bloco_conv(x, filtros, kernel=(3, 3), padding='same'):
-    x = layers.Conv2D(filtros, kernel, padding=padding, use_bias=False,
+def bloco_conv(x, filtros, kernel=(3, 3), padding='same', strides=(1, 1)):
+    x = layers.Conv2D(filtros, kernel, strides=strides, padding=padding, use_bias=False,
                       kernel_regularizer=tf.keras.regularizers.l2(1e-4))(x)
     x = layers.BatchNormalization()(x)
     return layers.ReLU()(x)
 
-inputs = layers.Input(shape=(IMG_HEIGHT, IMG_WIDTH, 1))
+def construir_modelo(perfil):
+    inputs = layers.Input(shape=(IMG_HEIGHT, IMG_WIDTH, 1))
 
-x = bloco_conv(inputs, 32)
-x = layers.MaxPooling2D((2, 2))(x)
-x = bloco_conv(x, 64)
-x = layers.MaxPooling2D((2, 2))(x)
-x = bloco_conv(x, 96)
-x = layers.MaxPooling2D((2, 1))(x)
-x = bloco_conv(x, 128)
-x = layers.MaxPooling2D((2, 1))(x)
-x = bloco_conv(x, 128)
-x = bloco_conv(x, 128, kernel=(IMG_HEIGHT // 16, 1), padding='valid')
+    if perfil == "padrao":
+        x = bloco_conv(inputs, 32)
+        x = layers.MaxPooling2D((2, 2))(x)
+        x = bloco_conv(x, 64)
+        x = layers.MaxPooling2D((2, 2))(x)
+        x = bloco_conv(x, 96)
+        x = layers.MaxPooling2D((2, 1))(x)
+        x = bloco_conv(x, 128)
+        x = layers.MaxPooling2D((2, 1))(x)
+        canais = 128
+        x = bloco_conv(x, canais)
+    elif perfil == "leve":
+        x = bloco_conv(inputs, 24, strides=(2, 2))     # 24 x 112 x 24
+        x = bloco_conv(x, 48, strides=(2, 2))          # 12 x 56 x 48
+        x = bloco_conv(x, 64)
+        x = layers.MaxPooling2D((2, 1))(x)             # 6 x 56
+        x = bloco_conv(x, 96)
+        x = layers.MaxPooling2D((2, 1))(x)             # 3 x 56
+        canais = 96
+        x = bloco_conv(x, canais)
+    else:
+        raise ValueError(f"PERFIL_MODELO inválido: {perfil}")
 
-# Camadas Temporais 1D para emular contexto sem LSTM
-x = bloco_conv(x, 128, kernel=(1, 5), padding='same')
-x = bloco_conv(x, 128, kernel=(1, 5), padding='same')
+    x = bloco_conv(x, canais, kernel=(IMG_HEIGHT // 16, 1), padding='valid')
 
-x = layers.Reshape((TIMESTEPS, 128))(x)
-x = layers.Dropout(0.35)(x)
-logits = layers.Dense(N_CLASSES, name='logits')(x)
+    # Camadas Temporais 1D para emular contexto sem LSTM
+    x = bloco_conv(x, canais, kernel=(1, 5), padding='same')
+    x = bloco_conv(x, canais, kernel=(1, 5), padding='same')
 
-base_model = models.Model(inputs=inputs, outputs=logits)
+    x = layers.Reshape((TIMESTEPS, canais))(x)
+    x = layers.Dropout(0.35)(x)
+    logits = layers.Dense(N_CLASSES, name='logits')(x)
+    return models.Model(inputs=inputs, outputs=logits)
+
+base_model = construir_modelo(PERFIL_MODELO)
+estimar_memoria(base_model, nome=f"perfil '{PERFIL_MODELO}'")
 
 # ==========================================
 # 6. FASE 1 — TREINO EM PONTO FLUTUANTE
@@ -363,3 +388,6 @@ for x, y in dataset_val:
         resultados_tflite.append((real, prever_tflite(img)))
 
 print(f"   Sequência completa correta (TFLite INT8): {acuracia_sequencia(resultados_tflite) * 100:.2f}%")
+print(f"   Valor correto ignorando zeros à esquerda (TFLite INT8): {acuracia_valor(resultados_tflite) * 100:.2f}%")
+ac_int, ac_dec = acuracia_por_parte(resultados_tflite)
+print(f"   Parte inteira: {ac_int * 100:.2f}% | parte decimal (3 últimos dígitos): {ac_dec * 100:.2f}%")
