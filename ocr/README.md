@@ -54,10 +54,10 @@ idêntica às usadas no treino de B (conferido por hash; os nomes de arquivo se 
 
 - `gabarito.csv`: leitura real, número de dígitos, medidor, confiança, `centro_y` (enquadramento) e
   `caixa_manual` (janela dos dígitos, só para o diagnóstico).
-- **O gabarito foi lido por inspeção visual de fotos borradas** e precisa de conferência humana. As leituras
-  marcadas `media` (9 quadros) têm o último dígito menos nítido. `gerar_verificacao.py` gera folhas em
-  `verificacao/` com a leitura escrita sobre cada foto, para conferir a olho.
-
+- **O gabarito foi conferido pelo autor do trabalho**, foto a foto, nas folhas de `verificacao/`
+  (`gerar_verificacao.py` escreve a leitura sobre cada foto). Ele havia sido lido por inspeção visual de fotos
+  borradas; as leituras marcadas `media` (9 quadros) têm o último dígito menos nítido.
+  
 ## Resultados (`teste_comum/resultados/RESULTADOS.md`)
 
 | Fluxo | Leituras exatas | Dígitos certos |

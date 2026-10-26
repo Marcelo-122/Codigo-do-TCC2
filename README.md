@@ -87,7 +87,7 @@ O trabalho foi unificado na `main`; as branches `ocr` e `Treino-Testes-e-Modelos
 | `legado/ocr_cloud/` | Pipeline C (U-Net de A + CNN 68×68, no PC) | Arquivado | `main` |
 | `ocr/colab_poc/` | Teste de viabilidade: um OCR genérico (Tesseract/EasyOCR) lê uma imagem 160×120. **Não será usado no trabalho** | Concluído (uma foto de entrada versionada) | `main` |
 | `ocr/pipeline_nuvem.py`, `ocr/avaliar.py` | Lado da nuvem: **os mesmos modelos de B** rodando no servidor sobre o JPEG remontado; avaliação borda × nuvem | Implementado ([`ocr/README.md`](ocr/README.md)) | — |
-| `ocr/teste_comum/` | Conjunto de teste comum: 39 fotos, 19 leituras, com gabarito (a conferir) | Primeira versão | — |
+| `ocr/teste_comum/` | Conjunto de teste comum: 39 fotos, 19 leituras, com gabarito conferido | Primeira versão | — |
 
 ---
 
@@ -633,8 +633,6 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
   `orchestrator.py`; falta automatizar a captura com confirmação.
 - **Comparação borda × nuvem em hardware**: o conjunto comum (`ocr/teste_comum/`) só permite emulação. Para medir a
   acurácia de verdade, capturar frames 160×120 nativos com o firmware de debug, com a câmera fixa e a ROI calibrada.
-- **Gabarito do conjunto de teste comum**: foi lido por inspeção visual e precisa de conferência humana (ver
-  `ocr/teste_comum/verificacao/`).
 - Ajustar o texto do trabalho: o lado da nuvem usa os mesmos modelos de B no servidor (muda a pergunta de pesquisa
   para "onde rodar o OCR"), e o Tesseract foi só um teste de viabilidade.
 - **Organização do repositório (pendente):** o protótipo antigo já foi para `legado/`; falta mover
