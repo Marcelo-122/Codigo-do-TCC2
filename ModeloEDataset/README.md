@@ -61,6 +61,13 @@ retificação (perspectiva/rotação) + corte em N células, uma por dígito
 leitura completa (ex.: "00588817" → 588.817 m³)
 ```
 
+O modelo de segmentação é treinado por [pipeline.py](pipeline.py): 70 % treino / 15 % validação / 15 % teste, com
+semente fixa (a divisão fica em `relatorios/split_segmentacao.csv`), `batch_size=1` (o `batch_shape=(1, ...)` do
+modelo fixa o batch em 1 para o TFLite Micro), histórico por época em
+`relatorios/historico_treino_segmentacao.csv` e Dice/IoU no conjunto de teste, em float e em INT8, em
+`relatorios/segmentacao_teste.json`. A acurácia por pixel que o script reportava é dominada pelo fundo; Dice e IoU
+medem só a janela. `--epocas` e `--dados` existem para rodar um teste rápido.
+
 Os dois modelos são independentes e cabem juntos com folga no ESP32CAM:
 
 | Modelo | Tamanho INT8 | Parâmetros |
@@ -121,9 +128,18 @@ troca entre dois dígitos — ambíguo).
 3. Divide a tira em N fatias de largura igual (aqui a divisão simples funciona bem, já que
    os recortes já vêm padronizados e retos — diferente do Kaggle).
 
-Resultado: 11.079 imagens aceitas → **57.197 recortes de dígito** (ruído residual estimado
-em ~1-2%, bem mais limpo que o Kaggle). Isso multiplicou o dataset de treino por ~35x e foi
-o que mais melhorou a acurácia (ver números corrigidos em [relatorios/RESULTADOS.md](relatorios/RESULTADOS.md)).
+Resultado (versão antiga do script, que usava as pastas `train` **e** `test`): 11.079 imagens aceitas →
+**57.197 recortes de dígito** (ruído residual estimado em ~1-2%, bem mais limpo que o Kaggle). Isso multiplicou o
+dataset de treino por ~35x e foi o que mais melhorou a acurácia (ver números corrigidos em
+[relatorios/RESULTADOS.md](relatorios/RESULTADOS.md)).
+
+> **As pastas `test` do Dryad agora ficam fora do treino.** O script usa só `train`
+> (`CONJUNTOS`), apaga de `dataset/digits/` os recortes `dryad_*-digit_test_*` que versões antigas geraram e deixa
+> `test` como teste independente: `python ../ocr/avaliar_teste_publico.py` lê essas pastas direto do Dryad
+> (fatias iguais → `modelo_digito.tflite`, mesmo pré-processamento do firmware) e grava a linha `dryad_teste` em
+> `../medicoes/ocr_teste.csv`. Os números em `relatorios/RESULTADOS.md` e o `modelo_digito.tflite` versionado são do
+> treino antigo (com `test` dentro): **re-treine** (`preparar_dataset_dryad.py` + `treinar_classificador_digitos.py`)
+> antes de usar o teste público como medida independente.
 
 ### 3. Fotos reais da própria ESP32CAM (conjunto de domínio / fine-tuning)
 Nem o Kaggle nem o Dryad foram fotografados com o sensor/lente/compressão da ESP32CAM alvo

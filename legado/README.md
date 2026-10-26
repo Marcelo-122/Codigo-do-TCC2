@@ -35,6 +35,13 @@ U-Net 384×384 (QAT/INT8) + leitor CRNN+CTC 48×224. Foi descartado como OCR de 
 core 3.0.7 não tem. `teste_esp32cam_pipeline_a/` é o firmware desse teste. Detalhes e como treinar na
 [seção 4 do README da raiz](../README.md#4-pipeline-a-arquivado-legadotreinoemodelosocrnaborda).
 
+`CSVs/gabarito.csv` (colunas `Arquivo,Leitura`, o que `simulador_extracao_dual.py` espera) foi montado a partir da
+coluna `Valor Real` de `CSVs/leituras_comparacao_tflite.csv`: 9 das 14 imagens de `dataset/imagens_reais/` têm valor
+anotado. Duas ressalvas: essas imagens **não são da ESP32-CAM** (nas que foram conferidas, `image1.jpg` é uma foto de
+catálogo e `image9.jpg`, uma figura explicativa), e a anotação parece ser só a parte inteira (as rodinhas pretas;
+em `image1.jpg` o medidor mostra `999893` e o valor anotado é `9998`), sem zeros à esquerda. Não foi reconferida foto a
+foto. O gabarito das fotos da ESP32-CAM é o de [`ocr/teste_comum/gabarito.csv`](../ocr/teste_comum/gabarito.csv).
+
 O teste de viabilidade de OCR genérico (Tesseract/EasyOCR) no Colab saiu daqui e está em [`ocr/colab_poc/`](../ocr/colab_poc/).
 
 Dependências deste diretório (`pip install -r legado/requirements.txt`): `pyserial` e `paho-mqtt`.

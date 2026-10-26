@@ -11,10 +11,14 @@ DIR_DRYAD = os.path.join(
 DIR_OUT = os.path.join(DIRETORIO_ATUAL, "dataset", "digits")
 
 # (subpasta, prefixo do nome do arquivo no csv/imagens, numero de digitos)
+# Só as pastas `train` viram dado de treino. As pastas `test` ficam FORA de dataset/digits/ para servir de
+# teste independente (ocr/avaliar_teste_publico.py); misturá-las ao treino foi o que tornava a validação otimista.
 CONJUNTOS = [
     ("recognition_5-digit/train", "5-digit_train", 5),
-    ("recognition_5-digit/test", "5-digit_test", 5),
     ("recognition_6-digit/train", "6-digit_train", 6),
+]
+CONJUNTOS_TESTE = [
+    ("recognition_5-digit/test", "5-digit_test", 5),
     ("recognition_6-digit/test", "6-digit_test", 6),
 ]
 
@@ -25,8 +29,25 @@ def segment_cells_iguais(strip_bgr, n):
     return [gray[:, int(w * i / n):int(w * (i + 1) / n)] for i in range(n)]
 
 
+def remover_recortes_de_teste():
+    """Apaga de dataset/digits/ os recortes das pastas `test` gerados por versões antigas deste script
+    (arquivos `dryad_<n>-digit_test_*`), para que o próximo treino não os veja."""
+    removidos = 0
+    for _, prefixo, _ in CONJUNTOS_TESTE:
+        marca = f"dryad_{prefixo}_"
+        for pasta, _, arquivos in os.walk(DIR_OUT):
+            for nome in arquivos:
+                if nome.startswith(marca):
+                    os.remove(os.path.join(pasta, nome))
+                    removidos += 1
+    return removidos
+
+
 def main():
     os.makedirs(DIR_OUT, exist_ok=True)
+    removidos = remover_recortes_de_teste()
+    if removidos:
+        print(f"Removidos {removidos} recortes das pastas test que estavam em dataset/digits/ (re-treine o classificador)")
     aceitas = 0
     rejeitadas_halfword = 0
     rejeitadas_leitura = 0

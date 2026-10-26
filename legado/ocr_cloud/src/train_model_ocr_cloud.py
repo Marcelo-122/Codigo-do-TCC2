@@ -1,3 +1,4 @@
+import hashlib
 import os
 from pathlib import Path
 import numpy as np
@@ -68,11 +69,25 @@ path_file = Path(__file__).resolve().parent.parent
 dataset_dir = path_file / 'num_dataset'
 
 imgs_paths = []
-for paste in os.listdir(dataset_dir):
+for paste in sorted(os.listdir(dataset_dir)):
     pasta_path = dataset_dir / paste
     if pasta_path.is_dir():
-        for nm_file_img in os.listdir(pasta_path):
+        for nm_file_img in sorted(os.listdir(pasta_path)):
             imgs_paths.append(str(pasta_path / nm_file_img))
+
+# Remove arquivos de conteúdo idêntico ANTES de dividir: o num_dataset tem cópias exatas (167 de 11.303), e com
+# a divisão aleatória uma cópia cairia no treino e outra na validação, inflando a acurácia. Os arquivos não são
+# apagados; só ficam de fora da lista. Cópias com rótulos (pastas) diferentes seriam ambíguas e saem todas.
+por_hash = {}
+for caminho in imgs_paths:
+    with open(caminho, "rb") as f:
+        por_hash.setdefault(hashlib.sha256(f.read()).hexdigest(), []).append(caminho)
+unicos = []
+for copias in por_hash.values():
+    if len({Path(c).parent.name for c in copias}) == 1:
+        unicos.append(copias[0])
+print(f"{len(imgs_paths)} arquivos; {len(unicos)} depois de tirar duplicatas exatas")
+imgs_paths = unicos
 
 np.random.seed(42)
 np.random.shuffle(imgs_paths)
