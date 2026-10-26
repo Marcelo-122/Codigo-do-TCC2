@@ -16,6 +16,7 @@ O trabalho une duas frentes que se complementam:
 ## Sumário
 
 - [Decisão: pipeline de OCR na borda](#decisão-pipeline-de-ocr-na-borda)
+- [Origem das imagens e como o pipeline é avaliado](#origem-das-imagens-e-como-o-pipeline-é-avaliado)
 - [Visão geral da arquitetura](#visão-geral-da-arquitetura)
 - [Estrutura do repositório](#estrutura-do-repositório)
 - [Como reproduzir](#como-reproduzir)
@@ -69,7 +70,8 @@ leitura dispensaria os ≈ 15,6 s dela e a arena de 1,6 MB, ficando nos ≈ 2 s 
 - **Fatiamento calibrado à mão**: `N_FATIAS` (número de rodinhas) é ajustado por medidor; B não lê sozinho um
   medidor desconhecido.
 - **Avaliação ainda fraca**: os 100 % de domínio são sobre as mesmas 24 fotos do *fine-tuning*, e a acurácia de
-  leitura completa foi medida só por **emulação** em fotos de um monitor (`ocr/teste_comum/`), não em hardware.
+  leitura completa foi medida só por **emulação** em fotos de um monitor (`ocr/teste_comum/`), não em hardware nem
+  em medidor físico (ver [Origem das imagens](#origem-das-imagens-e-como-o-pipeline-é-avaliado)).
 - **Última rodinha**: é o dígito que mais erra (a rodinha gira); o classificador dá menos confiança nele, o que
   permite sinalizá-lo como duvidoso.
 
@@ -86,6 +88,58 @@ O trabalho foi unificado na `main`; as branches `ocr` e `Treino-Testes-e-Modelos
 | `ocr/colab_poc/` | Teste de viabilidade: um OCR genérico (Tesseract/EasyOCR) lê uma imagem 160×120. **Não será usado no trabalho** | Concluído (uma foto de entrada versionada) | `main` |
 | `ocr/pipeline_nuvem.py`, `ocr/avaliar.py` | Lado da nuvem: **os mesmos modelos de B** rodando no servidor sobre o JPEG remontado; avaliação borda × nuvem | Implementado ([`ocr/README.md`](ocr/README.md)) | — |
 | `ocr/teste_comum/` | Conjunto de teste comum: 39 fotos, 19 leituras, com gabarito (a conferir) | Primeira versão | — |
+
+---
+
+## Origem das imagens e como o pipeline é avaliado
+
+**Nenhuma foto do repositório é de um hidrômetro físico.** As fotos da ESP32-CAM são de um **monitor** exibindo
+imagens de hidrômetro (por exemplo, `ModeloEDataset/Imagens/imagem_capturada_15.jpg` mostra a tela e
+`ModeloEDataset/Imagens_2/Imagens_teste_2_ESP32/imagem_capturada_144.jpg` mostra a barra de tarefas). Isso testa a
+câmera, a lente e a compressão, mas **não** o reflexo, a iluminação e o ângulo de um medidor de verdade.
+
+| Onde | Fotos | Origem | Usada como |
+|---|---|---|---|
+| `ModeloEDataset/Imagens/` | 34 | ESP32-CAM, **monitor** | 3 delas (24 recortes de dígito) no *fine-tuning* do classificador; as outras não entram no treino |
+| `ModeloEDataset/Imagens_2/Imagens_teste_2_ESP32/` | 2 | ESP32-CAM, **monitor** | teste do classificador com recorte manual |
+| `ModeloEDataset/Imagens_2/Imagens_teste_2/` | 4 | fotos de datasets públicos (nomes no padrão do Dryad, ex. `20221221_01143.jpg`) | teste do classificador com recorte manual; **a independência em relação ao treino não foi confirmada** (o Dryad completo não está nesta máquina para conferir) |
+| `ocr/teste_comum/imagens/` | 39 | ESP32-CAM, **monitor** | pipeline completo, borda × nuvem (`ocr/avaliar.py`, `ocr/avaliar_pipeline.py --conjunto comum`) |
+| `test_images/debug_ocr_esp32cam/debug_frames/` | frames | ESP32-CAM, origem (monitor ou físico) **não registrada** | conferência do firmware de debug |
+| `legado/TreinoEModelosOCRNaBorda/dataset/imagens_reais/` | 14 | imagens avulsas, não da ESP32-CAM (nas que foram conferidas: `image1.jpg` é uma foto de catálogo e `image9.jpg`, uma figura explicativa) | pipeline A, arquivado |
+| [`dados/teste/`](dados/teste/README.md) | **0 (a coletar)** | ESP32-CAM, **hidrômetro físico** | teste final do pipeline completo (`--conjunto fisico`); critério: ≥ 30 fotos |
+| Kaggle (Yandex.Toloka) | 1.244 | fotos de medidores, não versionadas | treino da segmentação (`pipeline.py`) e 195 imagens para o classificador |
+| Dryad, pastas `train` | — | recortes 200×60, não versionados | treino do classificador |
+| Dryad, pastas `test` | — | idem | **fora do treino** (`preparar_dataset_dryad.py` não as usa mais); teste do classificador em `ocr/avaliar_teste_publico.py` |
+
+**Como o pipeline é avaliado agora.** [`ocr/avaliar_pipeline.py`](ocr/avaliar_pipeline.py) roda o pipeline completo em
+INT8 (caixa prevista pelo **modelo de segmentação** → fatias iguais → classificador de dígito, sem caixa manual) nos
+dois fluxos, borda (quadro 160×120 direto) e nuvem (o mesmo quadro depois do JPEG q90), e grava em
+[`medicoes/ocr_teste.csv`](medicoes/ocr_teste.csv): taxa de leitura exata, acurácia por dígito, CER, Dice/IoU da
+máscara e IoU da caixa contra a janela marcada à mão. A borda continua sendo uma emulação em Python, não a acurácia
+medida na placa.
+
+Resultado hoje (só o conjunto de **monitor**; o de medidor físico está vazio):
+
+| Conjunto | Fluxo | Leitura exata | Dígitos certos | CER | Dice | IoU |
+|---|---|---|---|---|---|---|
+| `ocr/teste_comum` (39 fotos, monitor) | borda | 0/39 | 19,8 % | 0,78 | 0,14 | 0,08 |
+| `ocr/teste_comum` (39 fotos, monitor) | nuvem | 0/39 | 18,9 % | 0,79 | 0,15 | 0,08 |
+
+(Confere com o que `ocr/avaliar.py` já registrava: 0/39 com a segmentação do modelo, 44/222 e 42/222 dígitos.)
+A segmentação é o gargalo: a máscara do modelo cobre quase o mostrador inteiro, não a janela dos dígitos.
+
+**O que ainda falta medir**, e por quê:
+
+- **Medidor físico:** `dados/teste/` precisa das ≥ 30 fotos (protocolo em [`dados/teste/README.md`](dados/teste/README.md)).
+  Depois: `python dados/validar_teste.py` e `python ocr/avaliar_pipeline.py --conjunto fisico`.
+- **Teste público independente:** o `modelo_digito.tflite` versionado foi treinado com as pastas `test` do Dryad
+  dentro do treino. É preciso baixar o Dryad, rodar `preparar_dataset_dryad.py` (que agora remove esses recortes de
+  `dataset/digits/`), re-treinar o classificador e só então rodar `python ocr/avaliar_teste_publico.py`.
+- **Segmentação com teste separado:** `ModeloEDataset/pipeline.py` agora separa 15 % de teste com semente fixa, grava a
+  divisão (`relatorios/split_segmentacao.csv`), o histórico por época com Dice/IoU
+  (`relatorios/historico_treino_segmentacao.csv`) e o Dice/IoU final em float e em INT8
+  (`relatorios/segmentacao_teste.json`). O `modelo_esp32.tflite` versionado vem do treino antigo (sem split de
+  teste nem histórico), então esses arquivos só existem depois de re-treinar.
 
 ---
 
@@ -125,6 +179,7 @@ Codigo-do-TCC2/
 │   ├── receptor_lora32/           Firmware do receptor (Heltec/TTGO LoRa32)
 │   └── requirements.txt           Igual ao requirements.txt da raiz
 ├── legado/                        Fora do fluxo atual (ver legado/README.md): protótipo serial → ChirpStack e os pipelines de OCR arquivados (`ocr_cloud/` = C, `TreinoEModelosOCRNaBorda/` = A)
+├── dados/teste/                   Conjunto de teste de hidrômetro FÍSICO (≥ 30 fotos, ainda a coletar) + validador (ver dados/teste/README.md)
 ├── ocr/                           Lado da nuvem (modelos de B no servidor), avaliação borda × nuvem e conjunto de teste comum (ver ocr/README.md)
 │   └── colab_poc/                 Teste de viabilidade de OCR genérico em imagem 160×120 (Tesseract/EasyOCR no Colab; não será usado no trabalho)
 ├── enlace.py                      PC: parâmetros do enlace (bloco, cabeçalho) e parser LoRaWAN compartilhados
@@ -563,8 +618,11 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 
 - **Tirar a segmentação do firmware**: com câmera fixa, usar uma ROI calibrada (ver [Decisão](#decisão-pipeline-de-ocr-na-borda)),
   implementar a calibração no firmware e **medir** a latência e a energia sem a segmentação (hoje ≈ 15,6 s de 17,8 s).
-- **Poucas fotos reais** da ESP32-CAM (dígitos 4, 5 e 6 ausentes no conjunto de domínio); coletar
-  30–50 fotos por medidor, em condições variadas, separando uma fatia só para teste.
+- **Nenhuma foto de medidor físico** e poucas fotos reais da ESP32-CAM (dígitos 4, 5 e 6 ausentes no conjunto de
+  domínio): coletar as ≥ 30 fotos de `dados/teste/` (e mais para o fine-tuning, sem misturar com o teste) em
+  condições variadas.
+- **Re-treinar com o novo split**: classificador (Dryad `test` fora do treino) e segmentação (`pipeline.py` com teste
+  separado e histórico); até lá os modelos versionados vêm do treino antigo.
 - **Integração final**: levar o OCR do firmware de debug para um firmware de produção e enviar apenas a
   leitura (poucos bytes) pelo LoRaWAN, em vez da imagem inteira.
 - Perda de chunks no enlace: hoje o reenvio é manual (`RESEND`, com o `reconstrutor.py` aberto) ou pelo

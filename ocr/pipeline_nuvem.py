@@ -166,12 +166,17 @@ class LeitorB:
         if self._seg_out["quantization"][1] != -128:
             raise ValueError("saída da segmentação com zero_point diferente de -128")
 
-    def achar_caixa(self, quadro):
-        """Caixa (x0, y0, x1, y1) em coordenadas do quadro 160×120, ou None se a máscara vier vazia."""
+    def achar_mascara(self, quadro):
+        """Máscara booleana MODEL_H×MODEL_W (192×192) da segmentação: saída int8 > 0, o mesmo limiar do firmware."""
         entrada = _para_int8(_vizinho_mais_proximo(quadro, 0, 0, CAM_W, CAM_H, MODEL_W, MODEL_H))
         self.seg.set_tensor(self._seg_in["index"], entrada)
         self.seg.invoke()
-        mascara = self.seg.get_tensor(self._seg_out["index"])[0, :, :, 0] > 0
+        return self.seg.get_tensor(self._seg_out["index"])[0, :, :, 0] > 0
+
+    def achar_caixa(self, quadro, mascara=None):
+        """Caixa (x0, y0, x1, y1) em coordenadas do quadro 160×120, ou None se a máscara vier vazia."""
+        if mascara is None:
+            mascara = self.achar_mascara(quadro)
         if not mascara.any():
             return None
         ys, xs = np.nonzero(mascara)
@@ -189,7 +194,8 @@ class LeitorB:
         return int(np.argmax(self.pontuacoes_fatia(quadro, sx0, sy0, sx1, sy1)))
 
     def ler(self, quadro, n_digitos, caixa=None, deslocamentos=((0, 0),)):
-        """Lê o quadro. Devolve dict com 'leitura' (string; '-' * n se não achou a caixa), 'caixa' e tempos.
+        """Lê o quadro. Devolve dict com 'leitura' (string; '-' * n se não achou a caixa), 'caixa', 'mascara'
+        (192×192; None se a caixa foi dada) e tempos.
 
         `caixa` (x0, y0, x1, y1) pula a segmentação e usa a janela dada (diagnóstico: isola o erro do
         classificador do erro da segmentação). Sem ela, a caixa vem do modelo, como no firmware.
@@ -197,11 +203,14 @@ class LeitorB:
         `deslocamentos` [(dx, dy), ...] soma as saídas do classificador sobre a caixa deslocada de cada par
         (votação): tolera uma caixa imprecisa ao custo de rodar o classificador uma vez por deslocamento."""
         t0 = time.perf_counter()
+        mascara = None
         if caixa is None:
-            caixa = self.achar_caixa(quadro)
+            mascara = self.achar_mascara(quadro)
+            caixa = self.achar_caixa(quadro, mascara)
         t1 = time.perf_counter()
         if caixa is None:
-            return {"leitura": "-" * n_digitos, "caixa": None, "t_seg_ms": (t1 - t0) * 1e3, "t_dig_ms": 0.0}
+            return {"leitura": "-" * n_digitos, "caixa": None, "mascara": mascara,
+                    "t_seg_ms": (t1 - t0) * 1e3, "t_dig_ms": 0.0}
         digitos = []
         for i in range(n_digitos):
             soma = np.zeros(10, np.float32)
@@ -216,7 +225,7 @@ class LeitorB:
                 soma += self.pontuacoes_fatia(quadro, sx0, y0, sx1, y1)
             digitos.append(str(int(np.argmax(soma))))
         t2 = time.perf_counter()
-        return {"leitura": "".join(digitos), "caixa": caixa,
+        return {"leitura": "".join(digitos), "caixa": caixa, "mascara": mascara,
                 "t_seg_ms": (t1 - t0) * 1e3, "t_dig_ms": (t2 - t1) * 1e3}
 
 
