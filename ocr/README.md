@@ -36,7 +36,7 @@ python ocr/pipeline_nuvem.py foto.jpg --digitos 6 --modo borda --debug caixa.png
 python ocr/pipeline_nuvem.py foto.jpg --digitos 6 --alinhar      # endireita a inclinação (Hough) antes de ler
 python ocr/avaliar_pipeline.py --conjunto comum   # pipeline completo, sem caixa manual: medicoes/ocr_teste.csv (leitura exata, dígitos, CER, Dice/IoU)
 python ocr/avaliar_pipeline.py --conjunto fisico  # o mesmo em dados/teste/ (hidrômetro físico; ainda vazio)
-python ocr/avaliar_teste_publico.py               # pastas test do Dryad (precisa do dataset e do classificador re-treinado)
+python ocr/avaliar_teste_publico.py               # pastas test do Dryad (precisa do dataset; o classificador versionado já foi re-treinado sem elas)
 python ocr/avaliar.py                         # roda o conjunto de teste e grava ocr/teste_comum/resultados/
 python ocr/avaliar_roi_fixa.py                # cenário de câmera parada (ROI fixa, sem segmentação) e curva de tolerância
 ```
@@ -62,18 +62,18 @@ idêntica às usadas no treino de B (conferido por hash; os nomes de arquivo se 
 
 | Fluxo | Leituras exatas | Dígitos certos |
 |---|---|---|
-| borda (segmentação do modelo) | 0/39 | 44/222 (20 %) |
-| nuvem (segmentação do modelo) | 0/39 | 42/222 (19 %) |
-| borda, caixa manual (diagnóstico) | 23/39 (59 %) | 195/222 (88 %) |
-| nuvem, caixa manual (diagnóstico) | 23/39 (59 %) | 194/222 (87 %) |
-| nuvem, endireitada no servidor, segmentação do modelo | 0/39 | 39/222 (18 %) |
-| nuvem, endireitada no servidor, caixa manual (diagnóstico) | 29/39 (74 %) | 200/222 (90 %) |
+| borda (segmentação do modelo) | 0/39 | 34/222 (15 %) |
+| nuvem (segmentação do modelo) | 0/39 | 35/222 (16 %) |
+| borda, caixa manual (diagnóstico) | 18/39 (46 %) | 189/222 (85 %) |
+| nuvem, caixa manual (diagnóstico) | 18/39 (46 %) | 189/222 (85 %) |
+| nuvem, endireitada no servidor, segmentação do modelo | 0/39 | 41/222 (18 %) |
+| nuvem, endireitada no servidor, caixa manual (diagnóstico) | 32/39 (82 %) | 205/222 (92 %) |
 
 1. **Com a segmentação do modelo, B não leu nenhuma das 39 fotos.** A caixa que ela devolve cobre quase o
    mostrador inteiro (mediana 125×85 em 160×120), não a janela dos dígitos (≈ 97×18).
-2. **Com a janela certa, fatiamento e classificador acertam 88 % dos dígitos e 59 % das leituras.** O gargalo é
+2. **Com a janela certa, fatiamento e classificador acertam 85 % dos dígitos e 46 % das leituras** (82 % e 92 % com o quadro endireitado). O gargalo é
    a segmentação, não o classificador.
-3. **O JPEG q90 quase não afeta a leitura:** 23/39 nos dois fluxos com caixa manual, e 194 contra 195 dígitos.
+3. **O JPEG q90 não afeta a leitura:** 18/39 nos dois fluxos com caixa manual, e 189 dígitos nos dois.
 4. **Isso coincide com o firmware real.** Nas primeiras capturas em hardware a caixa também era enorme e a leitura
    errada (`02650090`, `300061`; ver `medicoes/debug_metricas.csv`); só depois de posicionar a câmera à mão, com a
    janela dos dígitos ocupando o quadro, a caixa encolheu (`30,51 → 149,75`) e a leitura estabilizou em `046663`.
@@ -86,19 +86,22 @@ idêntica às usadas no treino de B (conferido por hash; os nomes de arquivo se 
 Todos com a caixa marcada à mão (o oráculo) e o quadro 160×120, em scripts de análise que **não estão no
 repositório**; só o alinhamento virou código (`--alinhar`, e os fluxos `*_alinhada` de `avaliar.py`).
 
+Os números desta tabela que não vêm de `avaliar*.py` foram medidos em scripts de análise com o classificador
+anterior e **não foram repetidos** com o re-treinado; servem como ordem de grandeza.
+
 | Ideia | Resultado |
 |---|---|
-| **Endireitar a fileira** (as fotos têm de -3° a -9° de inclinação). O ângulo vem das linhas de Hough, sem usar a caixa: erro mediano de 0,4° contra o ângulo medido na janela, 35 de 39 quadros dentro de 2° | **Ajuda**: 59 % → 74 % das leituras, 88 % → 90 % dos dígitos. Alinhando na foto original (como numa câmera montada reta) vai a 77 % |
+| **Endireitar a fileira** (as fotos têm de -3° a -9° de inclinação). O ângulo vem das linhas de Hough, sem usar a caixa: erro mediano de 0,4° contra o ângulo medido na janela, 35 de 39 quadros dentro de 2° | **Ajuda**: 46 % → 82 % das leituras, 85 % → 92 % dos dígitos |
 | Endireitar e depois usar a segmentação do modelo | **Não ajuda**: a caixa do modelo continua com cerca de 85 px de altura (a janela tem 18) e 0/39 |
 | Localizar a janela por um "pente" de bordas verticais periódicas, sem o modelo | **Falha**: IoU mediano 0,35 com a janela real, 0/39 leituras |
 | Cortar nas divisórias reais (programação dinâmica sobre o perfil de colunas) em vez de fatias iguais | **Piora**: 62 % das leituras no melhor caso (divisória clara) contra 72 % das fatias iguais, e 21 % com a polaridade escura |
 | Achar cada dígito por componentes conectados (OpenCV), sem caixa | **Falha**: 2/39 leituras; em 32 dos 39 quadros nem acha uma fileira de N dígitos (o dígito encosta na borda da célula) |
 | Procurar, para cada dígito, a posição e a largura em que o classificador fica mais confiante | Ganho pequeno (+2 a +6 pontos de dígitos com erro na caixa de 2 a 5 px) a 15× o custo |
-| Votar entre 5 caixas deslocadas ±2 px | Ajuda com a caixa imprecisa (49 % → 62 % com erro de ±2 px), a 5× o custo do classificador |
+| Votar entre 5 caixas deslocadas ±2 px | Ajuda com a caixa imprecisa (62 % → 70 % com erro de ±2 px), a 5× o custo do classificador |
 | Redução por média, bilinear ou contraste por fatia | Sem efeito (±2 dígitos em 222) |
 
 **O que falta é achar a janela dos dígitos** (a caixa). Com ela marcada à mão e o quadro endireitado, a leitura
-chega a 74 % das leituras e 90 % dos dígitos; sem ela, 0 %. Os erros que sobram estão no último dígito (rodinha
+chega a 82 % das leituras e 92 % dos dígitos; sem ela, 0 %. Os erros que sobram estão no último dígito (rodinha
 girando) e em fotos de contraste muito baixo (`00285`).
 
 ## Enquadramento físico fixo (janela numa região conhecida, sem segmentação)
@@ -109,11 +112,11 @@ mesmo medidor, repetindo com cada leitura como calibração. Fluxo nuvem (JPEG q
 
 | Medidor | ROI | Leituras exatas | Dígitos certos |
 |---|---|---|---|
-| `tianjin6` (27 fotos, 14 leituras) | caixa verdadeira de cada foto (oráculo), com votação | 81 % | 96 % |
-| `tianjin6` | uma ROI única (mediana), com votação | 37 % | 64 % |
-| `tianjin6` | calibrada com uma leitura, com votação (pior 0 %, melhor 48 %) | 28 % | 53 % |
-| `branco5` (12 fotos, 5 leituras) | caixa verdadeira de cada foto (oráculo) | 75 % | 90 % |
-| `branco5` | qualquer ROI fixa | 0 % | 33–38 % |
+| `tianjin6` (27 fotos, 14 leituras) | caixa verdadeira de cada foto (oráculo), com votação | 93 % | 99 % |
+| `tianjin6` | uma ROI única (mediana), com votação | 48 % | 64 % |
+| `tianjin6` | calibrada com uma leitura, com votação (pior 0 %, melhor 50 %) | 30 % | 54 % |
+| `branco5` (12 fotos, 5 leituras) | caixa verdadeira de cada foto (oráculo) | 67 % | 83 % |
+| `branco5` | qualquer ROI fixa | 0 % | 38–45 % |
 
 **Por que a ROI fixa rende tão pouco aqui:** as fotos são de um monitor cujo zoom e posição mudam de uma leitura
 para outra, então a ROI errada tem 3,5 a 5 px de erro médio em `tianjin6` e 12 a 18 px em `branco5`. Não é uma
@@ -121,15 +124,15 @@ montagem fixa de verdade; é um cenário pessimista. A curva abaixo mostra o que
 
 | Erro da ROI (±d px por coordenada) | Fatias iguais (leituras / dígitos) | Com votação entre 5 caixas |
 |---|---|---|
-| ±0 | 74 % / 90 % | 77 % / 94 % |
-| ±1 | 74 % / 91 % | 78 % / 93 % |
-| ±2 | 62 % / 87 % | 70 % / 90 % |
-| ±3 | 56 % / 85 % | 67 % / 89 % |
-| ±4 | 47 % / 79 % | 62 % / 85 % |
-| ±6 | 25 % / 64 % | 34 % / 71 % |
+| ±0 | 82 % / 92 % | 87 % / 95 % |
+| ±1 | 71 % / 90 % | 81 % / 94 % |
+| ±2 | 62 % / 88 % | 70 % / 91 % |
+| ±3 | 51 % / 84 % | 64 % / 89 % |
+| ±4 | 40 % / 78 % | 50 % / 83 % |
+| ±6 | 20 % / 64 % | 26 % / 68 % |
 
 **Leitura:** a ROI precisa ter cerca de **±1 a ±2 px de precisão no quadro 160×120** (um dígito tem ~16 px de largura) para
-ficar na faixa de 70 a 78 % das leituras; acima de ±4 px a leitura cai rápido. A votação compensa uns 3 px de erro, ao
+ficar na faixa de 62 a 87 % das leituras; acima de ±3 px a leitura cai rápido. A votação compensa uns 3 px de erro, ao
 custo de rodar o classificador 5 vezes. A montagem mecânica (ou uma calibração que refine a ROI com vários quadros)
 precisa chegar a essa precisão.
 

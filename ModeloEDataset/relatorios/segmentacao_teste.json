@@ -1,0 +1,18 @@
+{
+  "n_teste": 186,
+  "seed": 42,
+  "lote": 16,
+  "perda": "bce_dice",
+  "epocas_executadas": 600,
+  "melhor_epoca": 581,
+  "float": {
+    "dice": 0.3870879112530008,
+    "iou": 0.28214455422450174
+  },
+  "int8": {
+    "dice": 0.3896937043068503,
+    "iou": 0.2835609061715567
+  },
+  "mascara_vazia_int8": 1,
+  "duracao_s": 1549
+}

@@ -6,29 +6,29 @@ Gerado por `ocr/avaliar_roi_fixa.py`; protocolo no docstring do script. Fluxo nu
 
 | Variante | ROI | Leituras exatas | Dígitos certos | Pior / melhor calibração (leituras) | Erro médio da ROI (px) |
 |---|---|---|---|---|---|
-| sem alinhar | caixa verdadeira de cada foto (oráculo) | 9/12 (75 %) | 54/60 (90 %) | - | 0 |
+| sem alinhar | caixa verdadeira de cada foto (oráculo) | 7/12 (58 %) | 49/60 (82 %) | - | 0 |
 | sem alinhar | mediana de todas as leituras (50, 45, 103, 58) | 0/12 (0 %) | 23/60 (38 %) | - | 12.3 |
-| sem alinhar | calibrada com UMA leitura, testada nas outras | 0/48 (0 %) | 79/240 (33 %) | 0 % / 0 % | 18.0 |
-| alinhada | caixa verdadeira de cada foto (oráculo) | 9/12 (75 %) | 52/60 (87 %) | - | 0 |
-| alinhada | mediana de todas as leituras (49, 44, 102, 57) | 0/12 (0 %) | 19/60 (32 %) | - | 11.9 |
-| alinhada | calibrada com UMA leitura, testada nas outras | 0/48 (0 %) | 84/240 (35 %) | 0 % / 0 % | 17.4 |
-| alinhada + votação | caixa verdadeira de cada foto (oráculo) | 9/12 (75 %) | 54/60 (90 %) | - | 0 |
-| alinhada + votação | mediana de todas as leituras (49, 44, 102, 57) | 0/12 (0 %) | 19/60 (32 %) | - | 11.9 |
-| alinhada + votação | calibrada com UMA leitura, testada nas outras | 0/48 (0 %) | 81/240 (34 %) | 0 % / 0 % | 17.4 |
+| sem alinhar | calibrada com UMA leitura, testada nas outras | 0/48 (0 %) | 94/240 (39 %) | 0 % / 0 % | 18.0 |
+| alinhada | caixa verdadeira de cada foto (oráculo) | 8/12 (67 %) | 50/60 (83 %) | - | 0 |
+| alinhada | mediana de todas as leituras (49, 44, 102, 57) | 0/12 (0 %) | 27/60 (45 %) | - | 11.9 |
+| alinhada | calibrada com UMA leitura, testada nas outras | 0/48 (0 %) | 99/240 (41 %) | 0 % / 0 % | 17.4 |
+| alinhada + votação | caixa verdadeira de cada foto (oráculo) | 8/12 (67 %) | 50/60 (83 %) | - | 0 |
+| alinhada + votação | mediana de todas as leituras (49, 44, 102, 57) | 0/12 (0 %) | 27/60 (45 %) | - | 11.9 |
+| alinhada + votação | calibrada com UMA leitura, testada nas outras | 0/48 (0 %) | 101/240 (42 %) | 0 % / 0 % | 17.4 |
 
 ## Medidor `tianjin6` (27 fotos, 14 leituras, recorte fixo em y=240)
 
 | Variante | ROI | Leituras exatas | Dígitos certos | Pior / melhor calibração (leituras) | Erro médio da ROI (px) |
 |---|---|---|---|---|---|
-| sem alinhar | caixa verdadeira de cada foto (oráculo) | 11/27 (41 %) | 139/162 (86 %) | - | 0 |
-| sem alinhar | mediana de todas as leituras (10, 49, 107, 67) | 2/27 (7 %) | 86/162 (53 %) | - | 3.4 |
-| sem alinhar | calibrada com UMA leitura, testada nas outras | 42/351 (12 %) | 931/2106 (44 %) | 0 % / 32 % | 4.8 |
-| alinhada | caixa verdadeira de cada foto (oráculo) | 20/27 (74 %) | 150/162 (93 %) | - | 0 |
-| alinhada | mediana de todas as leituras (10, 46, 107, 64) | 9/27 (33 %) | 98/162 (60 %) | - | 3.5 |
-| alinhada | calibrada com UMA leitura, testada nas outras | 84/351 (24 %) | 1049/2106 (50 %) | 0 % / 48 % | 4.9 |
-| alinhada + votação | caixa verdadeira de cada foto (oráculo) | 22/27 (81 %) | 155/162 (96 %) | - | 0 |
-| alinhada + votação | mediana de todas as leituras (10, 46, 107, 64) | 10/27 (37 %) | 104/162 (64 %) | - | 3.5 |
-| alinhada + votação | calibrada com UMA leitura, testada nas outras | 98/351 (28 %) | 1110/2106 (53 %) | 0 % / 48 % | 4.9 |
+| sem alinhar | caixa verdadeira de cada foto (oráculo) | 14/27 (52 %) | 144/162 (89 %) | - | 0 |
+| sem alinhar | mediana de todas as leituras (10, 49, 107, 67) | 3/27 (11 %) | 82/162 (51 %) | - | 3.4 |
+| sem alinhar | calibrada com UMA leitura, testada nas outras | 24/351 (7 %) | 880/2106 (42 %) | 0 % / 28 % | 4.8 |
+| alinhada | caixa verdadeira de cada foto (oráculo) | 23/27 (85 %) | 156/162 (96 %) | - | 0 |
+| alinhada | mediana de todas as leituras (10, 46, 107, 64) | 5/27 (19 %) | 75/162 (46 %) | - | 3.5 |
+| alinhada | calibrada com UMA leitura, testada nas outras | 90/351 (26 %) | 1055/2106 (50 %) | 0 % / 48 % | 4.9 |
+| alinhada + votação | caixa verdadeira de cada foto (oráculo) | 25/27 (93 %) | 160/162 (99 %) | - | 0 |
+| alinhada + votação | mediana de todas as leituras (10, 46, 107, 64) | 13/27 (48 %) | 103/162 (64 %) | - | 3.5 |
+| alinhada + votação | calibrada com UMA leitura, testada nas outras | 105/351 (30 %) | 1129/2106 (54 %) | 0 % / 50 % | 4.9 |
 
 ## Tolerância ao erro da ROI (alinhada, todas as 39 fotos)
 
@@ -36,12 +36,12 @@ Erro aleatório uniforme de ±d px somado a cada coordenada da caixa verdadeira 
 
 | d (px) | Leituras exatas, fatias iguais | Dígitos certos | Leituras exatas, votação | Dígitos certos |
 |---|---|---|---|---|
-| ±0 | 74 % | 90 % | 77 % | 94 % |
-| ±1 | 74 % | 91 % | 78 % | 93 % |
-| ±2 | 62 % | 87 % | 70 % | 90 % |
-| ±3 | 56 % | 85 % | 67 % | 89 % |
-| ±4 | 47 % | 79 % | 62 % | 85 % |
-| ±6 | 25 % | 64 % | 34 % | 71 % |
+| ±0 | 82 % | 92 % | 87 % | 95 % |
+| ±1 | 71 % | 90 % | 81 % | 94 % |
+| ±2 | 62 % | 88 % | 70 % | 91 % |
+| ±3 | 51 % | 84 % | 64 % | 89 % |
+| ±4 | 40 % | 78 % | 50 % | 83 % |
+| ±6 | 20 % | 64 % | 26 % | 68 % |
 
 ## Como ler
 

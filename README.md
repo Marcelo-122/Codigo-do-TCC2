@@ -47,7 +47,7 @@ branches e pastas diferentes; os outros dois foram arquivados em [`legado/`](leg
 | Cabe no ESP32-CAM | **Sim.** Arenas de 1,62 MB (segmentação) e 28,6 KB (dígito), medidas; sobram 1,29 MB de PSRAM | **Não.** O detector pede 15.335.424 bytes de arena; havia 4.053.940 (teste em placa) | Não se aplica (só PC) |
 | Roda em hardware | **Sim**, 61 capturas na ESP32-CAM | Não: a alocação falha; os leitores CTC também (operador `REDUCE_PROD` ausente na TFLM do core 3.0.7) | Não |
 | Latência | ≈ 17,8 s por leitura (15,6 s de segmentação + 2,0 s de dígitos) | Não se aplica | Não se aplica |
-| Acurácia | 96,9 % por dígito na validação (INT8); 94 % (30/32 dígitos) em imagens novas | Leitor CTC: 39 % a 64 % de acerto de sequência em recortes de máscara; no máximo 1 de 10 fotos de ponta a ponta | Treinado só com fontes de dígitos, não com hidrômetros |
+| Acurácia | 95,4 % por dígito na validação por foto (INT8); 97,7 % dos dígitos (92,8 % das leituras) nas pastas `test` do Dryad; 91 % (29/32 dígitos) em imagens novas | Leitor CTC: 39 % a 64 % de acerto de sequência em recortes de máscara; no máximo 1 de 10 fotos de ponta a ponta | Treinado só com fontes de dígitos, não com hidrômetros |
 
 Evidências: [`medicoes/README.md`](medicoes/README.md) (B em hardware),
 [`medicoes/teste_pipeline_a_esp32cam.md`](medicoes/teste_pipeline_a_esp32cam.md) (A em hardware) e
@@ -59,9 +59,9 @@ janela dos dígitos fora do enquadramento calibrado: no conjunto de teste comum 
 errou a caixa nas 39 fotos e não leu nenhuma. Como a câmera fica parada diante do medidor, a janela cai sempre na
 mesma região do quadro; então, em vez de segmentar a cada leitura, a região (ROI) e a inclinação são **ajustadas
 uma vez na instalação** e o classificador lê as N fatias dessa ROI. O que se mediu ([`ocr/README.md`](ocr/README.md)):
-com a janela certa e o quadro endireitado, a leitura chega a 74–77 % das leituras e 90–94 % dos dígitos; a ROI
-precisa de precisão de cerca de **±1 a ±2 px** no quadro 160×120 (com erro de ±4 px caem para 47–62 %, e com ±6 px
-para 25–34 %). Consequência **estimada, não medida** (o firmware ainda não foi alterado): sem a segmentação, a
+com a janela certa e o quadro endireitado, a leitura chega a 82–87 % das leituras e 92–95 % dos dígitos; a ROI
+precisa de precisão de cerca de **±1 a ±2 px** no quadro 160×120 (com erro de ±4 px caem para 40–50 %, e com ±6 px
+para 20–26 %). Consequência **estimada, não medida** (o firmware ainda não foi alterado): sem a segmentação, a
 leitura dispensaria os ≈ 15,6 s dela e a arena de 1,6 MB, ficando nos ≈ 2 s do classificador.
 
 **Limitações de B assumidas:**
@@ -102,7 +102,7 @@ câmera, a lente e a compressão, mas **não** o reflexo, a iluminação e o ân
 |---|---|---|---|
 | `ModeloEDataset/Imagens/` | 34 | ESP32-CAM, **monitor** | 3 delas (24 recortes de dígito) no *fine-tuning* do classificador; as outras não entram no treino |
 | `ModeloEDataset/Imagens_2/Imagens_teste_2_ESP32/` | 2 | ESP32-CAM, **monitor** | teste do classificador com recorte manual |
-| `ModeloEDataset/Imagens_2/Imagens_teste_2/` | 4 | fotos de datasets públicos (nomes no padrão do Dryad, ex. `20221221_01143.jpg`) | teste do classificador com recorte manual; **a independência em relação ao treino não foi confirmada** (o Dryad completo não está nesta máquina para conferir) |
+| `ModeloEDataset/Imagens_2/Imagens_teste_2/` | 4 | fotos de datasets públicos (ex. `20221221_01143.jpg`) | teste do classificador com recorte manual; **nenhuma coincide byte a byte com os 109.018 arquivos do Dryad** (os nomes do Dryad são `testN.jpg`/`trainN.jpg`, então o padrão de nome não prova nada); independência por conteúdo (mesmo medidor em outra foto) não foi verificada |
 | `ocr/teste_comum/imagens/` | 39 | ESP32-CAM, **monitor** | pipeline completo, borda × nuvem (`ocr/avaliar.py`, `ocr/avaliar_pipeline.py --conjunto comum`) |
 | `test_images/debug_ocr_esp32cam/debug_frames/` | frames | ESP32-CAM, origem (monitor ou físico) **não registrada** | conferência do firmware de debug |
 | `legado/TreinoEModelosOCRNaBorda/dataset/imagens_reais/` | 14 | imagens avulsas, não da ESP32-CAM (nas que foram conferidas: `image1.jpg` é uma foto de catálogo e `image9.jpg`, uma figura explicativa) | pipeline A, arquivado |
@@ -122,24 +122,25 @@ Resultado hoje (só o conjunto de **monitor**; o de medidor físico está vazio)
 
 | Conjunto | Fluxo | Leitura exata | Dígitos certos | CER | Dice | IoU |
 |---|---|---|---|---|---|---|
-| `ocr/teste_comum` (39 fotos, monitor) | borda | 0/39 | 19,8 % | 0,78 | 0,14 | 0,08 |
-| `ocr/teste_comum` (39 fotos, monitor) | nuvem | 0/39 | 18,9 % | 0,79 | 0,15 | 0,08 |
+| `ocr/teste_comum` (39 fotos, monitor) | borda | 0/39 | 15,3 % | 0,83 | 0,23 | 0,13 |
+| `ocr/teste_comum` (39 fotos, monitor) | nuvem | 0/39 | 15,8 % | 0,83 | 0,23 | 0,13 |
 
-(Confere com o que `ocr/avaliar.py` já registrava: 0/39 com a segmentação do modelo, 44/222 e 42/222 dígitos.)
+(Confere com o que `ocr/avaliar.py` registra: 0/39 com a segmentação do modelo, 34/222 e 35/222 dígitos. Estes são os
+números com os **modelos re-treinados**; antes do re-treino eram 44/222 e 42/222 dígitos e Dice 0,14.)
 A segmentação é o gargalo: a máscara do modelo cobre quase o mostrador inteiro, não a janela dos dígitos.
 
 **O que ainda falta medir**, e por quê:
 
 - **Medidor físico:** `dados/teste/` precisa das ≥ 30 fotos (protocolo em [`dados/teste/README.md`](dados/teste/README.md)).
   Depois: `python dados/validar_teste.py` e `python ocr/avaliar_pipeline.py --conjunto fisico`.
-- **Teste público independente:** o `modelo_digito.tflite` versionado foi treinado com as pastas `test` do Dryad
-  dentro do treino. É preciso baixar o Dryad, rodar `preparar_dataset_dryad.py` (que agora remove esses recortes de
-  `dataset/digits/`), re-treinar o classificador e só então rodar `python ocr/avaliar_teste_publico.py`.
-- **Segmentação com teste separado:** `ModeloEDataset/pipeline.py` agora separa 15 % de teste com semente fixa, grava a
-  divisão (`relatorios/split_segmentacao.csv`), o histórico por época com Dice/IoU
-  (`relatorios/historico_treino_segmentacao.csv`) e o Dice/IoU final em float e em INT8
-  (`relatorios/segmentacao_teste.json`). O `modelo_esp32.tflite` versionado vem do treino antigo (sem split de
-  teste nem histórico), então esses arquivos só existem depois de re-treinar.
+- **Teste público independente (feito):** o classificador foi re-treinado só com as pastas `train` do Dryad (mais o
+  Kaggle), com validação dividida por foto. Nas pastas `test` (1.894 imagens, fatias iguais, INT8): **92,8 % de
+  leituras exatas, 97,7 % dos dígitos, CER 0,023**; o modelo antigo, que tinha essas pastas no treino, marcava 95,6 %
+  / 98,6 %. Detalhes em [`ModeloEDataset/relatorios/RESULTADOS.md`](ModeloEDataset/relatorios/RESULTADOS.md).
+- **Segmentação com teste separado (feito):** `ModeloEDataset/pipeline.py` separa 15 % de teste com semente fixa,
+  treina com lote 16 e grava a divisão, o histórico por época e o log de progresso (`relatorios/`). No teste
+  (186 fotos do Kaggle, INT8): **Dice 0,39, IoU 0,28**. É fraco (rede minúscula e ainda subajustada) e, sobre as
+  fotos da ESP32-CAM de um monitor, a máscara continua cobrindo o mostrador inteiro (ver tabela acima).
 
 ---
 
@@ -507,9 +508,10 @@ reais da própria ESP32-CAM) e é treinado em duas fases (treino principal + *fi
 
 | Métrica | Valor |
 |---|---|
-| Acurácia (validação, INT8, 10 classes) | **96,9 %** |
+| Acurácia (validação por foto, INT8, 10 classes) | **95,4 %** |
+| Pastas `test` do Dryad (fora do treino): leitura exata / dígitos | **92,8 % / 97,7 %** |
 | Fotos reais da ESP32-CAM (24 recortes — mesmas do *fine-tuning*, número otimista) | 100 % |
-| Imagens totalmente novas (nunca vistas no treino): 30/32 dígitos | 94 % |
+| Imagens totalmente novas (nunca vistas no treino): 29/32 dígitos, recorte manual | 91 % |
 
 Tudo está documentado no **[README próprio](ModeloEDataset/README.md)** (fontes de dados, arquitetura,
 histórico de iterações, bug de *split* corrigido), com relatórios reprodutíveis em
@@ -621,8 +623,10 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 - **Nenhuma foto de medidor físico** e poucas fotos reais da ESP32-CAM (dígitos 4, 5 e 6 ausentes no conjunto de
   domínio): coletar as ≥ 30 fotos de `dados/teste/` (e mais para o fine-tuning, sem misturar com o teste) em
   condições variadas.
-- **Re-treinar com o novo split**: classificador (Dryad `test` fora do treino) e segmentação (`pipeline.py` com teste
-  separado e histórico); até lá os modelos versionados vêm do treino antigo.
+- **Segmentação fraca:** Dice 0,39 e IoU 0,28 no teste do Kaggle depois do re-treino com lote 16 e perda
+  entropia cruzada + Dice; a rede (11 KB, sem conexões de salto) tem capacidade limitada. Como a decisão é câmera fixa
+  e ROI calibrada na instalação, melhorar o modelo de segmentação não é necessário para a leitura, e só valeria como
+  extensão (arquitetura com *skip connections*, mais épocas).
 - **Integração final**: levar o OCR do firmware de debug para um firmware de produção e enviar apenas a
   leitura (poucos bytes) pelo LoRaWAN, em vez da imagem inteira.
 - Perda de chunks no enlace: hoje o reenvio é manual (`RESEND`, com o `reconstrutor.py` aberto) ou pelo

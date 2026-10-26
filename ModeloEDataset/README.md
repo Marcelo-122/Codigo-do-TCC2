@@ -62,11 +62,22 @@ leitura completa (ex.: "00588817" → 588.817 m³)
 ```
 
 O modelo de segmentação é treinado por [pipeline.py](pipeline.py): 70 % treino / 15 % validação / 15 % teste, com
-semente fixa (a divisão fica em `relatorios/split_segmentacao.csv`), `batch_size=1` (o `batch_shape=(1, ...)` do
-modelo fixa o batch em 1 para o TFLite Micro), histórico por época em
-`relatorios/historico_treino_segmentacao.csv` e Dice/IoU no conjunto de teste, em float e em INT8, em
-`relatorios/segmentacao_teste.json`. A acurácia por pixel que o script reportava é dominada pelo fundo; Dice e IoU
-medem só a janela. `--epocas` e `--dados` existem para rodar um teste rápido.
+semente fixa (a divisão fica em `relatorios/split_segmentacao.csv`). O treino usa lote de 16 numa versão da rede
+com lote livre, e os pesos são copiados para a versão de lote fixo em 1 (`batch_shape=(1, ...)`, que é a que o TFLite
+Micro precisa) antes de converter; antes, o treino inteiro era feito com `batch_size=1` por 10.000 épocas, sem parada
+antecipada. A perda é entropia cruzada + Dice suave (`--perda bce_dice`), porque a janela ocupa poucos pixels e só a
+entropia cruzada ficou no platô de "tudo fundo": no mesmo número de épocas, o Dice de validação foi de 0,306 (só
+entropia cruzada) para 0,396. O log de progresso fica em `relatorios/treino_segmentacao.log`, o histórico por época em
+`relatorios/historico_treino_segmentacao.csv` (gráfico: `relatorios/grafico_treino_segmentacao.png`, gerado por
+[gerar_graficos_treino.py](gerar_graficos_treino.py)) e o resultado no teste, em float e em INT8, em
+`relatorios/segmentacao_teste.json`.
+
+**Resultado no teste (186 fotos do Kaggle nunca vistas no treino, INT8):** Dice **0,39**, IoU **0,28**, 1 máscara
+vazia. É um resultado fraco: a rede é minúscula (11 KB, só dois `MaxPool`, sem conexões de salto) e ainda estava
+subindo na época 600 (melhor época: 581); treino e validação têm Dice parecido, ou seja, subajuste, não
+sobreajuste. A acurácia por pixel que o script reportava antes passa de 98 % mesmo assim, porque o fundo domina a
+imagem; Dice e IoU medem só a janela. O modelo antigo, medido nesse mesmo teste (que ele em boa parte viu no treino),
+tinha Dice 0,35.
 
 Os dois modelos são independentes e cabem juntos com folga no ESP32CAM:
 
@@ -137,9 +148,12 @@ dataset de treino por ~35x e foi o que mais melhorou a acurácia (ver números c
 > (`CONJUNTOS`), apaga de `dataset/digits/` os recortes `dryad_*-digit_test_*` que versões antigas geraram e deixa
 > `test` como teste independente: `python ../ocr/avaliar_teste_publico.py` lê essas pastas direto do Dryad
 > (fatias iguais → `modelo_digito.tflite`, mesmo pré-processamento do firmware) e grava a linha `dryad_teste` em
-> `../medicoes/ocr_teste.csv`. Os números em `relatorios/RESULTADOS.md` e o `modelo_digito.tflite` versionado são do
-> treino antigo (com `test` dentro): **re-treine** (`preparar_dataset_dryad.py` + `treinar_classificador_digitos.py`)
-> antes de usar o teste público como medida independente.
+> `../medicoes/ocr_teste.csv`. O `modelo_digito.tflite` versionado **já foi re-treinado** sem essas pastas (49.038
+> recortes: 47.478 do Dryad `train` e 1.560 do Kaggle). Para reproduzir: `preparar_dataset_digitos.py`,
+> `preparar_dataset_dryad.py` e `treinar_classificador_digitos.py`; o log de progresso fica em
+> `relatorios/treino_classificador.log` e o histórico por época em `relatorios/historico_treino_classificador.csv`.
+> A validação agora é dividida **por foto** ([divisao_por_foto.py](divisao_por_foto.py)): antes ela sorteava recorte a
+> recorte, e recortes da mesma foto caíam no treino e na validação, o que inflava a acurácia.
 
 ### 3. Fotos reais da própria ESP32CAM (conjunto de domínio / fine-tuning)
 Nem o Kaggle nem o Dryad foram fotografados com o sensor/lente/compressão da ESP32CAM alvo
@@ -198,12 +212,18 @@ par "real/previsto" (verde = acertou, vermelho = errou). Exemplo:
 Também há um teste com imagens **completamente novas** (nunca usadas em nenhuma etapa do
 treino) em **[relatorios/TESTE_IMAGENS_NOVAS.md](relatorios/TESTE_IMAGENS_NOVAS.md)** — hidrômetros chineses de
 marca/fonte de dígito nunca vista (4 fotos limpas) + fotos reais tiradas pela própria
-ESP32CAM (2 fotos), gerado por `testar_imagens_novas.py`: 30/32 dígitos individuais
-corretos (94%), incluindo as 2 fotos reais da ESP32CAM 100% corretas.
+ESP32CAM (2 fotos), gerado por `testar_imagens_novas.py`: 29/32 dígitos individuais
+corretos (91%), 4 das 6 leituras completas (a `imagem_capturada_144` errou o segundo dígito, `1` lido como `0`).
+Com o classificador anterior eram 30/32; a diferença é de um dígito, dentro do ruído de uma amostra tão pequena.
 
 | Etapa | Acurácia geral (validação, 10 classes) | Acurácia nas fotos reais da ESP32CAM |
 |---|---|---|
-| **Fase A + Fase B (final, INT8)** | **96,9%** | **100%** (24/24) |
+| **Fase A + Fase B (final, INT8)** | **95,4%** (validação por foto) | **100%** (24/24) |
+
+> **Teste independente (pastas `test` do Dryad, 1.894 imagens):** 92,8 % de leituras exatas e 97,7 % dos dígitos
+> com a Fase A + B; 92,4 % e 97,3 % só com a Fase A. A Fase B não prejudica e a diferença (8 leituras em 1.894) está
+> no ruído. Ela foi mantida porque é a única parte do treino que vê o sensor da ESP32-CAM (sem ela, os 24 recortes
+> de domínio dão 21 %). Ver [relatorios/RESULTADOS.md](relatorios/RESULTADOS.md).
 
 > **Os 100% de domínio são sobre as *mesmas* 24 fotos usadas no fine-tuning** (não há fatia
 > separada de teste, dado o volume pequeno) — é um número otimista, não uma medida
@@ -219,7 +239,7 @@ corretos (94%), incluindo as 2 fotos reais da ESP32CAM 100% corretas.
 > mencionados em conversa) media só esses 3 dígitos, nunca os outros 7. Corrigido em
 > `treinar_classificador_digitos.py` e `gerar_relatorio_resultados.py` (as duas chamadas
 > agora usam `shuffle=True` consistente) e o modelo foi re-treinado do zero. Os números
-> corrigidos acima ficaram parecidos com os antigos (96,9% vs 96,3%) — não porque o bug não
+> corrigidos ficaram parecidos com os antigos (96,9% vs 96,3%) — não porque o bug não
 > importasse, mas porque o modelo de fato generaliza bem pras 10 classes, o que só dá pra
 > afirmar agora que a validação está correta.
 

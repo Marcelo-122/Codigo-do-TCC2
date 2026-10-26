@@ -1,3 +1,5 @@
 conjunto,origem,fluxo,n_imagens,leituras_exatas,taxa_leitura_exata,digitos_certos,digitos_total,acuracia_digito,cer,n_com_caixa_real,dice_mascara,iou_mascara,iou_caixa,sem_caixa_prevista,modelo_segmentacao,modelo_digito,data
-comum,monitor,borda,39,0,0.0,44,222,0.1982,0.7793,39,0.1423,0.0775,0.1468,0,46f8ed3c2bcd,64fee950c1bc,2026-10-25
-comum,monitor,nuvem,39,0,0.0,42,222,0.1892,0.7928,39,0.1452,0.0793,0.1457,0,46f8ed3c2bcd,64fee950c1bc,2026-10-25
+dryad_teste_fase_a,publico,fatias_sem_segmentacao,1894,1750,0.924,9460,9719,0.9734,0.0263,0,,,,,46f8ed3c2bcd,44a941a4d1e4,2026-10-25
+dryad_teste,publico,fatias_sem_segmentacao,1894,1758,0.9282,9495,9719,0.977,0.0228,0,,,,,46f8ed3c2bcd,206755334fa3,2026-10-25
+comum,monitor,borda,39,0,0.0,34,222,0.1532,0.8288,39,0.2323,0.1327,0.1391,0,de20b85c1c35,206755334fa3,2026-10-25
+comum,monitor,nuvem,39,0,0.0,35,222,0.1577,0.8288,39,0.2348,0.1345,0.134,0,de20b85c1c35,206755334fa3,2026-10-25

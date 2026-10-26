@@ -11,9 +11,10 @@ viu estes dados. Os números só valem como teste independente depois de re-trei
 `preparar_dataset_dryad.py` + `treinar_classificador_digitos.py` (ver ModeloEDataset/README.md).
 
 Grava a linha `dryad_teste` em `medicoes/ocr_teste.csv` (substitui a anterior) e
-`medicoes/ocr_teste_por_imagem_dryad_teste.csv`. Uso (na raiz do repositório):
+`medicoes/ocr_teste_por_imagem_dryad_teste.csv`. Com `--rotulo X` o conjunto passa a se chamar `dryad_teste_X`,
+e com `--modelo-digito` avalia outro .tflite (comparar variantes de treino). Uso (na raiz do repositório):
 
-    python ocr/avaliar_teste_publico.py [--dryad PASTA_recognition]
+    python ocr/avaliar_teste_publico.py [--dryad PASTA_recognition] [--modelo-digito M.tflite --rotulo X]
 """
 import argparse
 import csv
@@ -39,11 +40,14 @@ FLUXO = "fatias_sem_segmentacao"
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dryad", default=DIR_DRYAD, help="pasta `recognition` do dataset (padrão: a de preparar_dataset_dryad.py)")
+    ap.add_argument("--modelo-digito", default=MODELO_DIGITO, help="classificador .tflite a avaliar (padrão: o versionado)")
+    ap.add_argument("--rotulo", default="", help="sufixo do nome do conjunto (ex.: fase_a), para comparar variantes sem apagar a linha oficial")
     a = ap.parse_args()
+    conjunto = CONJUNTO + (f"_{a.rotulo}" if a.rotulo else "")
     if not os.path.isdir(a.dryad):
         sys.exit(f"pasta do Dryad não encontrada: {a.dryad}\nBaixe com: python scripts/download_datasets.py --listar")
 
-    leitor = LeitorB()
+    leitor = LeitorB(modelo_digito=a.modelo_digito)
     por_imagem, descartadas = [], 0
     for subpasta, prefixo, n in CONJUNTOS_TESTE:
         base = os.path.join(a.dryad, subpasta)
@@ -69,16 +73,16 @@ def main():
 
     exatas = sum(l["exato"] for l in por_imagem)
     dig_ok, dig_tot = sum(l["digitos_certos"] for l in por_imagem), sum(l["n_digitos"] for l in por_imagem)
-    resumo = [{"conjunto": CONJUNTO, "origem": "publico", "fluxo": FLUXO, "n_imagens": len(por_imagem),
+    resumo = [{"conjunto": conjunto, "origem": "publico", "fluxo": FLUXO, "n_imagens": len(por_imagem),
                "leituras_exatas": exatas, "taxa_leitura_exata": round(exatas / len(por_imagem), 4),
                "digitos_certos": dig_ok, "digitos_total": dig_tot, "acuracia_digito": round(dig_ok / dig_tot, 4),
                "cer": round(sum(l["erros_edicao"] for l in por_imagem) / dig_tot, 4),
                "n_com_caixa_real": 0, "dice_mascara": "", "iou_mascara": "", "iou_caixa": "", "sem_caixa_prevista": "",
-               "modelo_segmentacao": _hash_arquivo(MODELO_SEGMENTACAO), "modelo_digito": _hash_arquivo(MODELO_DIGITO),
+               "modelo_segmentacao": _hash_arquivo(MODELO_SEGMENTACAO), "modelo_digito": _hash_arquivo(a.modelo_digito),
                "data": datetime.date.today().isoformat()}]
-    gravar(por_imagem, resumo, CONJUNTO)
+    gravar(por_imagem, resumo, conjunto)
     r = resumo[0]
-    print(f"{CONJUNTO}: {len(por_imagem)} recortes ({descartadas} descartados), leitura exata {exatas} "
+    print(f"{conjunto}: {len(por_imagem)} recortes ({descartadas} descartados), leitura exata {exatas} "
           f"({100 * r['taxa_leitura_exata']:.1f} %), dígitos {100 * r['acuracia_digito']:.1f} %, CER {r['cer']:.4f}")
     print(f"gravado em {os.path.relpath(SAIDA_RESUMO, RAIZ)}")
 
