@@ -1,35 +1,41 @@
 """Reavalia o modelo ja treinado (modelo_digito.h5 / .tflite) e grava um
 relatorio verificavel (RESULTADOS.md + matriz de confusao) com os numeros
 reais medidos, em vez de deixar isso so no console do treino."""
+import argparse
 import os
 import json
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras import layers
+
+from divisao_por_foto import dividir_por_foto
 
 DIRETORIO_ATUAL = os.path.dirname(os.path.abspath(__file__))
+ap = argparse.ArgumentParser(description=__doc__)
+ap.add_argument("--saida", default=DIRETORIO_ATUAL, help="pasta com modelos/ e relatorios/ do treino")
+args = ap.parse_args()
+
 DIR_DIGITS = os.path.join(DIRETORIO_ATUAL, "dataset", "digits")
 DIR_DOMINIO = os.path.join(DIRETORIO_ATUAL, "dataset", "digits_domain")
-DIR_MODELOS = os.path.join(DIRETORIO_ATUAL, "modelos")
-DIR_RELATORIOS = os.path.join(DIRETORIO_ATUAL, "relatorios")
+DIR_MODELOS = os.path.join(args.saida, "modelos")
+DIR_RELATORIOS = os.path.join(args.saida, "relatorios")
 os.makedirs(DIR_RELATORIOS, exist_ok=True)
 IMG_SIZE = (28, 28)
 SEED = 42
 BATCH_SIZE = 128
 
-NORM = layers.Rescaling(1.0 / 255)
+print("-> Recarregando a mesma divisao por foto usada no treino (mesma seed)")
+classes, itens_treino, itens_val = dividir_por_foto(DIR_DIGITS, seed=SEED, fracao_val=0.15)
 
-print("-> Recarregando o mesmo split de validacao usado no treino (mesma seed)")
-# shuffle=True aqui e obrigatorio -- tem que bater com o shuffle usado na
-# chamada de "training" em treinar_classificador_digitos.py, senao os dois
-# cortes deixam de ser complementares (ver comentario la).
-ds_val_raw = tf.keras.utils.image_dataset_from_directory(
-    DIR_DIGITS, labels="inferred", label_mode="int", color_mode="grayscale",
-    image_size=IMG_SIZE, batch_size=BATCH_SIZE, validation_split=0.15, subset="validation",
-    seed=SEED, shuffle=True,
-)
-classes = ds_val_raw.class_names
-ds_val = ds_val_raw.map(lambda x, y: (NORM(x), y)).prefetch(tf.data.AUTOTUNE)
+
+def carregar(caminho, rotulo):
+    img = tf.io.decode_png(tf.io.read_file(caminho), channels=1)
+    img = tf.ensure_shape(tf.cast(img, tf.float32), (IMG_SIZE[0], IMG_SIZE[1], 1))
+    return img / 255.0, rotulo
+
+
+ds_val = (tf.data.Dataset.from_tensor_slices(
+    (tf.constant([c for c, _ in itens_val]), tf.constant([r for _, r in itens_val], dtype=tf.int32)))
+    .map(carregar).batch(BATCH_SIZE).prefetch(tf.data.AUTOTUNE))
 
 contagens_treino = {c: len(os.listdir(os.path.join(DIR_DIGITS, c))) for c in classes}
 
@@ -93,7 +99,7 @@ if tem_dominio:
         tabela = tf.constant(mapa, dtype=tf.int64)
         return x, tf.cast(tf.gather(tabela, y), tf.int32)
 
-    ds_dominio = ds_dominio_raw.map(remapear).map(lambda x, y: (NORM(x), y))
+    ds_dominio = ds_dominio_raw.map(remapear).map(lambda x, y: (x / 255.0, y))
     acertos_d, totais_d = 0, 0
     for xb, yb in ds_dominio:
         for img, rot in zip(xb.numpy(), yb.numpy()):
@@ -159,6 +165,20 @@ linhas_classe = "\n".join(
     f"| {c} | {contagens_treino[c]} | {acuracia_por_classe[c]:.2%} |" for c in classes
 )
 
+# Teste independente: pastas `test` do Dryad (fora do treino), medido por ocr/avaliar_teste_publico.py
+linhas_teste = []
+caminho_teste = os.path.join(DIRETORIO_ATUAL, "..", "medicoes", "ocr_teste.csv")
+if os.path.exists(caminho_teste):
+    import csv
+    with open(caminho_teste, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r["conjunto"].startswith("dryad_teste"):
+                variante = "Fase A + B (versionado)" if r["conjunto"] == "dryad_teste" else "só Fase A (sem fine-tuning)"
+                linhas_teste.append(
+                    f"| {variante} | {r['n_imagens']} | {r['leituras_exatas']} ({100 * float(r['taxa_leitura_exata']):.1f} %) "
+                    f"| {100 * float(r['acuracia_digito']):.1f} % | {r['cer']} |")
+tabela_teste = "\n".join(linhas_teste) if linhas_teste else "| (rode `python ../ocr/avaliar_teste_publico.py`) | | | | |"
+
 md = f"""# Resultados do classificador de dígitos
 
 Gerado automaticamente por `gerar_relatorio_resultados.py`, reavaliando os arquivos
@@ -170,14 +190,27 @@ nada, só mede. Para reproduzir do zero, rode `treinar_classificador_digitos.py`
 
 | Métrica | Valor |
 |---|---|
-| Acurácia — modelo float (`modelo_digito.h5`) | **{acc_f:.2%}** |
-| Acurácia — modelo INT8 (`modelo_digito.tflite`), validação | **{acc_int8_val:.2%}** ({acertos_val}/{totais_val}) |
-| Acurácia — modelo INT8, fotos reais da ESP32CAM (domínio) | **{f"{acc_int8_dominio:.2%} ({total_dominio} amostras)" if acc_int8_dominio is not None else "N/A"}** |
+| Acurácia — modelo float (`modelo_digito.h5`), validação por foto | **{acc_f:.2%}** |
+| Acurácia — modelo INT8 (`modelo_digito.tflite`), validação por foto | **{acc_int8_val:.2%}** ({acertos_val}/{totais_val}) |
+| Acurácia — modelo INT8, 24 recortes de fotos da ESP32CAM (domínio) | **{f"{acc_int8_dominio:.2%} ({total_dominio} amostras)" if acc_int8_dominio is not None else "N/A"}** — esses recortes entram no fine-tuning, então **não medem generalização** |
 | Parâmetros do modelo | {modelo_float.count_params():,} |
 | Tamanho `modelo_digito.tflite` | {tam_tflite_kb:.1f} KB |
 | Tamanho `modelo_esp32.tflite` (segmentação, referência) | {tam_seg_kb:.1f} KB |
 | Total de imagens em `dataset/digits/` | {sum(contagens_treino.values()):,} |
-| Tamanho da fatia de validação | {totais_val:,} |
+| Recortes na validação (divisão por foto, 15 % das fotos) | {totais_val:,} |
+
+## Teste independente (pastas `test` do Dryad, fora do treino)
+
+Cada imagem 200×60 é cortada em N fatias iguais (como no firmware) e cada fatia vai ao classificador INT8.
+Gerado por [`../ocr/avaliar_teste_publico.py`](../ocr/avaliar_teste_publico.py); as linhas ficam em
+[`../medicoes/ocr_teste.csv`](../medicoes/ocr_teste.csv).
+
+| Modelo | Imagens | Leitura exata | Dígitos certos | CER |
+|---|---|---|---|---|
+{tabela_teste}
+
+Para comparação: o classificador **antigo**, treinado com essas mesmas pastas `test` dentro do treino, tirava
+**95,6 %** de leituras exatas e 98,6 % dos dígitos nelas (número contaminado, mantido só para mostrar o tamanho do vazamento).
 
 ## Acurácia por classe (INT8, validação)
 

@@ -1,0 +1,15 @@
+{
+  "seed": 42,
+  "divisao": "por foto (15 % das fotos para validacao)",
+  "recortes_treino": 41660,
+  "recortes_validacao": 7378,
+  "fase_a_epocas": 37,
+  "fase_a_val_accuracy_float": 0.9465,
+  "fase_b_executada": true,
+  "fase_b_val_accuracy_float": 0.9546,
+  "int8_val_accuracy": 0.9538,
+  "int8_dominio_accuracy_ja_visto": 1.0,
+  "tflite_kb": 81.5,
+  "parametros": 72442,
+  "duracao_s": 504
+}

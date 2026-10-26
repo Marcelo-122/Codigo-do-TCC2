@@ -35,7 +35,7 @@ Gerado por `testar_imagens_novas.py`, reaproveitando `modelo_digito.tflite` já 
 | Métrica | Valor |
 |---|---|
 | Fotos com leitura 100% correta | 4/6 (67%) |
-| Dígitos individuais corretos | 30/32 (94%) |
+| Dígitos individuais corretos | 29/32 (91%) |
 
 ## Resultado por imagem
 
@@ -43,9 +43,9 @@ Gerado por `testar_imagens_novas.py`, reaproveitando `modelo_digito.tflite` já 
 |---|---|---|---|---|---|---|
 | 20220515025423_T1iyhTBjCi1RCvBVdK-000-00282.1296.jpg | referencia_limpa | 00282 | 00282 | ✅ | 5/5 | [ver](dataset/teste_imagens_novas/ref_00282_predicao.png) |
 | 20221126_01576.jpg | referencia_limpa | 00399 | 00399 | ✅ | 5/5 | [ver](dataset/teste_imagens_novas/ref_00399_predicao.png) |
-| 20221221_01143.jpg | referencia_limpa | 027535 | 027532 | ❌ | 5/6 | [ver](dataset/teste_imagens_novas/ref_027535_predicao.png) |
-| 20221221_01471.jpg | referencia_limpa | 021235 | 021234 | ❌ | 5/6 | [ver](dataset/teste_imagens_novas/ref_021235_predicao.png) |
-| imagem_capturada_144.jpg | esp32cam_real | 01613 | 01613 | ✅ | 5/5 | [ver](dataset/teste_imagens_novas/esp32_144_predicao.png) |
+| 20221221_01143.jpg | referencia_limpa | 027535 | 027535 | ✅ | 6/6 | [ver](dataset/teste_imagens_novas/ref_027535_predicao.png) |
+| 20221221_01471.jpg | referencia_limpa | 021235 | 021200 | ❌ | 4/6 | [ver](dataset/teste_imagens_novas/ref_021235_predicao.png) |
+| imagem_capturada_144.jpg | esp32cam_real | 01613 | 00613 | ❌ | 4/5 | [ver](dataset/teste_imagens_novas/esp32_144_predicao.png) |
 | imagem_capturada_145.jpg | esp32cam_real | 01613 | 01613 | ✅ | 5/5 | [ver](dataset/teste_imagens_novas/esp32_145_predicao.png) |
 
 ## Metodologia e limitações
