@@ -4,12 +4,13 @@
 // pela Serial linhas "t_us,shunt_mV,bus_V" (CSV). Quem processa e
 // medicoes/corrente.py.
 //
-// Roda numa SEGUNDA placa (um ESP32 qualquer, p.ex. DevKit), nunca na ESP32-CAM
-// que esta sendo medida. Biblioteca: "Adafruit INA219" (Library Manager).
+// Roda numa SEGUNDA placa, nunca na ESP32-CAM que esta sendo medida. Usado com um
+// Arduino Uno; tambem compila para ESP32. Biblioteca: "Adafruit INA219" (Library Manager).
 //
 // Ligacao (ver medicoes/medir_corrente.md):
-//   INA219 VCC -> 3V3 do logger     INA219 GND -> GND do logger (e do no)
-//   INA219 SDA -> GPIO21            INA219 SCL -> GPIO22   (padrao do Wire no ESP32)
+//   Uno:   INA219 VCC -> 5V    GND -> GND (e do no)    SDA -> A4    SCL -> A5
+//   ESP32: INA219 VCC -> 3V3   GND -> GND (e do no)    SDA -> SDA_PIN    SCL -> SCL_PIN
+//          (ESP32-S3: GPIO8/GPIO9, padrao do Wire. ESP32 classico: troque para 21/22.)
 //   Fonte + -> Vin+   |   Vin- -> alimentacao do no   |   Fonte - -> GND do no
 //
 // A corrente NAO sai do registrador de corrente: sai da tensao do shunt
@@ -20,17 +21,31 @@
 #include <Adafruit_INA219.h>
 
 // Periodo entre amostras. Uma conversao do INA219 (12 bits, sem media) leva ~0,53 ms
-// por canal; 2 ms evita ler a mesma conversao duas vezes. 500 amostras/s cobrem
-// os ~136 ms de cada pacote LoRa. Em Arduino Uno (115200 baud) use PERIODO_US = 10000.
+// por canal; 2 ms evita ler a mesma conversao duas vezes. 500 amostras/s (ESP32, 921600
+// baud) cobrem os ~136 ms de cada pacote LoRa. No Arduino Uno (115200 baud) o periodo e de
+// 10 ms (100 amostras/s); pinos, baud e periodo sao escolhidos abaixo pela placa. Capture
+// com "corrente.py capturar <porta> <csv> --baud 115200".
+#if defined(ARDUINO_ARCH_ESP32)
 const uint32_t PERIODO_US = 2000;
-const uint32_t BAUD = 921600;  // Uno: 115200
+const uint32_t BAUD = 921600;
+const int SDA_PIN = 8;         // ESP32-S3; ESP32 classico: 21
+const int SCL_PIN = 9;         // ESP32-S3; ESP32 classico: 22
+#else
+// Arduino Uno: SDA = A4, SCL = A5 (pinos fixos do Wire)
+const uint32_t PERIODO_US = 10000;
+const uint32_t BAUD = 115200;
+#endif
 
 Adafruit_INA219 ina;
 uint32_t proximo = 0;
 
 void setup() {
   Serial.begin(BAUD);
+#if defined(ARDUINO_ARCH_ESP32)
+  Wire.begin(SDA_PIN, SCL_PIN);
+#else
   Wire.begin();
+#endif
   Wire.setClock(400000);
   if (!ina.begin()) {
     Serial.println("# INA219 nao encontrado: confira SDA/SCL/VCC/GND");

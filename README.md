@@ -158,7 +158,7 @@ flowchart TB
     subgraph ENLACE ["2. Enlace LoRaWAN"]
         direction LR
         RD["Radioenge RD49C<br/>AU915, DR6 = SF8<br/>BW 500 kHz, 915,9 MHz"] -- "LoRaWAN<br/>(uplink, ABP)" --> RX["Heltec/TTGO LoRa32<br/>(receptor)"]
-        RX -- "USB-serial<br/>HEX:frame|RSSI:n" --> PC["PC: reconstrutor.py<br/>descriptografa (AES-128 CTR)<br/>e remonta o JPEG"]
+        RX -- "USB-serial<br/>HEX:frame|RSSI:n" --> PC["PC: reconstrutor.py<br/>descriptografa (AES-128 CTR),<br/>remonta o JPEG (FPort 1)<br/>ou lê a leitura (FPort 2)"]
     end
 
     OCR -. "imagem JPEG (ou leitura)<br/>em chunks de 175 bytes" .-> ENLACE
@@ -167,7 +167,10 @@ flowchart TB
 Os dois estágios de OCR já foram **testados juntos em uma ESP32-CAM real**
 (ver [`test_images/`](test_images/debug_ocr_esp32cam/README.md)). O enlace LoRaWAN foi validado
 separadamente transmitindo a imagem em chunks (ver [`Rede/`](#1-rede-lorawan-rede)). A integração
-final (OCR no dispositivo → só a leitura trafega por LoRaWAN) é um dos próximos passos.
+final (OCR no dispositivo → só a leitura trafega por LoRaWAN) tem firmware,
+[`Rede/transmissor_ocr_esp32cam/`](Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino), e
+leitura no PC (FPort 2, `medicoes/transmissao_ocr.csv`), mas **ainda não foi compilado com a toolchain do
+ESP32 nem testado em placa**; a parte do PC foi testada só com frames sintéticos.
 
 ---
 
@@ -176,20 +179,21 @@ final (OCR no dispositivo → só a leitura trafega por LoRaWAN) é um dos próx
 ```
 Codigo-do-TCC2/
 ├── Rede/                          Firmwares do enlace LoRaWAN (Arduino IDE)
-│   ├── transmissor_esp32cam/      Transmissor único: câmera (CAPTURE), reenvio (RESEND), envio vindo do PC (SEND), teste de enlace (SENDALL) e modo autônomo com deep sleep (AUTO/STOP/SLEEP, ainda não testado em placa)
+│   ├── transmissor_esp32cam/      Transmissor do fluxo de IMAGEM (FPort 1): câmera (CAPTURE), reenvio (RESEND), envio vindo do PC (SEND), teste de enlace (SENDALL) e modo autônomo com deep sleep (AUTO/STOP/SLEEP; testado em placa em um teste curto de 3 ciclos, medição completa pendente). No modo autônomo desliga a câmera após a captura (alteração ainda não testada em placa)
+│   ├── transmissor_ocr_esp32cam/  Transmissor do fluxo de OCR NA BORDA (FPort 2): captura, lê os dígitos na ESP32-CAM (segmentação + classificador, TFLite Micro) e envia só a leitura (9 bytes) em um uplink; mesmo deep sleep e mesma linha [CICLO_FIM]. Contém cópias de `modelo.h`/`modelo_digito.h`. Ainda não compilado com a toolchain do ESP32 nem testado em placa
 │   ├── receptor_lora32/           Firmware do receptor (Heltec/TTGO LoRa32)
 │   └── requirements.txt           Igual ao requirements.txt da raiz
 ├── legado/                        Fora do fluxo atual (ver legado/README.md): protótipo serial → ChirpStack e os pipelines de OCR arquivados (`ocr_cloud/` = C, `TreinoEModelosOCRNaBorda/` = A)
 ├── dados/teste/                   Conjunto de teste de hidrômetro FÍSICO (≥ 30 fotos, ainda a coletar) + validador (ver dados/teste/README.md)
 ├── ocr/                           Lado da nuvem (modelos de B no servidor), avaliação borda × nuvem e conjunto de teste comum (ver ocr/README.md)
 │   └── colab_poc/                 Teste de viabilidade de OCR genérico em imagem 160×120 (Tesseract/EasyOCR no Colab; não será usado no trabalho)
-├── enlace.py                      PC: parâmetros do enlace (bloco, cabeçalho) e parser LoRaWAN compartilhados
-├── registro.py                    PC: registro das medições (logs completos + medicoes/transmissao.csv); usado pelos dois scripts abaixo
-├── reconstrutor.py                PC: lê a serial do receptor, descriptografa, remonta o JPEG e registra PDR, tempo de rádio e latência (`--tx` controla o nó)
+├── enlace.py                      PC: parâmetros do enlace (bloco, cabeçalho), parser LoRaWAN e parser da leitura OCR (FPort 2) compartilhados
+├── registro.py                    PC: registro das medições (logs completos + medicoes/transmissao.csv e medicoes/transmissao_ocr.csv); usado pelos dois scripts abaixo
+├── reconstrutor.py                PC: lê a serial do receptor, descriptografa, remonta o JPEG (FPort 1) ou lê a leitura OCR (FPort 2) e registra PDR, tempo de rádio e latência (`--tx` controla o nó; `--fluxo ocr` manda `LER` no lugar de `CAPTURE`)
 ├── decode_lorawan.py              PC: decodifica/descriptografa uplinks e mostra quais chunks faltam
 ├── orchestrator.py                PC: envia a imagem em chunks (SEND:), confere o recebimento, reenvia o que faltou e registra a medição
 ├── analise_tempo_no_ar.py         PC: calcula pacotes, tempo no ar e tempo total de envio (`--verificar` confere a fórmula)
-├── medicoes/                      Medições em hardware: `transmissao.csv` + `logs/` + `imagens/` do enlace (ver medicoes/medir_transmissao.md) e as de OCR/energia
+├── medicoes/                      Medições em hardware: `transmissao.csv` (fluxo de imagem), `transmissao_ocr.csv` (fluxo OCR) + `logs/` + `imagens/` do enlace (ver medicoes/medir_transmissao.md) e as de OCR/energia/latência
 ├── config.py, .env.example        Leitura do .env e modelo das variáveis (chaves, rede, portas)
 ├── requirements.txt               Dependências dos scripts da raiz (pyserial, pycryptodome)
 ├── scripts/download_datasets.py   Baixa os datasets públicos (eles não ficam no Git)
@@ -201,12 +205,15 @@ Codigo-do-TCC2/
 └── README.md
 ```
 
-> **Atenção ao enlace:** o transmissor é um sketch único,
-> [`Rede/transmissor_esp32cam/`](Rede/transmissor_esp32cam/transmissor_esp32cam.ino), que usa o
-> cabeçalho binário de 6 bytes (id da leitura + índice base 0 + total). Os scripts do PC (`reconstrutor.py`,
-> `decode_lorawan.py`, `orchestrator.py`) usam o mesmo formato e o mesmo tamanho de bloco,
-> definidos em [`enlace.py`](enlace.py). Se mudar o `CHUNK_DATA_SIZE` do firmware, mude também o de
-> `enlace.py`.
+> **Atenção ao enlace:** há dois transmissores, um por fluxo, e eles falam em portas LoRaWAN diferentes.
+> O de imagem, [`Rede/transmissor_esp32cam/`](Rede/transmissor_esp32cam/transmissor_esp32cam.ino) (FPort 1),
+> usa o cabeçalho binário de 6 bytes (id da leitura + índice base 0 + total). O de OCR,
+> [`Rede/transmissor_ocr_esp32cam/`](Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino) (FPort 2),
+> manda um payload de `3 + N` bytes (id, flags e os N dígitos em ASCII; ver [Fluxo OCR](#fluxo-ocr-na-borda-fport-2)).
+> Os scripts do PC (`reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py`) usam os mesmos formatos e o mesmo
+> tamanho de bloco, definidos em [`enlace.py`](enlace.py). Se mudar o `CHUNK_DATA_SIZE` do firmware de imagem,
+> mude também o de `enlace.py`; se mudar o payload da FPort 2, mude `parse_leitura` e `montar_payload_leitura`.
+> O `decode_lorawan.py` e o `orchestrator.py` ainda tratam só o fluxo de imagem.
 
 > Cada pasta de OCR tem uma abordagem própria (ver tabela abaixo). Elas **não dependem umas das
 > outras** — cada uma tem seu próprio dataset, `requirements.txt` e scripts. A escolhida para o trabalho é a
@@ -279,7 +286,7 @@ python scripts/download_datasets.py             # baixa os do Kaggle
 
 | Peça | Função |
 |---|---|
-| **ESP32-CAM (AI-Thinker)** | Captura a imagem (QQVGA 160×120 em escala de cinza, convertida para JPEG qualidade 90) e, na versão de debug, roda o OCR |
+| **ESP32-CAM (AI-Thinker)** | Captura a imagem (QQVGA 160×120 em escala de cinza, convertida para JPEG qualidade 90) e, no `debug_ocr_esp32cam` e no `transmissor_ocr_esp32cam`, roda o OCR |
 | **Radioenge RD49C** | Módulo LoRaWAN (comandos `AT+...`), ligado à ESP32-CAM por UART (RX = GPIO 15, TX = GPIO 14) |
 | **Heltec / TTGO LoRa32 V2** | Receptor LoRa: SS = 18, RST = 14, DIO0 = 26; imprime os frames recebidos na serial |
 | **PC** | Roda `reconstrutor.py` (remonta a imagem e registra as medições) e treina os modelos |
@@ -295,11 +302,12 @@ Todos os componentes (Radioenge, transmissor, receptor, scripts do PC) usam este
 | **Máscara de canais** | `AT+CHMASK=0000:0000:0000:0000:0001:0000` | Manual, seção 5.2.15 |
 | **Datarate** | **DR6 = SF8 / BW 500 kHz**, `AT+DR=6` com `AT+ADR=0` (o `AT+DR` só vale com o ADR desligado) | Manual, Tabelas 7 e 5.2.2; `receptor_lora32.ino` |
 | **Camada física** | Código 4/5, preâmbulo de 8 símbolos, CRC ligado, cabeçalho explícito, sync word `0x34` | Padrão LoRaWAN; `receptor_lora32.ino` |
-| **Ativação / porta** | ABP, FPort 1 (`AT+SENDB=01:<hex>`) | `transmissor_esp32cam.ino` |
+| **Ativação / porta** | ABP. FPort 1 para os chunks de imagem (`AT+SENDB=01:<hex>`) e **FPort 2** para a leitura do OCR (`AT+SENDB=02:<hex>`) | `transmissor_esp32cam.ino`, `transmissor_ocr_esp32cam.ino`; `FPORT` e `FPORT_LEITURA` em `enlace.py` |
 | **Potência** | Máx. +20 dBm (100 mW), fixa no módulo (não há comando `AT` para mudar) | Manual, especificações |
 | **Payload máximo (DR6)** | 222 B | Manual, Tabela 8 |
 | **Bloco de imagem por pacote** | **175 B** de dados + 6 B de cabeçalho = **181 B** de payload (41 B de folga) | `CHUNK_DATA_SIZE` no `.ino` e em `enlace.py` |
 | **Cabeçalho do chunk** | `uint16` id da leitura (sorteado a cada `CAPTURE`) + `uint16` índice (base 0) + `uint16` total, big-endian | `enlace.py` |
+| **Payload da leitura OCR (FPort 2)** | `uint16` id da leitura + `uint8` flags (bit 7 = caixa achada, bits 0–6 = nº de dígitos N) + N dígitos em ASCII (`0`–`9`, `?` = fatia não classificada, `-` = sem caixa). Com N = 6: **9 B** de payload, um uplink por leitura | `parse_leitura` / `montar_payload_leitura` em `enlace.py`; `enviarLeitura` no `.ino` |
 | **Intervalo entre pacotes** | 7 s | `SEND_INTERVAL_MS` no `.ino`; `orchestrator.py` |
 | **Captura** | QQVGA 160×120, escala de cinza, convertida em JPEG qualidade 90 (`fmt2jpg`, escala 1–100) | `JPEG_QUALITY` no `.ino` |
 | **Tamanho do JPEG** | Medido: 2.460 a 4.209 B (média 3.640 B, 4 capturas). **Referência de projeto: 4.300 B** | `analise_tempo_no_ar.py` |
@@ -349,12 +357,34 @@ salto de frequência e o limite de ocupação por canal do item 10.2. A largura 
    cada execução deixa logs completos em `medicoes/logs/<execução>/`. Veja
    [`medicoes/medir_transmissao.md`](medicoes/medir_transmissao.md).
 
+### Fluxo OCR na borda (FPort 2)
+
+No fluxo de OCR na borda o dispositivo lê o medidor e só a **leitura** trafega, em um único uplink:
+
+1. A ESP32-CAM (firmware em [`Rede/transmissor_ocr_esp32cam/`](Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino))
+   captura o quadro 160×120, copia-o, **desliga a câmera**, roda a segmentação e o classificador de dígito
+   (os mesmos modelos do `debug_ocr_esp32cam`; a segmentação ainda roda a cada leitura, ~15,6 s) e monta o payload.
+2. O payload vai ao Radioenge com `AT+SENDB=02:<hex>` (**FPort 2**): `uint16` id + `uint8` flags + N dígitos em ASCII
+   (9 bytes com N = 6). Não há blocos nem JPEG: um uplink por leitura, e o ciclo ativo cai de ~140 s (18 chunks a 7 s)
+   para algo na ordem da inferência (~18 s), a confirmar na medição.
+3. O `reconstrutor.py` descriptografa como sempre e, ao ver FPort 2, decodifica a leitura com
+   `enlace.parse_leitura()`. Cada leitura vira uma linha em **`medicoes/transmissao_ocr.csv`**, separada do
+   `transmissao.csv` de imagem (as duas coexistem na mesma execução).
+4. O PDR do enlace sai das lacunas de FCnt (cada ciclo é um uplink); a latência só existe com o nó ligado ao PC
+   (`--tx --fluxo ocr`, que manda `LER`) ou com o `latencia_ponta_a_ponta.py ... --fluxo ocr`.
+
+O transmissor de OCR repete o deep sleep e a linha `[CICLO_FIM]` do de imagem (com os tempos de cada etapa:
+`t_captura_ms`, `t_modelos_ms`, `t_seg_ms`, `t_digitos_ms`, `t_envio_ms`), para o consumo dos dois fluxos ser medido e
+comparado com os mesmos scripts. **Estado:** o firmware só passou por checagem de sintaxe com stubs, e o lado do PC foi
+testado com frames sintéticos; nada disso rodou com as placas.
+
 ### Firmwares (Arduino IDE)
 
 | Sketch | Placa | Observações |
 |---|---|---|
-| `Rede/transmissor_esp32cam/` | AI Thinker ESP32-CAM | **Transmissor único.** Comandos pela serial: `CAPTURE` (captura e envia), `RESEND:2,7,15` (reenvia chunks da última captura), `SEND:<id>:<índice>:<total>:<hex>` (dados vindos do PC, usado pelo `orchestrator.py`), `SENDALL:<n>` (teste de enlace sem câmera, payload fixo) ou `AT...` (repassado ao Radioenge). Retentativas quando o módulo está ocupado. Intervalo entre chunks: `SEND_INTERVAL_MS` (7000 ms). |
-| `Rede/receptor_lora32/` | TTGO/Heltec LoRa32 V2 | Biblioteca **LoRa** (Sandeep Mistry). Frequência fixa 915,9 MHz. |
+| `Rede/transmissor_esp32cam/` | AI Thinker ESP32-CAM | **Transmissor do fluxo de imagem (FPort 1).** Comandos pela serial: `CAPTURE` (captura e envia), `RESEND:2,7,15` (reenvia chunks da última captura), `SEND:<id>:<índice>:<total>:<hex>` (dados vindos do PC, usado pelo `orchestrator.py`), `SENDALL:<n>` (teste de enlace sem câmera, payload fixo), `AUTO[:<s>]`/`STOP`/`SLEEP:<s>` (modo autônomo com deep sleep) ou `AT...` (repassado ao Radioenge). Retentativas quando o módulo está ocupado. Intervalo entre chunks: `SEND_INTERVAL_MS` (7000 ms). |
+| `Rede/transmissor_ocr_esp32cam/` | AI Thinker ESP32-CAM, PSRAM habilitada | **Transmissor do fluxo de OCR na borda (FPort 2).** Comandos: `LER` (lê o medidor e envia a leitura), `AUTO[:<s>]`/`STOP`/`SLEEP:<s>` (mesmos do outro) e `AT...`. Precisa da biblioteca TensorFlow Lite Micro e dos modelos `modelo.h`/`modelo_digito.h`, que são **cópias** das de `test_images/debug_ocr_esp32cam/` (copie de novo se retreinar). Imprime `[ocr] leitura=...`, `[ocr] enviando leitura id N` e `[CICLO_FIM]`, que o PC lê. |
+| `Rede/receptor_lora32/` | TTGO/Heltec LoRa32 V2 | Biblioteca **LoRa** (Sandeep Mistry). Frequência fixa 915,9 MHz. Serve aos dois fluxos (repassa o frame, qualquer FPort). |
 
 ### Rodando o receptor no PC
 
@@ -379,6 +409,15 @@ feche o Monitor Serial e rode, por exemplo,
 Isso manda `CAPTURE` 30 vezes, lê o log do nó e do receptor com um único relógio e grava tudo em
 `medicoes/`. Definições das colunas, o que cada log guarda e limitações em
 [`medicoes/medir_transmissao.md`](medicoes/medir_transmissao.md).
+
+Com o nó rodando o `transmissor_ocr_esp32cam`, use `--fluxo ocr`: o PC manda `LER` no lugar de `CAPTURE` e
+espera o uplink da FPort 2 (timeout de resposta do nó de 90 s). O resultado vai para `medicoes/transmissao_ocr.csv`:
+
+```bash
+.venv\Scripts\python reconstrutor.py --tx --fluxo ocr --envios 30 --distancia 50
+```
+
+Sem `--tx`, o `reconstrutor.py` só escuta e aceita os dois fluxos (por exemplo, com o nó em `AUTO`).
 
 Para enviar uma imagem do PC pelo transmissor de teste (`Rede/transmissor_esp32cam/`), com o `.env`
 preenchido (`TX_SERIAL_PORT`, `RX_SERIAL_PORT`, chaves e `IMAGE_PATH`); também registra a medição:
@@ -627,8 +666,9 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
   entropia cruzada + Dice; a rede (11 KB, sem conexões de salto) tem capacidade limitada. Como a decisão é câmera fixa
   e ROI calibrada na instalação, melhorar o modelo de segmentação não é necessário para a leitura, e só valeria como
   extensão (arquitetura com *skip connections*, mais épocas).
-- **Integração final**: levar o OCR do firmware de debug para um firmware de produção e enviar apenas a
-  leitura (poucos bytes) pelo LoRaWAN, em vez da imagem inteira.
+- **Integração final**: o firmware existe (`Rede/transmissor_ocr_esp32cam/`: OCR do debug + envio da leitura na
+  FPort 2, ~9 bytes em vez da imagem inteira), mas **falta compilar com a toolchain do ESP32, testar em placa e medir**
+  consumo e latência (a segmentação a cada leitura ainda está lá; ver o item da ROI acima).
 - Perda de chunks no enlace: hoje o reenvio é manual (`RESEND`, com o `reconstrutor.py` aberto) ou pelo
   `orchestrator.py`; falta automatizar a captura com confirmação.
 - **Comparação borda × nuvem em hardware**: o conjunto comum (`ocr/teste_comum/`) só permite emulação. Para medir a

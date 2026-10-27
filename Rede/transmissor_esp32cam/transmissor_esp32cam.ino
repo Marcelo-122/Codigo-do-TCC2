@@ -93,10 +93,10 @@ const int JPEG_QUALITY = 90;
 // sleep sobe. O Radioenge continua alimentado (so o ESP32 dorme), entao a sessao
 // LoRaWAN e o contador de quadros ficam no modulo.
 #define FLASH_LED_GPIO GPIO_NUM_4
-#define AUTO_AO_LIGAR  0                      // 1 = modo autonomo ja no power-on
-const uint32_t INTERVALO_PADRAO_S = 600;      // dormida padrao do AUTO
+#define AUTO_AO_LIGAR  1                      // 1 = modo autonomo ja no power-on
+const uint32_t INTERVALO_PADRAO_S = 30;       // dormida padrao do AUTO
 const uint32_t INTERVALO_MIN_S    = 10;
-const unsigned long JANELA_STOP_MS = 1500;    // tempo acordado esperando STOP; ponha 0
+const unsigned long JANELA_STOP_MS = 0;       // tempo acordado esperando STOP; ponha 0
                                               // para medir o consumo de producao
 
 // RTC_DATA_ATTR sobrevive ao deep sleep (nao ao power-on reset).
@@ -395,6 +395,19 @@ void dormir(uint32_t segundos) {
 }
 
 // ----------------------------------------------------------------
+// Desliga a camera (driver + power-down do sensor) assim que o quadro virou JPEG em
+// imgBuf. No modo autonomo o envio dura ~140 s e a camera nao e mais usada nele; ligada,
+// ela somava ~80 mA durante todo o envio. Sem hold: dormir() segura o nivel do pino e o
+// setup() o libera antes do proximo esp_camera_init.
+void desligarCamera() {
+  esp_camera_deinit();
+  pinMode(PWDN_GPIO_NUM, OUTPUT);
+  digitalWrite(PWDN_GPIO_NUM, HIGH);  // PWDN ativo em nivel alto
+  camPronta = false;
+  Serial.println("[camera] desligada apos a captura");
+}
+
+// ----------------------------------------------------------------
 // Um ciclo do modo autonomo: captura, envia todos os chunks e dorme. Mesmo se a
 // camera ou o envio falharem, o no dorme (nao fica acordado gastando bateria).
 // Tempos em ms contados desde o despertar (millis() zera a cada boot); o boot da
@@ -411,6 +424,7 @@ void cicloAutonomo() {
     bool capturou = captureImage();
     t_captura = millis() - t0;
     if (capturou) {
+      desligarCamera();
       jpegBytes = imgSize;
       total = (imgSize + CHUNK_DATA_SIZE - 1) / CHUNK_DATA_SIZE;
       t0 = millis();

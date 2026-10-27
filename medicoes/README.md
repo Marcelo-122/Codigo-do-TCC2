@@ -11,6 +11,10 @@ e gravados por [`grab_image_debug.py`](../test_images/debug_ocr_esp32cam/grab_im
 | `debug_metricas.csv` | atual (segmentação + classificador de dígito) | 61 | tempos por etapa, heap, PSRAM, arena dos dois modelos, leitura |
 | `debug_metricas_v1_so_segmentacao.csv` | versão antiga, só segmentação | 28 | sem leitura nem `t_digitos_ms`; coluna `t_inferencia_ms` |
 | `debug_metricas_teste2_so_segmentacao.csv` | versão antiga, só segmentação | 17 | idem |
+| `transmissao.csv` | `Rede/transmissor_esp32cam` (fluxo de imagem) | — | uma linha por imagem: PDR, tempo de rádio, latência ([`medir_transmissao.md`](medir_transmissao.md)) |
+| `transmissao_ocr.csv` | `Rede/transmissor_ocr_esp32cam` (fluxo de OCR, FPort 2) | — | uma linha por leitura recebida: dígitos, FCnt, RSSI, tempo de rádio, latência ([`medir_transmissao.md`](medir_transmissao.md)) |
+
+Os dois últimos são gerados pelo `reconstrutor.py` e ainda não têm medições em placa.
 
 Todas as capturas são de 2026-09-27 (17:54 a 19:02). Os arquivos `v1`/`teste2` foram
 mantidos por serem medições reais, mas **não entram** na contagem do critério de pronto
@@ -62,5 +66,5 @@ mantidos por serem medições reais, mas **não entram** na contagem do critéri
 ## Ainda não medido
 
 - Corrente por estado (sleep, captura, inferência, transmissão) e mAh por leitura (procedimento e scripts prontos em [`medir_corrente.md`](medir_corrente.md), ainda sem medições).
-- Latência ponta a ponta (disparo no nó até o dado no servidor), nos dois fluxos: script pronto para o fluxo de imagem em [`medir_latencia.md`](medir_latencia.md), ainda sem medições; o fluxo de OCR na borda não tem firmware.
-- Deep sleep entre leituras: implementado em `Rede/transmissor_esp32cam` (comandos `AUTO`, `STOP`, `SLEEP`), **ainda não testado em placa** — roteiro em [`teste_deep_sleep.md`](teste_deep_sleep.md).
+- Latência ponta a ponta (disparo no nó até o dado no servidor), nos dois fluxos: script pronto para o fluxo de imagem e, com `--fluxo ocr`, para o de OCR em [`medir_latencia.md`](medir_latencia.md), ainda sem medições. O firmware do fluxo de OCR, [`Rede/transmissor_ocr_esp32cam`](../Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino), existe mas **não foi compilado com a toolchain do ESP32 nem testado em placa**; o lado do PC (FPort 2, `transmissao_ocr.csv`) foi testado só com frames sintéticos.
+- Deep sleep entre leituras: implementado em `Rede/transmissor_esp32cam` (comandos `AUTO`, `STOP`, `SLEEP`) e em `Rede/transmissor_ocr_esp32cam`. No de imagem, um **teste curto de 3 ciclos** (`AUTO:30`, 2026-10-27) confirmou `DEEPSLEEP_RESET`, o contador de ciclos na memória RTC e a corrente caindo de ~159 mA acordado para ~24 mA dormindo (INA219, 100 Hz); a medição completa (≥ 30 ciclos) segue pendente, e o de OCR não foi testado em placa — roteiro em [`teste_deep_sleep.md`](teste_deep_sleep.md).

@@ -19,9 +19,17 @@ para medicoes/imagens/. Chunks que não chegarem: mande RESEND:<índices> no tra
 (só no modo sem --tx) enquanto este script está rodando. O RESEND reenvia a MESMA foto; não
 use CAPTURE para completar, porque ele tira outra foto e abre outra leitura.
 
+Fluxo OCR na borda (Rede/transmissor_ocr_esp32cam): a leitura inteira vai em um único uplink na
+FPort 2, sem blocos nem JPEG. Qualquer modo recebe os dois fluxos: FPort 1 vira imagem
+(transmissao.csv), FPort 2 vira uma linha em medicoes/transmissao_ocr.csv. A opção --fluxo ocr só
+muda o que acontece com o nó ligado (--tx): o PC manda LER no lugar de CAPTURE e espera o uplink.
+Sem --tx, com o nó em AUTO, a latência fica vazia (não há disparo nem primeiro chunk como
+referência); o PDR do enlace vem da contagem de FCnt.
+
 Exemplos:
     python reconstrutor.py                                   # só escuta
     python reconstrutor.py --tx --envios 30 --distancia 50   # mede 30 envios a 50 m
+    python reconstrutor.py --tx --fluxo ocr --envios 30      # 30 leituras OCR (manda LER ao nó)
 
 Requisitos:  pip install pyserial pycryptodome   (portas e chaves no .env, veja .env.example)
 """
@@ -53,8 +61,12 @@ def _argumentos():
                    help="sem --tx: fecha a leitura sem frames novos por este tempo (padrão 300)")
     p.add_argument("--timeout-leitura-s", type=float, default=900.0,
                    help="com --tx: tempo máximo de uma leitura (padrão 900)")
-    p.add_argument("--timeout-foto-s", type=float, default=30.0,
-                   help="com --tx: tempo máximo para o nó responder ao CAPTURE (padrão 30)")
+    p.add_argument("--fluxo", choices=["imagem", "ocr"], default="imagem",
+                   help="com --tx: qual firmware está no nó. imagem manda CAPTURE; ocr manda LER "
+                        "(transmissor_ocr_esp32cam). Sem --tx os dois fluxos são aceitos")
+    p.add_argument("--timeout-foto-s", type=float, default=None,
+                   help="com --tx: tempo máximo para o nó responder ao disparo "
+                        "(padrão 30 no fluxo imagem, 90 no ocr: a inferência leva ~18 s)")
     p.add_argument("--sem-imagens", action="store_true", help="não grava as imagens em medicoes/imagens/")
     p.add_argument("--pasta-medicoes", default=str(registro.PASTA_MEDICOES), help=argparse.SUPPRESS)
     return p.parse_args()
@@ -73,18 +85,21 @@ def main():
         if args.distancia is None:
             print("[aviso] sem --distancia: a coluna distancia_m do CSV ficará vazia.")
     envios = args.envios if args.envios is not None else (1 if args.tx else 0)
+    timeout_foto_s = args.timeout_foto_s if args.timeout_foto_s is not None \
+        else (90.0 if args.fluxo == "ocr" else 30.0)
+    comando = b"LER\n" if args.fluxo == "ocr" else b"CAPTURE\n"
 
     ex = registro.Execucao(
         modo="tx_controlado" if args.tx else "so_receptor", rotulo=args.rotulo,
         distancia_m=args.distancia, pasta_medicoes=args.pasta_medicoes,
-        extras={"portas": portas, "envios_pedidos": envios or None,
+        extras={"portas": portas, "envios_pedidos": envios or None, "fluxo": args.fluxo,
                 "grace_s": args.grace_s if args.tx else 0.0,
                 "timeout_inatividade_s": args.timeout_inatividade_s,
                 "timeout_leitura_s": args.timeout_leitura_s})
     sessao = registro.Sessao(
         ex, app_skey, dev_addr, grace_s=args.grace_s if args.tx else 0.0,
         timeout_inatividade_s=args.timeout_inatividade_s, timeout_leitura_s=args.timeout_leitura_s,
-        timeout_foto_s=args.timeout_foto_s, salvar_imagens=not args.sem_imagens)
+        timeout_foto_s=timeout_foto_s, salvar_imagens=not args.sem_imagens, fluxo=args.fluxo)
 
     seriais, leitores = {}, {}
 
@@ -146,8 +161,8 @@ def main():
                 print(f"\n=== Envio {i}/{envios} ===")
                 t0 = time.perf_counter()
                 sessao.disparar(t0)
-                seriais["tx"].write(b"CAPTURE\n")
-                ex.evento("capture_enviado", t0, n=i)
+                seriais["tx"].write(comando)
+                ex.evento("capture_enviado", t0, n=i, comando=comando.decode().strip())
                 while sessao.atual is not None:
                     passo()
                 if i < envios:
@@ -155,9 +170,10 @@ def main():
                     while time.perf_counter() < fim_pausa:
                         passo()             # ainda registra o que sobrar da leitura anterior
         else:
-            print(">>> Mande CAPTURE no transmissor agora (Ctrl+C encerra e mostra o resumo). <<<")
-            print("Se faltar algum chunk, mande RESEND:<índices base 0> SEM fechar este script.\n")
-            while not envios or len(sessao.resumos) < envios:
+            print(">>> Mande CAPTURE (imagem) ou LER (OCR) no transmissor, ou deixe o nó em AUTO "
+                  "(Ctrl+C encerra e mostra o resumo). <<<")
+            print("Se faltar algum chunk de imagem, mande RESEND:<índices base 0> SEM fechar este script.\n")
+            while not envios or sessao.n_leituras < envios:
                 passo()
     except KeyboardInterrupt:
         motivo_fim = "interrompido"
@@ -169,10 +185,18 @@ def main():
     finally:
         sessao.encerrar(motivo_fim, time.perf_counter())
         print()
-        for linha in registro.estatisticas(sessao.resumos):
-            print(linha)
-        print(f"\nLogs em {ex.pasta}\nCSV acumulado em {ex.arquivo_transmissao}")
-        ex.fechar(motivo_fim=motivo_fim, erro=erro, leituras=len(sessao.resumos))
+        if sessao.resumos or not sessao.resumos_ocr:
+            for linha in registro.estatisticas(sessao.resumos):
+                print(linha)
+        if sessao.resumos_ocr:
+            for linha in registro.estatisticas_ocr(sessao.resumos_ocr):
+                print(linha)
+        print(f"\nLogs em {ex.pasta}")
+        if sessao.resumos or not sessao.resumos_ocr:
+            print(f"CSV acumulado em {ex.arquivo_transmissao}")
+        if sessao.resumos_ocr:
+            print(f"CSV das leituras OCR em {ex.arquivo_ocr}")
+        ex.fechar(motivo_fim=motivo_fim, erro=erro, leituras=sessao.n_leituras)
         for s in seriais.values():
             try:
                 s.close()

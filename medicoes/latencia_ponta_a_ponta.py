@@ -23,10 +23,21 @@ Marcos medidos em cada leitura, em ms desde o disparo:
 Leituras que nao completam (chunks perdidos, sem RESEND) entram no CSV com completo=0
 e ficam fora das estatisticas de latencia.
 
+Fluxo OCR na borda (--fluxo ocr, firmware Rede/transmissor_ocr_esp32cam): a leitura inteira
+chega em UM uplink na FPort 2, entao nao ha chunks nem JPEG. No modo capture o PC manda LER
+(no lugar de CAPTURE); no modo auto o no esta em AUTO e o disparo e o mesmo ("[boot]
+causa=timer"). A leitura esta completa quando o uplink chega ao receptor:
+  t_ate_ocr_ms       linha "[ocr] leitura=..." do no (segmentacao + digitos concluidos)
+  t_ate_primeiro_chunk_ms = t_ate_ultimo_chunk_ms = chegada do uplink; t_envio_ms = 0
+  t_ate_disponivel_ms  uplink recebido e decodificado <- latencia ponta a ponta do fluxo OCR
+Colunas leitura e achou_caixa trazem o que chegou ao PC.
+
 Requisitos:  pip install pyserial pycryptodome   (config no .env, como os outros scripts)
 Uso:
   python latencia_ponta_a_ponta.py capture --n 30
   python latencia_ponta_a_ponta.py auto --n 30
+  python latencia_ponta_a_ponta.py capture --n 30 --fluxo ocr
+  python latencia_ponta_a_ponta.py auto --n 30 --fluxo ocr
 """
 import argparse
 import csv
@@ -48,9 +59,11 @@ CSV_PADRAO = os.path.join(AQUI, "latencia_ponta_a_ponta.csv")
 CAMPOS = ["recebido_em", "modo", "fluxo", "leitura_id", "completo", "chunks_total",
           "chunks_recebidos", "duplicados", "jpeg_bytes", "rssi_medio",
           "t_ate_foto_ms", "t_ate_primeiro_chunk_ms", "t_ate_ultimo_chunk_ms",
-          "t_envio_ms", "t_ate_disponivel_ms"]
+          "t_envio_ms", "t_ate_disponivel_ms", "t_ate_ocr_ms", "leitura", "achou_caixa"]
 
 RE_FOTO = re.compile(r"\[camera\] JPEG .*?: (\d+) bytes \(leitura id (\d+)\)")
+RE_OCR_LEITURA = re.compile(r"\[ocr\] leitura=(\S+) achou_caixa=(\d)")
+RE_OCR_ID = re.compile(r"\[ocr\] enviando leitura id (\d+)")
 GATILHOS_AUTO = ("[boot] causa=timer", "[auto] ligado")
 
 
@@ -79,7 +92,8 @@ class Medidor:
         if self.atual:
             self.fechar()
         self.atual = {"t0": t, "t_foto": None, "id": None, "total": None, "chunks": {},
-                      "t_primeiro": None, "t_ultimo": None, "dup": 0, "rssi": [], "jpeg": None}
+                      "t_primeiro": None, "t_ultimo": None, "dup": 0, "rssi": [], "jpeg": None,
+                      "t_ocr": None, "leitura": None, "achou": None}
 
     def fechar(self):
         """Encerra a leitura em andamento sem imagem completa (timeout ou novo disparo)."""
@@ -104,6 +118,9 @@ class Medidor:
             "t_envio_ms": (None if a["t_primeiro"] is None
                            else round((a["t_ultimo"] - a["t_primeiro"]) * 1000)),
             "t_ate_disponivel_ms": _ms(t_disp, t0),
+            "t_ate_ocr_ms": _ms(a["t_ocr"], t0),
+            "leitura": a["leitura"],
+            "achou_caixa": None if a["achou"] is None else int(a["achou"]),
         }
         self.linhas.append(linha)
         return linha
@@ -112,6 +129,14 @@ class Medidor:
     def linha_tx(self, texto, t):
         if self.modo == "auto" and any(g in texto for g in GATILHOS_AUTO):
             self.disparar(t)
+            return None
+        if self.fluxo == "ocr":
+            m = RE_OCR_ID.search(texto)
+            if m and self.atual and self.atual["id"] is None:
+                self.atual["id"] = int(m.group(1))
+            m = RE_OCR_LEITURA.search(texto)
+            if m and self.atual and self.atual["t_ocr"] is None:
+                self.atual["t_ocr"] = t
             return None
         m = RE_FOTO.search(texto)
         if m and self.atual and self.atual["id"] is None:
@@ -124,10 +149,16 @@ class Medidor:
         """Devolve a linha de CSV quando este chunk completa a imagem, senao None."""
         a = self.atual
         m = enlace.LINE_RE.search(texto)
-        if not m or not a or a["id"] is None:
-            return None  # sem leitura em andamento (ou ainda sem a linha da foto): ignora
+        if not m or not a:
+            return None  # sem leitura em andamento: ignora
+        if self.fluxo == "ocr":
+            return self._linha_rx_ocr(a, m, t)
+        if a["id"] is None:
+            return None  # ainda sem a linha da foto: ignora
         try:
             info = enlace.parse_uplink(bytes.fromhex(m.group(1)), self.app_skey, self.dev_addr)
+            if info["fport"] == enlace.FPORT_LEITURA:
+                return None  # uplink do fluxo OCR em uma medicao do fluxo de imagem
             id_rx, idx, total, dados = enlace.parse_chunk(info["payload"])
         except ValueError:
             return None
@@ -150,6 +181,26 @@ class Medidor:
             os.makedirs(self.pasta_imagens, exist_ok=True)
             with open(os.path.join(self.pasta_imagens, f"leitura_{a['id']}.jpg"), "wb") as f:
                 f.write(imagem)
+        t_disp = self.relogio()
+        self.atual = None
+        return self._registrar(a, completo=True, t_disp=t_disp)
+
+    def _linha_rx_ocr(self, a, m, t):
+        """Fluxo OCR: o uplink da leitura (FPort 2) completa a leitura de uma vez."""
+        try:
+            info = enlace.parse_uplink(bytes.fromhex(m.group(1)), self.app_skey, self.dev_addr)
+            if info["fport"] != enlace.FPORT_LEITURA:
+                return None  # chunk de imagem em uma medicao do fluxo OCR
+            id_rx, achou, digitos = enlace.parse_leitura(info["payload"])
+        except ValueError:
+            return None
+        if a["id"] is not None and id_rx != a["id"]:
+            return None  # uplink atrasado de outra leitura
+        a["id"], a["total"] = id_rx, 1
+        a["chunks"][0] = digitos.encode("ascii")
+        a["leitura"], a["achou"] = digitos, achou
+        a["rssi"].append(int(m.group(2)))
+        a["t_primeiro"] = a["t_ultimo"] = t
         t_disp = self.relogio()
         self.atual = None
         return self._registrar(a, completo=True, t_disp=t_disp)
@@ -208,7 +259,9 @@ def main():
     p.add_argument("--n", type=int, default=30, help="numero de leituras (padrao 30)")
     p.add_argument("--timeout-s", type=float, default=600, help="tempo maximo por leitura no modo capture")
     p.add_argument("--pausa-s", type=float, default=5, help="espera entre leituras no modo capture")
-    p.add_argument("--fluxo", default="imagem", help="rotulo do fluxo no CSV")
+    p.add_argument("--fluxo", choices=["imagem", "ocr"], default="imagem",
+                   help="firmware do no: imagem (CAPTURE, chunks na FPort 1) ou ocr (LER, "
+                        "leitura em um uplink na FPort 2); vai na coluna fluxo do CSV")
     p.add_argument("--csv", default=CSV_PADRAO)
     p.add_argument("--salvar-imagens", metavar="PASTA", help="salva cada imagem remontada (conta no tempo)")
     args = p.parse_args()
@@ -236,8 +289,9 @@ def main():
     def publicar(linha):
         escritor.writerow(linha)
         arquivo.flush()
+        extra = f" leitura {linha['leitura']}" if linha["leitura"] else ""
         print(f"[{len(med.linhas)}/{args.n}] id {linha['leitura_id']} completo={linha['completo']} "
-              f"chunks {linha['chunks_recebidos']}/{linha['chunks_total']} "
+              f"chunks {linha['chunks_recebidos']}/{linha['chunks_total']}{extra} "
               f"disponivel em {linha['t_ate_disponivel_ms']} ms")
 
     def consumir(timeout):
@@ -257,7 +311,7 @@ def main():
                     fila.get_nowait()  # descarta o que sobrou da leitura anterior
                 t0 = time.perf_counter()
                 med.disparar(t0)
-                tx.write(b"CAPTURE\n")
+                tx.write(b"LER\n" if args.fluxo == "ocr" else b"CAPTURE\n")
                 while med.atual and time.perf_counter() - t0 < args.timeout_s:
                     consumir(0.5)
                 if med.atual:  # estourou o tempo

@@ -5,6 +5,7 @@ Parâmetros e funções compartilhados pelos scripts do enlace LoRa
 
 Os valores abaixo precisam bater com o firmware:
   - Rede/transmissor_esp32cam/transmissor_esp32cam.ino  (CHUNK_DATA_SIZE, cabeçalho)
+  - Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino  (payload da FPort 2: a leitura)
   - Rede/receptor_lora32/receptor_lora32.ino            (formato "HEX:<bytes>|RSSI:<n>")
 Configuração de rádio: AU915, canal fixo 915,9 MHz, DR6 = SF8 / BW 500 kHz.
 
@@ -23,6 +24,13 @@ CHUNK_DATA_SIZE = 175            # bytes de imagem por chunk (= CHUNK_DATA_SIZE 
 HEADER_FMT = ">HHH"              # uint16 id da leitura + uint16 índice (base 0) + uint16 total, big-endian
 HEADER_SIZE = struct.calcsize(HEADER_FMT)   # 6 bytes
 FPORT = 1                        # AT+SENDB=01:...
+
+# Fluxo OCR na borda (Rede/transmissor_ocr_esp32cam): um uplink por leitura, na FPort 2.
+# Payload: [id hi][id lo][flags][dígitos em ASCII...]; flags = bit 7 (caixa achada) | nº de dígitos.
+FPORT_LEITURA = 2                # AT+SENDB=02:...
+LEITURA_HEADER_FMT = ">HB"       # uint16 id da leitura + uint8 flags
+LEITURA_HEADER_SIZE = struct.calcsize(LEITURA_HEADER_FMT)   # 3 bytes
+_DIGITOS_LEITURA = set(b"0123456789?-")   # '?' = fatia não classificada, '-' = sem caixa
 
 # Rádio (AU915, canal fixo, DR6). Só informativos para os scripts: quem fixa esses valores é
 # o firmware (AT+CHMASK / AT+DR no Radioenge, receptor_lora32.ino) e o texto da issue.
@@ -108,3 +116,26 @@ def parse_chunk(payload: bytes) -> tuple[int, int, int, bytes]:
     if len(dados) > CHUNK_DATA_SIZE:
         raise ValueError(f"chunk com {len(dados)} bytes de dados (máximo {CHUNK_DATA_SIZE})")
     return leitura_id, indice, total, dados
+
+
+def montar_payload_leitura(leitura_id: int, achou_caixa: bool, digitos: str) -> bytes:
+    """Monta o payload da FPort 2 (o mesmo que o transmissor_ocr_esp32cam envia)."""
+    flags = (0x80 if achou_caixa else 0x00) | len(digitos)
+    return struct.pack(LEITURA_HEADER_FMT, leitura_id, flags) + digitos.encode("ascii")
+
+
+def parse_leitura(payload: bytes) -> tuple[int, bool, str]:
+    """Lê o payload da FPort 2 e devolve (id da leitura, caixa achada, dígitos).
+
+    Levanta ValueError (mensagem começando com "leitura inválida") se o payload não bater
+    com o formato: tamanho = 3 + nº de dígitos e só '0'-'9', '?' e '-' nos dígitos."""
+    if len(payload) < LEITURA_HEADER_SIZE + 1:
+        raise ValueError(f"leitura inválida: payload curto ({payload.hex()})")
+    leitura_id, flags = struct.unpack(LEITURA_HEADER_FMT, payload[:LEITURA_HEADER_SIZE])
+    n = flags & 0x7F
+    dados = payload[LEITURA_HEADER_SIZE:]
+    if n == 0 or len(dados) != n:
+        raise ValueError(f"leitura inválida: {len(dados)} byte(s) de dígitos, o cabeçalho diz {n}")
+    if any(b not in _DIGITOS_LEITURA for b in dados):
+        raise ValueError("leitura inválida: caractere fora de 0-9, '?' e '-'")
+    return leitura_id, bool(flags & 0x80), dados.decode("ascii")

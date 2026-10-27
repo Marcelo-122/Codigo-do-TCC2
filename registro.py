@@ -20,6 +20,13 @@ O que é gravado, por execução, em medicoes/logs/<run_id>/:
 e, fora da pasta da execução:
   medicoes/transmissao.csv     uma linha por leitura, acumulada entre execuções
   medicoes/imagens/            a imagem de cada leitura (completa ou parcial)
+  medicoes/transmissao_ocr.csv uma linha por leitura do fluxo OCR na borda (FPort 2): os dígitos
+                               que chegaram, FCnt, tempo de rádio e, com o nó ligado, latência
+
+Fluxo OCR (Rede/transmissor_ocr_esp32cam): um único uplink na FPort 2 carrega a leitura inteira,
+então não há blocos nem JPEG. O receptor trata os dois fluxos juntos: FPort 1 vira imagem (como
+sempre), FPort 2 vira uma linha em transmissao_ocr.csv. `fluxo="ocr"` só muda o que o nó
+imprime/aceita com o nó ligado ao PC (LER no lugar de CAPTURE, linhas "[ocr] ...") e os timeouts.
 
 Definições (as colunas do CSV seguem estas):
   pdr_leitura   blocos únicos recebidos / total de blocos da imagem.
@@ -67,6 +74,15 @@ RE_OCUPADO = re.compile(r"\[aviso\] chunk (\d+) ocupado")
 RE_FALHOU = re.compile(r"\[ERRO\] chunk (\d+) falhou")
 RE_CONCLUIDO = re.compile(r"\[envio\] concluido: (\d+) ok, (\d+) falhas")
 
+# --- Linhas que o firmware do fluxo OCR imprime (Rede/transmissor_ocr_esp32cam) --------
+RE_OCR_LEITURA = re.compile(r"\[ocr\] leitura=(\S+) achou_caixa=(\d)")
+RE_OCR_ID = re.compile(r"\[ocr\] enviando leitura id (\d+)")
+RE_OCR_FALHA = re.compile(r"\[ocr\] (camera|modelos) indisponive|\[ciclo\] OCR nao rodou"
+                          r"|\[camera\] falha ao capturar|\[ERRO\] (quadro|sem memoria)")
+RE_UPLINK_TENT = re.compile(r"\[uplink tent (\d+)\] (\d+) bytes payload")
+RE_UPLINK_OCUPADO = re.compile(r"\[aviso\] modulo ocupado")
+RE_UPLINK_FALHOU = re.compile(r"\[ERRO\] uplink falhou")
+
 # DevAddr (bytes 1 a 4 do frame LoRaWAN) mascarado nos logs
 _RE_HEX_FRAME = re.compile(r"(HEX:[0-9A-Fa-f]{2})[0-9A-Fa-f]{8}")
 
@@ -87,6 +103,17 @@ CAMPOS_TRANSMISSAO = [
     "t_foto_s", "t_primeiro_chunk_s", "t_envio_s", "latencia_s", "latencia_base",
     "tx_tentativas", "tx_ocupado", "tx_falhas", "tx_ok_reportado",
     "imagem_arquivo", "imagem_sha256",
+]
+
+CAMPOS_OCR = [
+    "run_id", "leitura_id", "distancia_m", "rotulo", "modo", "status", "motivo_fim",
+    "inicio", "fim",
+    "sf", "bw_khz", "payload_bytes",
+    "leitura", "achou_caixa", "digitos_incertos", "leitura_no", "leitura_confere",
+    "duplicados", "rssi_dbm", "fcnt", "fcnt_perdidos_antes",
+    "tempo_radio_s", "tempo_radio_base",
+    "t_ocr_s", "latencia_s", "latencia_base",
+    "tx_tentativas", "tx_ocupado", "tx_falhas",
 ]
 
 CAMPOS_CHUNKS = [
@@ -121,6 +148,10 @@ def _categoria_erro(erro: ValueError) -> str:
         return "cabecalho_invalido"
     if msg.startswith("chunk com"):
         return "chunk_grande_demais"
+    if msg.startswith("leitura inválida"):
+        return "leitura_invalida"
+    if msg.startswith("fport de imagem"):
+        return "fport_imagem_em_fluxo_ocr"
     return "erro_parser"
 
 
@@ -200,6 +231,7 @@ class Execucao:
                 self.run_id = f"{base}_{sufixo}"
         self.pasta_imagens = self.pasta_medicoes / "imagens"
         self.arquivo_transmissao = self.pasta_medicoes / "transmissao.csv"
+        self.arquivo_ocr = self.pasta_medicoes / "transmissao_ocr.csv"
 
         self._chunks_csv = open(self.pasta / "chunks.csv", "w", newline="", encoding="utf-8")
         self._chunks_w = csv.DictWriter(self._chunks_csv, fieldnames=CAMPOS_CHUNKS)
@@ -216,7 +248,8 @@ class Execucao:
             "enlace": {
                 "sf": enlace.SF, "bw_khz": enlace.BW_KHZ, "freq_mhz": enlace.FREQ_MHZ,
                 "chunk_bytes": enlace.CHUNK_DATA_SIZE, "cabecalho_bytes": enlace.HEADER_SIZE,
-                "fport": enlace.FPORT, "intervalo_envio_s": enlace.INTERVALO_ENVIO_S,
+                "fport": enlace.FPORT, "fport_leitura": enlace.FPORT_LEITURA,
+                "intervalo_envio_s": enlace.INTERVALO_ENVIO_S,
             },
             "tempo_no_ar": "calculado (Semtech AN1200.13, analise_tempo_no_ar.py), nao medido",
             "privacidade": "DevAddr e chaves nao sao gravados; DevAddr mascarado em serial_rx.txt",
@@ -289,6 +322,9 @@ class Execucao:
     def registrar_envio(self, linha: dict) -> None:
         self._escrever(lambda: anexar_csv(self.arquivo_transmissao, CAMPOS_TRANSMISSAO, linha))
 
+    def registrar_leitura_ocr(self, linha: dict) -> None:
+        self._escrever(lambda: anexar_csv(self.arquivo_ocr, CAMPOS_OCR, linha))
+
     def fechar(self, **resumo) -> None:
         if self._chunks_csv.closed:
             return
@@ -355,6 +391,8 @@ class Leitura:
         self._ultima_tentativa_ms = 0.0
         self.tx_ok_reportado = None      # "[envio] concluido: N ok"
         self.t_envio_concluido = None
+        self.t_ocr = None                # fluxo OCR: linha "[ocr] leitura=..." do nó (OCR concluído)
+        self.leitura_tx = None           # fluxo OCR: a leitura que o nó diz ter feito
 
     @property
     def completa(self) -> bool:
@@ -445,6 +483,25 @@ class Leitura:
             self.tx_ok_reportado = int(m.group(1))
             self.t_envio_concluido = t
             return "concluido"
+        # Fluxo OCR: o uplink da leitura (mesma contabilidade, com as mensagens do outro firmware)
+        m = RE_UPLINK_TENT.search(texto)
+        if m:
+            self.tx_observado = True
+            self.tx_tentativas += 1
+            self._ultima_tentativa_ms = ar.tempo_no_ar_ms(
+                ar.OVERHEAD_LORAWAN + int(m.group(2)), enlace.SF, enlace.BW_KHZ * 1000)
+            self.tx_airtime_ms += self._ultima_tentativa_ms
+            return "tentativa"
+        if RE_UPLINK_OCUPADO.search(texto):
+            self.tx_observado = True
+            self.tx_ocupado += 1
+            self.tx_airtime_ms -= self._ultima_tentativa_ms
+            self._ultima_tentativa_ms = 0.0
+            return "ocupado"
+        if RE_UPLINK_FALHOU.search(texto):
+            self.tx_observado = True
+            self.tx_falhas += 1
+            return "falhou"
         return None
 
 
@@ -465,7 +522,8 @@ class Sessao:
     def __init__(self, execucao: Execucao, app_skey: bytes, dev_addr: bytes | None = None, *,
                  grace_s: float = 0.0, timeout_inatividade_s: float = 300.0,
                  timeout_leitura_s: float = 900.0, timeout_foto_s: float = 30.0,
-                 salvar_imagens: bool = True, imprimir=print):
+                 salvar_imagens: bool = True, imprimir=print, fluxo: str = "imagem"):
+        self.fluxo = fluxo                # "imagem" ou "ocr" (ver o docstring do módulo)
         self.ex = execucao
         self.app_skey = app_skey
         self.dev_addr = dev_addr
@@ -478,6 +536,14 @@ class Sessao:
         self.atual: Leitura | None = None
         self.historico: dict[int, Leitura] = {}
         self.resumos: list[dict] = []
+        self.resumos_ocr: list[dict] = []   # linhas de transmissao_ocr.csv desta execução
+        self._fcnt_ocr: int | None = None   # FCnt do último uplink de leitura (FPort 2)
+        self._ocr_vistos: set[tuple[int, int]] = set()   # (id, FCnt) já registrados
+
+    @property
+    def n_leituras(self) -> int:
+        """Leituras encerradas desta execução, de imagem e de OCR."""
+        return len(self.resumos) + len(self.resumos_ocr)
 
     # -- entrada ---------------------------------------------------------------------------
     def disparar(self, t: float, leitura_id: int | None = None) -> Leitura:
@@ -493,6 +559,9 @@ class Sessao:
     def linha_tx(self, texto: str, t: float) -> None:
         """Uma linha da serial do nó (ESP32-CAM)."""
         self.ex.serial("tx", texto, t)
+        if self.fluxo == "ocr":
+            self._linha_tx_ocr(texto, t)
+            return
         a = self.atual
         m = RE_FOTO.search(texto)
         if m:
@@ -516,6 +585,35 @@ class Sessao:
                 self.ex.evento(f"tx_{tipo}", t, leitura_id=a.id, linha=texto)
         self.verificar(t)
 
+    def _linha_tx_ocr(self, texto: str, t: float) -> None:
+        """Uma linha do nó no fluxo OCR (transmissor_ocr_esp32cam)."""
+        a = self.atual
+        m = RE_OCR_LEITURA.search(texto)
+        if m:
+            if a is not None and a.t_ocr is None:
+                a.t_ocr, a.leitura_tx = t, m.group(1)
+                self.ex.evento("ocr_concluido", t, leitura=m.group(1), achou_caixa=int(m.group(2)))
+            self.verificar(t)
+            return
+        m = RE_OCR_ID.search(texto)
+        if m:
+            if a is not None and a.id is None:
+                a.id = int(m.group(1))
+                self.ex.evento("ocr_id", t, leitura_id=a.id)
+            self.verificar(t)
+            return
+        if RE_OCR_FALHA.search(texto):
+            self.ex.contadores["falhas_ocr"] += 1
+            self.ex.evento("falha_ocr", t, linha=texto)
+            if a is not None and a.id is None and a.t_ocr is None:
+                self.encerrar("falha_ocr", t)
+            return
+        if a is not None:
+            tipo = a.registrar_linha_tx(texto, t)
+            if tipo in ("ocupado", "falhou"):
+                self.ex.evento(f"tx_{tipo}", t, leitura_id=a.id, linha=texto)
+        self.verificar(t)
+
     def linha_rx(self, texto: str, t: float) -> dict | None:
         """Uma linha da serial do receptor. Devolve o resultado se for um frame, senão None."""
         self.ex.serial("rx", texto, t)
@@ -527,6 +625,11 @@ class Sessao:
         try:
             raw = bytes.fromhex(hex_frame)
             info = enlace.parse_uplink(raw, self.app_skey, self.dev_addr)
+            if info["fport"] == enlace.FPORT_LEITURA:     # fluxo OCR: a leitura inteira em um frame
+                lid, achou, digitos = enlace.parse_leitura(info["payload"])
+                return self._frame_leitura(t, info, rssi, len(raw), lid, achou, digitos)
+            if self.fluxo == "ocr":
+                raise ValueError("fport de imagem em fluxo ocr")
             lid, idx, total, dados = enlace.parse_chunk(info["payload"])
         except ValueError as e:
             categoria = _categoria_erro(e)
@@ -583,6 +686,114 @@ class Sessao:
         return {"status": r["status"], "leitura_id": lid, "indice": idx, "total": total,
                 "rssi": rssi, "fcnt": fcnt}
 
+    # -- fluxo OCR: a leitura chega inteira em um frame (FPort 2) -------------------------
+    def _frame_leitura(self, t: float, info: dict, rssi: int, frame_bytes: int,
+                       lid: int, achou: bool, digitos: str) -> dict:
+        """Registra um uplink de leitura. Com o nó ligado ao PC (fluxo ocr), fecha a leitura em
+        andamento e mede a latência a partir do disparo; sem o nó, grava a linha direto."""
+        fcnt = info["fcnt"]
+        n_bytes = len(info["payload"])
+        a = self.atual if self.fluxo == "ocr" else None
+        base = {"leitura_id": lid, "indice": 0, "total": 1, "dados_bytes": n_bytes,
+                "rssi_dbm": rssi, "fcnt": fcnt, "fport": info["fport"], "frame_bytes": frame_bytes}
+        self.ex.contadores["frames_leitura"] += 1
+
+        if (lid, fcnt) in self._ocr_vistos:           # o mesmo uplink de novo
+            self.ex.contadores["frames_duplicado"] += 1
+            self.ex.chunk(t, "duplicado", **base)
+            return {"status": "duplicado", "leitura_id": lid}
+        if a is not None and a.id is not None and a.id != lid:   # atraso de outra leitura
+            self.ex.contadores["frames_outra_leitura"] += 1
+            self.ex.chunk(t, "outra_leitura", **base)
+            return {"status": "outra_leitura", "leitura_id": lid}
+        self._ocr_vistos.add((lid, fcnt))
+
+        # FCnt: cada uplink incrementa; a lacuna é o que o receptor não viu (não enxerga
+        # perdas antes do primeiro nem depois do último uplink recebido)
+        delta, perdidos = None, 0
+        if self._fcnt_ocr is not None:
+            delta = (fcnt - self._fcnt_ocr) & 0xFFFF
+            if 0 < delta <= _LIMITE_LACUNA_FCNT:
+                perdidos = delta - 1
+            elif delta > _LIMITE_LACUNA_FCNT:
+                self.ex.contadores["fcnt_reinicios_leitura"] += 1
+        self._fcnt_ocr = fcnt
+        self.ex.chunk(t, "novo", fcnt_delta="" if delta is None else delta,
+                      fcnt_perdidos_antes=perdidos, **base)
+
+        if a is not None:
+            if a.id is None:
+                a.id = lid
+            a.t_primeiro = a.t_completa = t
+        linha = self._linha_ocr(a, lid, t, achou=achou, digitos=digitos, rssi=rssi, fcnt=fcnt,
+                                perdidos=perdidos, payload_bytes=n_bytes)
+        if a is not None:
+            self.atual = None
+        self._registrar_ocr(linha, t)
+        return {"status": "novo", "leitura_id": lid, "leitura": digitos, "rssi": rssi, "fcnt": fcnt}
+
+    def _linha_ocr(self, a: "Leitura | None", lid, t: float, *, achou=None, digitos="", rssi=None,
+                   fcnt=None, perdidos="", payload_bytes="", status=None, motivo="recebida") -> dict:
+        """Uma linha de transmissao_ocr.csv (uso interno). `a` é a leitura disparada pelo PC, se houver."""
+        disparo = a.t_disparo if a is not None else None
+        if status is None:
+            if "?" in digitos:
+                status = "recebida_digito_incerto"
+            elif not achou:
+                status = "recebida_sem_caixa"
+            else:
+                status = "recebida"
+        linha = {c: "" for c in CAMPOS_OCR}
+        linha.update({
+            "run_id": self.ex.run_id, "leitura_id": "" if lid is None else lid,
+            "distancia_m": "" if self.ex.distancia_m is None else self.ex.distancia_m,
+            "rotulo": self.ex.rotulo, "modo": self.ex.modo, "status": status, "motivo_fim": motivo,
+            "inicio": self.ex.iso(disparo if disparo is not None else t), "fim": self.ex.iso(t),
+            "sf": enlace.SF, "bw_khz": enlace.BW_KHZ, "payload_bytes": payload_bytes,
+            "leitura": digitos, "achou_caixa": "" if achou is None else int(achou),
+            "digitos_incertos": digitos.count("?") if digitos else "",
+            "duplicados": 0, "rssi_dbm": "" if rssi is None else rssi,
+            "fcnt": "" if fcnt is None else fcnt, "fcnt_perdidos_antes": perdidos,
+        })
+        if a is not None:
+            linha["leitura_no"] = "" if a.leitura_tx is None else a.leitura_tx
+            if a.leitura_tx is not None and digitos:
+                linha["leitura_confere"] = int(a.leitura_tx == digitos)
+            if a.tx_observado:
+                linha.update(tx_tentativas=a.tx_tentativas, tx_ocupado=a.tx_ocupado,
+                             tx_falhas=a.tx_falhas)
+            if a.t_ocr is not None and disparo is not None:
+                linha["t_ocr_s"] = _arred(a.t_ocr - disparo)
+        if digitos:   # chegou um frame: o tempo de rádio vem do log do nó (tx) ou do frame (rx)
+            if a is not None and a.tx_observado and a.tx_tentativas:
+                linha["tempo_radio_s"], linha["tempo_radio_base"] = _arred(a.tx_airtime_ms / 1000), "tx"
+            else:
+                linha["tempo_radio_s"] = _arred(ar.tempo_no_ar_ms(
+                    ar.OVERHEAD_LORAWAN + int(payload_bytes), enlace.SF, enlace.BW_KHZ * 1000) / 1000)
+                linha["tempo_radio_base"] = "rx"
+            if disparo is not None:
+                linha["latencia_s"], linha["latencia_base"] = _arred(t - disparo), "disparo"
+        return linha
+
+    def _registrar_ocr(self, linha: dict, t: float) -> None:
+        self.resumos_ocr.append(linha)
+        self.ex.registrar_leitura_ocr(linha)
+        self.ex.evento("leitura_ocr", t, **linha)
+        self.ex.contadores["leituras_ocr"] += 1
+        self.ex.contadores[f"leituras_ocr_{linha['status']}"] += 1
+        lat = linha["latencia_s"]
+        self.imprimir(f"[leitura {linha['leitura_id']}] {linha['status']}: {linha['leitura']!r}"
+                      + (f"  RSSI={linha['rssi_dbm']} dBm  FCnt={linha['fcnt']}" if linha["fcnt"] != "" else "")
+                      + (f", latência {lat:.1f} s" if lat != "" else "")
+                      + (f"  [aviso] {linha['fcnt_perdidos_antes']} uplink(s) perdido(s) antes deste (lacuna de FCnt)"
+                         if linha["fcnt_perdidos_antes"] else ""))
+
+    def _encerrar_ocr(self, a: "Leitura", motivo: str, t: float) -> dict:
+        """Fecha uma leitura OCR disparada pelo PC que não recebeu nenhum uplink."""
+        linha = self._linha_ocr(a, a.id, t, status="sem_dados", motivo=motivo)
+        self._registrar_ocr(linha, t)
+        return linha
+
     # -- fim de leitura --------------------------------------------------------------------
     def verificar(self, t: float) -> None:
         """Chamar periodicamente: aplica timeouts e fecha leituras que já podem fechar."""
@@ -620,6 +831,8 @@ class Sessao:
         if a is None:
             return None
         self.atual = None
+        if self.fluxo == "ocr" and a.t_disparo is not None:   # leitura OCR sem uplink
+            return self._encerrar_ocr(a, motivo, t)
         resumo = self._resumir(a, motivo, t)
         self.resumos.append(resumo)
         self.ex.registrar_envio(resumo)
@@ -787,6 +1000,34 @@ def estatisticas(resumos: list[dict]) -> list[str]:
     serie("pdr_enlace", ".2f", "PDR do enlace ")
     serie("latencia_s", ".1f", "Latência (s)   ")
     serie("tempo_radio_s", ".2f", "Tempo de rádio (s)")
+    if 0 < n < 30:
+        linhas.append("Atenção: o critério de pronto da issue pede >= 30 envios.")
+    return linhas
+
+
+def estatisticas_ocr(resumos: list[dict]) -> list[str]:
+    """Resumo das leituras do fluxo OCR (linhas de transmissao_ocr.csv)."""
+    n = len(resumos)
+    recebidas = [r for r in resumos if r["status"] != "sem_dados"]
+    linhas = [f"{n} leitura(s) OCR: {len(recebidas)} recebida(s), {n - len(recebidas)} sem uplink"]
+    perdidos = sum(r["fcnt_perdidos_antes"] or 0 for r in recebidas)
+    if recebidas:
+        linhas.append(f"Uplinks perdidos (lacunas de FCnt): {perdidos}; "
+                      f"PDR do enlace {len(recebidas) / (len(recebidas) + perdidos):.2f} "
+                      "(não vê perdas antes do primeiro nem depois do último uplink)")
+        sem_caixa = sum(r["status"] == "recebida_sem_caixa" for r in recebidas)
+        incertas = sum(r["status"] == "recebida_digito_incerto" for r in recebidas)
+        linhas.append(f"Sem caixa: {sem_caixa}; com dígito incerto ('?'): {incertas}")
+        conferem = [r["leitura_confere"] for r in recebidas if r["leitura_confere"] != ""]
+        if conferem:
+            linhas.append(f"Leitura do PC igual à impressa pelo nó: {sum(conferem)}/{len(conferem)}")
+    for campo, formato, nome in (("latencia_s", ".1f", "Latência (s)   "),
+                                 ("tempo_radio_s", ".3f", "Tempo de rádio (s)")):
+        v = sorted(r[campo] for r in resumos if r[campo] != "")
+        if v:
+            p95 = v[min(len(v) - 1, int(round(0.95 * (len(v) - 1))))]
+            linhas.append(f"{nome}: min {v[0]:{formato}}  mediana {statistics.median(v):{formato}}  "
+                          f"p95 {p95:{formato}}  max {v[-1]:{formato}}  média {statistics.fmean(v):{formato}}")
     if 0 < n < 30:
         linhas.append("Atenção: o critério de pronto da issue pede >= 30 envios.")
     return linhas

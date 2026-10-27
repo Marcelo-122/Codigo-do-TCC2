@@ -1,8 +1,10 @@
 # Teste do deep sleep do nó (`Rede/transmissor_esp32cam`)
 
 > O firmware **não foi compilado nem testado em placa** quando este roteiro foi escrito.
-> O item "Deep sleep implementado" só vale depois do passo 4 abaixo. Se não compilar,
-> cole o erro do Arduino IDE e eu corrijo.
+> Depois disso, o `transmissor_esp32cam` foi gravado e rodou um `AUTO:30` de 3 ciclos (2026-10-27): deep sleep
+> confirmado pelo log (`DEEPSLEEP_RESET`, `causa=timer`, `ciclo` incrementando) e pela corrente (~159 mA acordado,
+> ~24 mA dormindo, medidos com INA219). O passo 4 (`STOP`) e a medição de ≥ 30 ciclos seguem pendentes. O
+> `transmissor_ocr_esp32cam` ainda não foi testado em placa. Se não compilar, cole o erro do Arduino IDE e eu corrijo.
 
 ## O que foi implementado
 
@@ -83,4 +85,8 @@ Com isso eu atualizo o `medicoes/README.md` e marcamos o item como feito, ou aju
 - Entre chunks o nó fica em `delay(7000)` com a CPU ligada. Um light sleep ali reduziria o consumo do fluxo de imagem.
 - A janela de 1,5 s para o `STOP` entra no tempo ativo de cada ciclo. Para medir consumo de produção,
   ponha `JANELA_STOP_MS = 0` (e use `AUTO_AO_LIGAR 1`).
-- O fluxo "OCR na borda" (só a leitura trafega) ainda não existe no firmware do nó. Este deep sleep cobre só o fluxo de imagem.
+- Este roteiro cobre o fluxo de imagem (`transmissor_esp32cam`). O fluxo "OCR na borda" (só a leitura trafega) tem firmware próprio,
+  [`Rede/transmissor_ocr_esp32cam`](../Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino), com o mesmo deep sleep
+  (`AUTO`/`STOP`/`SLEEP`, memória RTC, hold de PWDN/flash) e o comando `LER` no lugar de `CAPTURE`. Os mesmos passos valem
+  para ele (troque `CAPTURE` por `LER`; o `[CICLO_FIM]` traz `leitura=` e os tempos da inferência), mas ele **não foi
+  compilado com a toolchain do ESP32 nem testado em placa**.

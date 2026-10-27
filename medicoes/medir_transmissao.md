@@ -2,7 +2,8 @@
 
 Scripts: [`reconstrutor.py`](../reconstrutor.py) (medição principal) e [`orchestrator.py`](../orchestrator.py),
 os dois usando [`registro.py`](../registro.py). Saída: `transmissao.csv` (uma linha por leitura, acumulada
-entre execuções), `logs/<execução>/` e `imagens/`.
+entre execuções), `logs/<execução>/` e `imagens/`. Para o fluxo de OCR na borda (FPort 2, um uplink por
+leitura) a saída é `transmissao_ocr.csv`; veja [Fluxo OCR](#fluxo-ocr-na-borda-fport-2) abaixo.
 
 > **Status:** a lógica (contagem de perdas, duplicatas, FCnt, PDR, latência, timeouts, reconexão da
 > serial, formato dos arquivos) foi testada com nó e receptor **simulados** (59 verificações, sem
@@ -74,6 +75,59 @@ faltam. O SHA-256 da completa vai no CSV.
 | `latencia_s`, `latencia_base` | Imagem completa menos o disparo (`disparo`: instante em que o PC escreveu `CAPTURE`/primeiro `SEND`) ou, sem controle do nó, menos o primeiro chunk (`primeiro_chunk`, subestima: falta captura e compressão). Vazia se incompleta |
 | `tx_tentativas`, `tx_ocupado`, `tx_falhas`, `tx_ok_reportado` | Contagens do log do nó (`[chunk ... tent N]`, `[aviso] ... ocupado`, `[ERRO] ... falhou`, `[envio] concluido: N ok`) |
 | `imagem_arquivo`, `imagem_sha256` | Caminho relativo a `medicoes/` e hash |
+
+## Fluxo OCR na borda (FPort 2)
+
+Firmware: [`Rede/transmissor_ocr_esp32cam`](../Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino). Em vez
+de chunks de imagem, o nó manda **um único uplink** na FPort 2 com `[id (2 B)][flags (1 B)][N dígitos ASCII]`
+(9 B com N = 6; `flags` = bit 7 caixa achada | N; `?` = fatia não classificada, `-` = sem caixa). O parser é
+`enlace.parse_leitura()`. Não há blocos, JPEG nem PDR da leitura: uma leitura ou chegou ou não chegou.
+
+> **Status:** o firmware só passou por checagem de sintaxe com stubs (não foi compilado com a toolchain do
+> ESP32 nem testado em placa) e o lado do PC foi testado com frames LoRaWAN sintéticos (50 verificações). Antes de
+> valer como dado do TCC, faça uma execução curta (`--envios 1`) e confira a linha do CSV contra o log do nó.
+
+O mesmo `reconstrutor.py` recebe os dois fluxos: FPort 1 vira imagem em `transmissao.csv`, FPort 2 vira uma linha em
+`transmissao_ocr.csv`. `--fluxo ocr` só muda o que o PC faz com o nó ligado.
+
+```bash
+# O PC manda LER, espera o uplink e repete 30 vezes (timeout de resposta do nó: 90 s, --timeout-foto-s)
+python reconstrutor.py --tx --fluxo ocr --envios 30 --distancia 50 --rotulo "pátio, antena 2 dBi"
+
+# Só escutando (nó em AUTO ou LER mandado por outro terminal). Latência fica vazia: sem disparo não há referência
+python reconstrutor.py --distancia 50
+```
+
+Sem `--tx` o script não encerra sozinho se `--envios` for omitido: `Ctrl+C` fecha e mostra o resumo. Cada leitura
+sem uplink em `--tx` vira uma linha `sem_dados` (`motivo_fim`: `sem_foto`, `falha_ocr`, `timeout_leitura`...).
+
+### Colunas de `transmissao_ocr.csv`
+
+| Coluna | Significado |
+|---|---|
+| `run_id`, `leitura_id` | Execução e id da leitura (o mesmo do payload e de `[ocr] enviando leitura id N` no log do nó) |
+| `distancia_m`, `rotulo`, `modo` | `--distancia`, `--rotulo`; `modo` = `tx_controlado` ou `so_receptor` |
+| `status` | `recebida`, `recebida_sem_caixa` (a segmentação não achou a janela), `recebida_digito_incerto` (algum `?`) ou `sem_dados` (disparada pelo PC e sem uplink) |
+| `motivo_fim` | `recebida`, ou o motivo do `sem_dados`: `sem_foto`, `falha_ocr`, `timeout_leitura`, `novo_disparo`, `interrompido`... |
+| `inicio`, `fim` | Instantes ISO 8601 com fuso. Com `--tx`, `inicio` é o disparo (`LER`); sem, é a chegada do uplink |
+| `sf`, `bw_khz`, `payload_bytes` | Parâmetros do enlace e tamanho do payload decifrado |
+| `leitura`, `achou_caixa`, `digitos_incertos` | O que chegou ao PC: dígitos, se a caixa foi achada, quantos `?` |
+| `leitura_no`, `leitura_confere` | Só com `--tx`: a leitura que o nó imprimiu (`[ocr] leitura=...`) e se é igual à que chegou (`1`/`0`) |
+| `duplicados` | Sempre 0 por enquanto: um uplink repetido (mesmo id e FCnt) vira `duplicado` em `chunks.csv` e não gera linha nova |
+| `rssi_dbm`, `fcnt` | RSSI do frame no receptor e FCnt do nó |
+| `fcnt_perdidos_antes` | Lacuna de FCnt desde o uplink de leitura anterior = uplinks que o receptor não viu. **Não** vê perdas antes do primeiro nem depois do último uplink |
+| `tempo_radio_s`, `tempo_radio_base` | Tempo no ar **calculado** (Semtech AN1200.13) de um frame com o payload: base `tx` (tentativas do log do nó, `[uplink tent N]`) ou `rx` (o frame recebido) |
+| `t_ocr_s` | Só com `--tx`: do disparo até a linha `[ocr] leitura=...` (câmera, modelos, segmentação e dígitos) |
+| `latencia_s`, `latencia_base` | Do disparo (`LER` escrito) até o uplink decodificado no PC (`disparo`). Vazia sem `--tx` |
+| `tx_tentativas`, `tx_ocupado`, `tx_falhas` | Contagens do log do nó (`[uplink tent N]`, `[aviso] modulo ocupado`, `[ERRO] uplink falhou`), só com `--tx` |
+
+O **PDR do enlace** sai do resumo no fim da execução: leituras recebidas / (recebidas + soma de
+`fcnt_perdidos_antes`). A taxa de entrega por leitura disparada (`sem_dados` incluídas) é recebidas / linhas.
+`chunks.csv`, `eventos.jsonl`, `serial_rx.txt` e `serial_tx.txt` seguem o mesmo formato dos logs de imagem
+(`status` `novo`, `duplicado`, `outra_leitura`, `ignorado`; `fport` = 2).
+
+Frames FPort 1 em uma execução `--fluxo ocr` (e payloads de FPort 2 malformados) são ignorados e contados em
+`meta.json` como `ignorado_fport_imagem_em_fluxo_ocr` / `ignorado_leitura_invalida`.
 
 ## Limitações e cuidados
 
