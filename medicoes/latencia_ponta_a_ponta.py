@@ -78,11 +78,12 @@ class Medidor:
     em que foi lida (`t`, em segundos), o que permite testar sem hardware."""
 
     def __init__(self, app_skey, dev_addr, modo, fluxo="imagem", relogio=time.perf_counter,
-                 pasta_imagens=None):
+                 pasta_imagens=None, log=None):
         self.app_skey, self.dev_addr = app_skey, dev_addr
         self.modo, self.fluxo = modo, fluxo
         self.relogio = relogio
         self.pasta_imagens = pasta_imagens
+        self.log = log or (lambda *_: None)  # --debug: diz por que um uplink foi descartado
         self.atual = None
         self.linhas = []  # linhas finalizadas, na ordem
 
@@ -149,6 +150,8 @@ class Medidor:
         """Devolve a linha de CSV quando este chunk completa a imagem, senao None."""
         a = self.atual
         m = enlace.LINE_RE.search(texto)
+        if m and not a:
+            self.log("[descartado] uplink recebido sem leitura em andamento (o gatilho do no nao apareceu)")
         if not m or not a:
             return None  # sem leitura em andamento: ignora
         if self.fluxo == "ocr":
@@ -160,7 +163,8 @@ class Medidor:
             if info["fport"] == enlace.FPORT_LEITURA:
                 return None  # uplink do fluxo OCR em uma medicao do fluxo de imagem
             id_rx, idx, total, dados = enlace.parse_chunk(info["payload"])
-        except ValueError:
+        except ValueError as e:
+            self.log(f"[descartado] {e}")
             return None
         if id_rx != a["id"]:
             return None  # chunk atrasado de outra foto
@@ -192,9 +196,11 @@ class Medidor:
             if info["fport"] != enlace.FPORT_LEITURA:
                 return None  # chunk de imagem em uma medicao do fluxo OCR
             id_rx, achou, digitos = enlace.parse_leitura(info["payload"])
-        except ValueError:
+        except ValueError as e:
+            self.log(f"[descartado] {e}")
             return None
         if a["id"] is not None and id_rx != a["id"]:
+            self.log(f"[descartado] uplink com id {id_rx}, esperado {a['id']}")
             return None  # uplink atrasado de outra leitura
         a["id"], a["total"] = id_rx, 1
         a["chunks"][0] = digitos.encode("ascii")
@@ -263,6 +269,8 @@ def main():
                    help="firmware do no: imagem (CAPTURE, chunks na FPort 1) ou ocr (LER, "
                         "leitura em um uplink na FPort 2); vai na coluna fluxo do CSV")
     p.add_argument("--csv", default=CSV_PADRAO)
+    p.add_argument("--debug", action="store_true",
+                   help="imprime cada linha das duas seriais e o motivo de cada uplink descartado")
     p.add_argument("--salvar-imagens", metavar="PASTA", help="salva cada imagem remontada (conta no tempo)")
     args = p.parse_args()
 
@@ -270,19 +278,25 @@ def main():
 
     app_skey = config.require_hex("LORA_APP_SKEY", 16)
     dev_addr = bytes.fromhex(config.get("LORA_DEV_ADDR", "")) or None
-    med = Medidor(app_skey, dev_addr, args.modo, args.fluxo, pasta_imagens=args.salvar_imagens)
+    med = Medidor(app_skey, dev_addr, args.modo, args.fluxo, pasta_imagens=args.salvar_imagens,
+                  log=print if args.debug else None)
 
     tx = _abrir_serial(config.require("TX_SERIAL_PORT"))
     rx = _abrir_serial(config.require("RX_SERIAL_PORT"))
     fila, parar = queue.Queue(), threading.Event()
+    leitores = []
     for ser, nome in ((tx, "tx"), (rx, "rx")):
-        threading.Thread(target=_leitor, args=(ser, nome, fila, parar), daemon=True).start()
+        th = threading.Thread(target=_leitor, args=(ser, nome, fila, parar), daemon=True)
+        th.start()
+        leitores.append(th)
     print("Abrindo as seriais...")
     time.sleep(2)
 
     arquivo, escritor = abrir_csv(args.csv)
 
     def processar(nome, t, texto):
+        if args.debug and texto:
+            print(f"[{nome}] {texto[:160]}")
         linha = med.linha_tx(texto, t) if nome == "tx" else med.linha_rx(texto, t)
         return linha
 
@@ -326,6 +340,8 @@ def main():
         print("\nInterrompido pelo usuario.")
     finally:
         parar.set()
+        for th in leitores:
+            th.join(timeout=1)  # fecha a porta so depois da leitura em curso (evita erro no encerramento)
         arquivo.close()
         tx.close()
         rx.close()

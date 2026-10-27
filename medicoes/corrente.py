@@ -114,6 +114,8 @@ def indice_em(t, alvo, a, b):
 
 def analisar(args):
     t, i, v = carregar(args.csv, args.offset_ma)
+    if args.max_amostras:  # so as primeiras N amostras (o no pode ter seguido ciclando depois)
+        t, i, v = t[: args.max_amostras], i[: args.max_amostras], v[: args.max_amostras]
     baixos = sorted(i)[: max(10, len(i) // 10)]
     nivel_sleep = st.median(baixos)
     limiar = args.limiar_ma if args.limiar_ma else nivel_sleep + max(5.0, 0.5 * nivel_sleep)
@@ -205,6 +207,7 @@ def main():
     a.add_argument("--offset-ma", type=float, default=0.0, help="offset do INA219 medido com a carga desconectada")
     a.add_argument("--limiar-ma", type=float, default=None, help="limiar sleep/ativo (padrao: automatico)")
     a.add_argument("--min-sleep-s", type=float, default=2.0)
+    a.add_argument("--max-amostras", type=int, default=None, help="analisa so as primeiras N amostras do arquivo")
     a.add_argument("--init-s", type=float, help="t_ate_ciclo_ms do no, em s")
     a.add_argument("--captura-s", type=float, help="t_captura_ms do no, em s")
     a.add_argument("--envio-s", type=float, help="t_envio_ms do no, em s")

@@ -165,11 +165,17 @@ bool iniciarModelo() {
 
   // Operadores usados pelo modelo de segmentacao (conferido em
   // modelo_esp32.tflite via introspeccao do flatbuffer): CONV_2D,
-  // MAX_POOL_2D, TRANSPOSE_CONV, LOGISTIC. Se adicionar/trocar o modelo,
-  // reconfira essa lista (script rapido em Python, ver ModeloEDataset).
-  static tflite::MicroMutableOpResolver<4> resolver;
+  // MAX_POOL_2D, SHAPE, STRIDED_SLICE, PACK, TRANSPOSE_CONV, LOGISTIC.
+  // O modelo reexportado em 25/10/2026 passou a ter SHAPE/STRIDED_SLICE/PACK
+  // (o anterior so tinha CONV_2D, MAX_POOL_2D, TRANSPOSE_CONV, LOGISTIC).
+  // Se adicionar/trocar o modelo, reconfira essa lista (script rapido em
+  // Python, ver ModeloEDataset).
+  static tflite::MicroMutableOpResolver<7> resolver;
   resolver.AddConv2D();
   resolver.AddMaxPool2D();
+  resolver.AddShape();
+  resolver.AddStridedSlice();
+  resolver.AddPack();
   resolver.AddTransposeConv();
   resolver.AddLogistic();
 

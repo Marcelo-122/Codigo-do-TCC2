@@ -100,12 +100,14 @@ com outra biblioteca/versão**:
   AddSoftmax`) — conferidos por introspecção do `modelo_digito.tflite`; com
   mais operadores que o de segmentação (8 em vez de 4), é o ponto mais
   provável de quebrar se a versão da biblioteca mudar.
-- **Operadores do resolver** (`AddConv2D/AddMaxPool2D/AddTransposeConv/
-  AddLogistic`) — conferidos por introspecção direta do
-  `modelo_esp32.tflite` (script Python, ver
-  `ModeloEDataset/` no branch `ocr`), então esses 4 deveriam bastar; se
-  aparecer erro tipo "didn't find op", é sinal de que o modelo mudou desde
-  a última vez que isso foi conferido.
+- **Operadores do resolver da segmentação** (`AddConv2D/AddMaxPool2D/AddShape/
+  AddStridedSlice/AddPack/AddTransposeConv/AddLogistic`) — conferidos por
+  introspecção direta do `modelo_esp32.tflite` atual. O modelo reexportado em
+  2026-10-25 passou a ter `SHAPE`, `STRIDED_SLICE` e `PACK`; o anterior só tinha
+  `CONV_2D`, `MAX_POOL_2D`, `TRANSPOSE_CONV` e `LOGISTIC`, e com ele o erro
+  `Didn't find op for builtin opcode 'SHAPE'` aparece no `AllocateTensors`. A lista
+  nova compila, mas **não foi testada em placa**. Se o erro "didn't find op"
+  voltar, o modelo mudou de novo: reconfira os operadores.
 
 ## Histórico de ajustes
 

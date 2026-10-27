@@ -12,8 +12,11 @@ e gravados por [`grab_image_debug.py`](../test_images/debug_ocr_esp32cam/grab_im
 | `debug_metricas_v1_so_segmentacao.csv` | versão antiga, só segmentação | 28 | sem leitura nem `t_digitos_ms`; coluna `t_inferencia_ms` |
 | `debug_metricas_teste2_so_segmentacao.csv` | versão antiga, só segmentação | 17 | idem |
 | `corrente/teste_1.csv` | `Rede/transmissor_esp32cam` antes de desligar a câmera após a captura, `AUTO:30` | 4 ciclos | `t_us,shunt_mV,bus_V` do INA219 (shunt 0,1 Ω) lido por um Arduino Uno a 100 Hz; analisado com `corrente.py` ([`medir_corrente.md`](medir_corrente.md)) |
-| `corrente/auto30_imagem.csv` (+ `.png`) | `Rede/transmissor_esp32cam` com a câmera desligada após a captura, `AUTO:30` | 30 ciclos válidos (31 despertares com 1 falso) | mesmo formato; 685.000 amostras em 6.850 s, 2026-10-27 09:29 a 11:22 |
+| `corrente/auto30_imagem.csv` (+ `.png`) | `Rede/transmissor_esp32cam` com a câmera desligada após a captura, `AUTO:30` | 30 ciclos válidos (31 despertares com 1 falso) | mesmo formato; 2026-10-27 a partir das 09:29. O arquivo tem 1.041.066 amostras (≈ 10.410 s), mas a análise usa as primeiras 685.000 (6.850 s, até 11:22); o resultado é o mesmo com o arquivo inteiro |
+| `corrente/auto30_ocr.csv` (+ `.png`) | `Rede/transmissor_ocr_esp32cam`, `AUTO:30` | 30 ciclos | mesmo formato; 159.035 amostras em 1.590 s, 2026-10-27 12:22 a 12:48 |
 | `latencia_ponta_a_ponta.csv` | mesmo firmware, medido no PC por `latencia_ponta_a_ponta.py auto` | 31 disparos (30 com envio) | uma linha por leitura: chunks enviados/recebidos, bytes do JPEG, RSSI, tempo até o 1º/último chunk e até a imagem completa |
+| `latencia_ocr.csv` | `Rede/transmissor_ocr_esp32cam`, medido no PC por `latencia_ponta_a_ponta.py auto --fluxo ocr` | 34 disparos (27 uplinks recebidos) | uma linha por leitura: RSSI, tempo até a linha `[ocr] leitura=` e até o dado no PC, dígitos lidos, `achou_caixa`; 2026-10-27, 12:59 a 13:27 |
+| `latencia_ocr_tentativa1.csv` | mesmo firmware, primeira tentativa | 28 disparos (1 uplink recebido) | tentativa em que o receptor não entregou nenhum uplink ao PC durante 22 min (12:25 a 12:46); **não entra nas estatísticas**, fica como registro |
 | `transmissao.csv` | `Rede/transmissor_esp32cam` (fluxo de imagem) | — | uma linha por imagem: PDR, tempo de rádio, latência ([`medir_transmissao.md`](medir_transmissao.md)) |
 | `transmissao_ocr.csv` | `Rede/transmissor_ocr_esp32cam` (fluxo de OCR, FPort 2) | — | uma linha por leitura recebida: dígitos, FCnt, RSSI, tempo de rádio, latência ([`medir_transmissao.md`](medir_transmissao.md)) |
 
@@ -40,7 +43,7 @@ mantidos por serem medições reais, mas **não entram** na contagem do critéri
 | Core Arduino-ESP32 | **3.0.7** (`esp32` da Espressif Systems, Boards Manager da Arduino IDE 2.3.10; ESP-IDF v5.1). Versão lida da instalação em 2026-10-27; o log das capturas de 2026-09-27 não a registra, então assume-se o mesmo core (o README da raiz já o citava como o do PC de desenvolvimento) |
 | Biblioteca TFLite Micro | **`espressif/esp-tflite-micro` 1.3.1, com `esp-nn` 1.1.0**, embutida no core 3.0.7 (arquivo `versions.txt` de `esp32-arduino-libs`). Não há biblioteca TFLite instalada à parte na pasta de bibliotecas do sketchbook; o sketch inclui `tensorflow/lite/micro/micro_log.h` desse pacote |
 | Entrada da câmera | 160×120, tons de cinza; segmentação redimensiona para 192×192 |
-| Modelos | `modelo.h` (segmentação, `modelo_esp32.tflite`) e `modelo_digito.h` (classificador) |
+| Modelos | `modelo.h` (segmentação, `modelo_esp32.tflite`) e `modelo_digito.h` (classificador). **Atenção:** o `modelo.h` do repositório foi reexportado em 2026-10-25 (12.080 bytes, com os operadores `SHAPE`, `STRIDED_SLICE` e `PACK`) e **não é o que rodou nas 61 capturas**: o firmware de debug daquelas capturas só registrava 4 operadores, que o modelo atual não cabe (o de 11.128 bytes em `legado/` tem só esses 4). Latência, arena e temperatura desta tabela valem para o modelo antigo e serão refeitos com o atual no fluxo de OCR |
 | Intervalo entre capturas | 5 s de `delay` + ~18 s de processamento |
 | Medição de corrente | INA219 (shunt R100 = 0,1 Ω) lido por um Arduino Uno a 100 amostras/s; 5 V do USB da ESP32-CAM-MB passando pelo INA219 antes da ESP32-CAM; capacitor de 100 µF/50 V depois do shunt; offset não descontado (leitura de 0,00 mV com o nó desligado, resolução de 0,01 mV) |
 
@@ -79,22 +82,24 @@ pacotes entregues") compara fluxos, não etapas:
 | Fluxo | Composição | Latência (despertar até o dado no PC) |
 |---|---|---|
 | Nuvem (imagem) | captura em ~0,7 s, 1º chunk em ~2,0 s e envio de 22 a 27 chunks, um a cada ~7,9 s (JPEG de 3,7 a 4,6 KB) | **mediana de 189 s** (173 a 214 s), **medido** em 30 leituras de `AUTO:30` (20 imagens completas; ver "Latência ponta a ponta e entrega do fluxo de imagem"). No teste curto anterior, com JPEG de ~3,0 KB (18 chunks), foram ≈ 141 s. A inferência na nuvem não está incluída |
-| Local (OCR na borda) | inferência de ~17,8 s mais 1 uplink de ~9 bytes | ≈ 18 s mais o uplink, **estimado**: o `transmissor_ocr_esp32cam` ainda não foi medido |
+| Local (OCR na borda) | inferência de ~17,8 s mais 1 uplink de ~9 bytes | **18,84 s** (mediana; de 18,836 a 18,840 s), **medido** em 34 disparos de `AUTO:30`, dos quais 27 uplinks chegaram ao PC (ver "Latência ponta a ponta e entrega do fluxo de OCR"). O tempo acordado do ciclo inteiro, medido pelo INA219, é 19,45 s |
 
 **Decisão.**
 - *Reduzir o modelo* (entrada menor, menos filtros, kernels otimizados): descartado. Com câmera fixa a
   instalação não precisa de uma segmentação a cada leitura, e a rede é fraca (Dice 0,39, IoU 0,28), então
   encolhê-la ou melhorá-la não melhora a leitura.
-- *Revisar a H2*: não é necessário pelos números. Mesmo com a segmentação a cada leitura, a latência estimada
-  do fluxo local (~18 s) é cerca de 1/10 da do fluxo de imagem (mediana medida de 189 s).
+- *Revisar a H2*: não é necessário pela latência. Mesmo com a segmentação a cada leitura, a latência medida do
+  fluxo local (18,84 s) é cerca de 1/10 da do fluxo de imagem (mediana medida de 189 s). A outra metade da H2, a
+  taxa de pacotes entregues, depende da métrica (ver a seção de entrega do fluxo de OCR).
 - **Adotada:** manter o Pipeline B e retirar a segmentação do firmware com uma ROI calibrada na instalação
   (ver a decisão no README da raiz). Efeito esperado: leitura em ≈ 2 s por leitura. É uma **estimativa**: o
   firmware ainda não foi alterado.
 
-**Ainda falta para confirmar a H2:** a latência medida do fluxo local (`latencia_ponta_a_ponta.py auto --fluxo ocr`)
-e a taxa de pacotes entregues do fluxo local (1 pacote por leitura). Do fluxo de imagem já há 30 leituras
-(22 a 27 pacotes cada): 98,0% dos pacotes e 66,7% das imagens entregues (seção abaixo); `transmissao.csv` e
-`transmissao_ocr.csv` ainda não foram gerados.
+**Resultado para a H2.** A latência está confirmada com folga (18,84 s contra 189 s). A taxa de entrega depende da
+métrica: por **leitura** entregue o fluxo local foi melhor (27 de 34, 79,4%, contra 20 de 30, 66,7%, na imagem), mas
+a diferença não é estatisticamente distinguível com essas amostras (Fisher exato, p = 0,27); por **pacote**, o fluxo
+de imagem foi melhor (699 de 713, 98,0%, contra 79,4%). Ver as seções de entrega abaixo. `transmissao.csv` e
+`transmissao_ocr.csv` (PDR com FCnt e tempo de rádio, pelo `reconstrutor.py`) ainda não foram gerados.
 
 ## Consumo do fluxo de imagem (teste curto, câmera ligada durante o envio)
 
@@ -159,24 +164,94 @@ tempo até cada chunk e monta a imagem. Foram 31 disparos: 30 com envio e 1 sem 
 
 A latência é dominada pelo envio: ≈ 7,9 s por chunk, então cresce com o tamanho do JPEG. Os 98% de pacotes
 entregues parecem altos, mas como a imagem só serve inteira, **um terço das imagens se perdeu**. É o dado que
-a H2 compara com o fluxo local, que envia 1 pacote por leitura (ainda não medido).
+a H2 compara com o fluxo local, que envia 1 pacote por leitura (medido na seção do fluxo de OCR).
+
+## Consumo do fluxo de OCR na borda (30 ciclos)
+
+`Rede/transmissor_ocr_esp32cam` em `AUTO:30`, `JANELA_STOP_MS = 0`, mesma bancada e mesmo sleep de 30 s do fluxo de
+imagem (`corrente/auto30_ocr.csv`, 2026-10-27, 159.035 amostras em 1.590 s, tensão média 4,955 V). Análise com
+`python medicoes/corrente.py analisar medicoes/corrente/auto30_ocr.csv --offset-ma 0.0 --min-sleep-s 12`.
+
+| Grandeza | Valor (n = 30 ciclos) |
+|---|---|
+| `mAh por leitura` | **0,825** (desvio 0,014) |
+| Tempo acordado | **19,45 s** na maioria dos ciclos (início, captura, modelos, segmentação, dígitos e envio) |
+| Corrente média acordado | ≈ 114 mA, com picos de TX de 206 a 227 mA |
+| Corrente em sleep | ≈ 25,2 mA (de 24,1 a 26,3), **incluindo o Radioenge** |
+| Período do ciclo | 49,1 s (≈ 19,5 s acordado + ≈ 29,6 s de sleep) |
+
+Os ciclos 24 e 25 da tabela do `analisar` (0,778 e 0,872 mAh) têm a fronteira deslocada por um pico isolado de uma
+amostra e somam 1,650 mAh, ou seja, 0,825 cada. O tempo acordado de 19,45 s é o ciclo inteiro do nó, medido pelo
+INA219; a latência medida no PC (disparo até o dado no receptor) está na seção seguinte. O gráfico `corrente/auto30_ocr.png` foi gerado fora do venv (o venv do projeto não tem `matplotlib`).
+
+### Comparação dos dois fluxos (mesmo sleep de 30 s)
+
+| | Imagem (nuvem) | OCR na borda |
+|---|---|---|
+| `mAh por leitura` | 4,64 | **0,825** (5,6 vezes menos) |
+| Tempo acordado | 189,9 s (173 a 219 s) | 19,45 s |
+| Corrente média acordado | ≈ 84,5 mA (espera entre chunks) | ≈ 114 mA (inferência) |
+| Corrente em sleep (com Radioenge) | ≈ 23,7 mA | ≈ 25,2 mA |
+| Período do ciclo | 218,5 s | 49,1 s |
+| Latência ponta a ponta vista pelo PC (mediana) | 189,1 s (n = 20 completas) | **18,84 s** (n = 27 recebidas) |
+| Leituras entregues (imagem completa / uplink recebido) | 20 de 30 (66,7%) | 27 de 34 (79,4%) |
+| Pacotes entregues | 699 de 713 (98,0%) | 27 de 34 (79,4%) |
+| Autonomia, bateria hipotética de 2000 mAh | 1,1 dia | 1,4 dia |
+| Autonomia a cada 10 min (extrapolação) | 1,9 dia | 3,0 dias |
+| Autonomia a cada 1 h (extrapolação) | 3,1 dias | 3,2 dias |
+
+As linhas de extrapolação **não foram medidas**: usam `mAh = corrente acordado × tempo acordado + corrente de sleep ×
+(intervalo − tempo acordado)` com os valores medidos acima (o modelo reproduz os 4,64 e os 0,825 medidos). O resultado
+para a H3: por leitura, o fluxo de imagem gasta 5,6 vezes mais; com leituras a cada poucos minutos isso vira uma
+vantagem grande de autonomia, mas o piso de ≈ 24 mA do sleep (que inclui o Radioenge e ainda não foi separado) domina
+quando o intervalo chega a 1 h, e a diferença cai para ≈ 5%.
+
+## Latência ponta a ponta e entrega do fluxo de OCR (34 leituras)
+
+`python medicoes/latencia_ponta_a_ponta.py auto --n 34 --fluxo ocr --csv medicoes/latencia_ocr.csv --debug`, com o nó em
+`AUTO:30` (2026-10-27, 12:59 a 13:27), câmera fixa. Foram 34 disparos e 27 uplinks decodificados no PC.
+
+| Grandeza | Valor |
+|---|---|
+| Leituras entregues | **27 de 34 (79,4%)**; 7 perdidas (posições 9, 16, 17, 21, 27, 33 e 34) |
+| Latência ponta a ponta (n = 27) | **mediana 18.838 ms**, de 18.836 a 18.840 ms (desvio 0,9 ms) |
+| Disparo até a linha `[ocr] leitura=` | 18.195 ms (o OCR), mais ≈ 0,64 s até o uplink aparecer no PC |
+| Tempos do nó (`[CICLO_FIM]`) | início 1.189 ms, segmentação ≈ 15.537 ms, dígitos ≈ 1.965 ms |
+| Caixa achada | 27 de 27 uplinks recebidos com `achou_caixa=1` |
+| RSSI médio | de −31 a −27 dBm (sinal muito forte) |
+
+- **A latência é determinística** (desvio de ~1 ms): é a inferência (≈ 17,5 s) mais o início, sem nada de rede que
+  varie. O modelo atual de segmentação leva 15.537 ms, praticamente o mesmo dos 15.564 ms do modelo antigo.
+- **Perdas com sinal forte.** Com RSSI de −27 a −31 dBm não é falta de sinal. Nos dois ciclos perdidos que aparecem
+  no log (33 e 34) o nó registrou `AT_TX_OK` e `falhas=0`: o Radioenge aceitou o envio e o receptor não o entregou ao PC.
+  A causa não foi estabelecida. Uma hipótese, **não testada**, é que o primeiro uplink depois do despertar do deep sleep
+  se perde mais: no fluxo de imagem, em 3 de 30 leituras (10%) o primeiro chunk recebido só chegou aos 10 a 11 s
+  (o chunk inicial parece ter se perdido), contra 2,0% de perda no total; no fluxo de OCR todo uplink é o primeiro depois
+  do despertar. As amostras são pequenas demais para afirmar. Um teste direto seria mandar dois `AT+SENDB` seguidos
+  logo após o despertar e comparar as perdas.
+- **Sem reenvio.** O nó dorme depois de um único envio, então um uplink perdido é uma leitura perdida. Isso favorece
+  uma estratégia de reenvio ou de confirmação (uplink confirmado) como trabalho futuro.
+- **A leitura varia entre ciclos** (13 valores distintos em 27 recebidas, com a câmera fixa). Não há rótulo, então
+  isto não é um teste de acurácia; pode ser a câmera acordando fria, sem quadros de aquecimento, e não foi investigado.
+- **Tentativa anterior sem dados.** Em `latencia_ocr_tentativa1.csv` o nó e o PC viram os 27 disparos (12:25 a 12:46), mas
+  o receptor não entregou nenhum uplink ao PC até as 12:46:19, e a causa não foi identificada (o script dessa tentativa
+  ainda não tinha o `--debug`). Essas 28 linhas **não entram** nas estatísticas acima.
 
 ## Pendente
 
 - **Consumo, fluxo de imagem:** separar o sleep do Radioenge (`SLEEP:60` com ele desconectado); autonomia com a
   bateria real e o intervalo de campo; investigar a causa do despertar sem envio (ciclo 28) e do JPEG maior.
   Procedimento em [`medir_corrente.md`](medir_corrente.md).
-- **Consumo, fluxo de OCR na borda:** sem medição. O firmware
-  [`Rede/transmissor_ocr_esp32cam`](../Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino) existe, mas
-  **não foi compilado com a toolchain do ESP32 nem testado em placa**.
-- **Latência ponta a ponta, fluxo de OCR:** o fluxo de imagem está medido (30 leituras, seção acima). Para o de
-  OCR o script tem `--fluxo ocr` ([`medir_latencia.md`](medir_latencia.md)), mas o lado do PC (FPort 2,
-  `transmissao_ocr.csv`) foi testado só com frames sintéticos e não há medição em placa.
+- **Perdas de uplink nos dois fluxos:** 20,6% das leituras do OCR e 33% das imagens não chegaram ao PC; a causa
+  não foi investigada (ver a hipótese do primeiro uplink depois do despertar, acima). Falta também a estratégia de
+  reenvio, que não existe em nenhum dos dois firmwares no modo autônomo.
 - **Deep sleep:** implementado em `Rede/transmissor_esp32cam` (comandos `AUTO`, `STOP`, `SLEEP`) e em
   `Rede/transmissor_ocr_esp32cam`. No de imagem, os 30 ciclos de `AUTO:30` (acima) mostram a corrente caindo de
   ≈ 84,5 mA acordado para ≈ 23,7 mA dormindo em todos os ciclos, e o teste curto de 4 ciclos confirmou
-  `DEEPSLEEP_RESET` e o contador de ciclos na memória RTC. O de OCR não foi testado em placa. Roteiro em
+  `DEEPSLEEP_RESET` e o contador de ciclos na memória RTC. No de OCR, os 30 ciclos de `AUTO:30` mostram o mesmo
+  padrão (≈ 114 mA acordado, ≈ 25 mA dormindo). Roteiro em
   [`teste_deep_sleep.md`](teste_deep_sleep.md).
-- **Taxa de pacotes entregues (H2):** fluxo de imagem medido em `latencia_ponta_a_ponta.csv` (98,0% dos
-  pacotes, 20 de 30 imagens completas); `transmissao.csv` (imagem) e `transmissao_ocr.csv` (OCR) ainda sem
-  medições em placa, e o fluxo de OCR não tem número de entrega; ver [`medir_transmissao.md`](medir_transmissao.md).
+- **Taxa de pacotes entregues (H2):** medida nos dois fluxos pelos CSVs de latência (imagem: 98,0% dos pacotes e
+  20 de 30 imagens; OCR: 79,4% das leituras). `transmissao.csv` (imagem) e `transmissao_ocr.csv` (OCR), gerados pelo
+  `reconstrutor.py` com FCnt e tempo de rádio, ainda sem medições em placa; ver
+  [`medir_transmissao.md`](medir_transmissao.md).

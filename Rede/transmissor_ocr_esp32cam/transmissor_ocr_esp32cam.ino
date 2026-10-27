@@ -109,8 +109,8 @@ const unsigned long RETRY_MS = 7000;        // espera entre tentativas
 #define AUTO_AO_LIGAR  0                      // 1 = modo autonomo ja no power-on
 const uint32_t INTERVALO_PADRAO_S = 30;       // dormida padrao do AUTO (igual ao teste de imagem)
 const uint32_t INTERVALO_MIN_S    = 10;
-const unsigned long JANELA_STOP_MS = 1500;    // tempo acordado esperando STOP; ponha 0
-                                              // (e AUTO_AO_LIGAR 1) para medir o consumo de producao
+const unsigned long JANELA_STOP_MS = 0;       // tempo acordado esperando STOP; 0 = igual ao
+                                              // transmissor_esp32cam (so se para desligando a MB)
 
 // RTC_DATA_ATTR sobrevive ao deep sleep (nao ao power-on reset).
 RTC_DATA_ATTR static bool     autoAtivo      = (AUTO_AO_LIGAR != 0);
@@ -156,10 +156,15 @@ bool iniciarModelo() {
     return false;
   }
 
-  // Operadores da segmentacao (CONV_2D, MAX_POOL_2D, TRANSPOSE_CONV, LOGISTIC).
-  static tflite::MicroMutableOpResolver<4> resolver;
+  // Operadores da segmentacao (CONV_2D, MAX_POOL_2D, SHAPE, STRIDED_SLICE, PACK,
+  // TRANSPOSE_CONV, LOGISTIC). O modelo.h reexportado em 25/10/2026 passou a ter
+  // SHAPE/STRIDED_SLICE/PACK (o anterior so tinha os quatro operadores de 2026-09-27).
+  static tflite::MicroMutableOpResolver<7> resolver;
   resolver.AddConv2D();
   resolver.AddMaxPool2D();
+  resolver.AddShape();
+  resolver.AddStridedSlice();
+  resolver.AddPack();
   resolver.AddTransposeConv();
   resolver.AddLogistic();
 

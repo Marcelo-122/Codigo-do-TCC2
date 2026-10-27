@@ -70,8 +70,10 @@ python medicoes/latencia_ponta_a_ponta.py auto --n 30 --fluxo ocr
   em `auto` que o PC começou a ouvir no meio), o script adota o id do primeiro uplink.
 - Chunks de imagem (FPort 1) numa medição `--fluxo ocr`, e uplinks de leitura (FPort 2) numa medição de imagem, são
   ignorados.
-- **Status:** o firmware de OCR não foi compilado com a toolchain do ESP32 nem testado em placa, e esta extensão do script
-  foi testada só com frames sintéticos. O `reconstrutor.py --tx --fluxo ocr` mede a mesma coisa e grava em
+- **Status:** testado em hardware com o nó em `AUTO:30` (34 disparos, 27 uplinks recebidos, mediana de 18,84 s; ver
+  [`README.md`](README.md)). Use `--debug` para ver as linhas das duas seriais e o motivo de cada uplink descartado
+  (uma tentativa anterior ficou 22 min sem receber nenhum uplink e não deixou pista sem ele). Cada tentativa deve usar
+  um `--csv` próprio para não misturar execuções. O `reconstrutor.py --tx --fluxo ocr` mede a mesma coisa e grava em
   `transmissao_ocr.csv` ([`medir_transmissao.md`](medir_transmissao.md)); os dois abrem as mesmas portas e não rodam juntos.
 
 ## Limitações
