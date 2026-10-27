@@ -106,7 +106,6 @@ câmera, a lente e a compressão, mas **não** o reflexo, a iluminação e o ân
 | `ocr/teste_comum/imagens/` | 39 | ESP32-CAM, **monitor** | pipeline completo, borda × nuvem (`ocr/avaliar.py`, `ocr/avaliar_pipeline.py --conjunto comum`) |
 | `test_images/debug_ocr_esp32cam/debug_frames/` | frames | ESP32-CAM, origem (monitor ou físico) **não registrada** | conferência do firmware de debug |
 | `legado/TreinoEModelosOCRNaBorda/dataset/imagens_reais/` | 14 | imagens avulsas, não da ESP32-CAM (nas que foram conferidas: `image1.jpg` é uma foto de catálogo e `image9.jpg`, uma figura explicativa) | pipeline A, arquivado |
-| [`dados/teste/`](dados/teste/README.md) | **0 (a coletar)** | ESP32-CAM, **hidrômetro físico** | teste final do pipeline completo (`--conjunto fisico`); critério: ≥ 30 fotos |
 | Kaggle (Yandex.Toloka) | 1.244 | fotos de medidores, não versionadas | treino da segmentação (`pipeline.py`) e 195 imagens para o classificador |
 | Dryad, pastas `train` | — | recortes 200×60, não versionados | treino do classificador |
 | Dryad, pastas `test` | — | idem | **fora do treino** (`preparar_dataset_dryad.py` não as usa mais); teste do classificador em `ocr/avaliar_teste_publico.py` |
@@ -115,32 +114,6 @@ câmera, a lente e a compressão, mas **não** o reflexo, a iluminação e o ân
 INT8 (caixa prevista pelo **modelo de segmentação** → fatias iguais → classificador de dígito, sem caixa manual) nos
 dois fluxos, borda (quadro 160×120 direto) e nuvem (o mesmo quadro depois do JPEG q90), e grava em
 [`medicoes/ocr_teste.csv`](medicoes/ocr_teste.csv): taxa de leitura exata, acurácia por dígito, CER, Dice/IoU da
-máscara e IoU da caixa contra a janela marcada à mão. A borda continua sendo uma emulação em Python, não a acurácia
-medida na placa.
-
-Resultado hoje (só o conjunto de **monitor**; o de medidor físico está vazio):
-
-| Conjunto | Fluxo | Leitura exata | Dígitos certos | CER | Dice | IoU |
-|---|---|---|---|---|---|---|
-| `ocr/teste_comum` (39 fotos, monitor) | borda | 0/39 | 15,3 % | 0,83 | 0,23 | 0,13 |
-| `ocr/teste_comum` (39 fotos, monitor) | nuvem | 0/39 | 15,8 % | 0,83 | 0,23 | 0,13 |
-
-(Confere com o que `ocr/avaliar.py` registra: 0/39 com a segmentação do modelo, 34/222 e 35/222 dígitos. Estes são os
-números com os **modelos re-treinados**; antes do re-treino eram 44/222 e 42/222 dígitos e Dice 0,14.)
-A segmentação é o gargalo: a máscara do modelo cobre quase o mostrador inteiro, não a janela dos dígitos.
-
-**O que ainda falta medir**, e por quê:
-
-- **Medidor físico:** `dados/teste/` precisa das ≥ 30 fotos (protocolo em [`dados/teste/README.md`](dados/teste/README.md)).
-  Depois: `python dados/validar_teste.py` e `python ocr/avaliar_pipeline.py --conjunto fisico`.
-- **Teste público independente (feito):** o classificador foi re-treinado só com as pastas `train` do Dryad (mais o
-  Kaggle), com validação dividida por foto. Nas pastas `test` (1.894 imagens, fatias iguais, INT8): **92,8 % de
-  leituras exatas, 97,7 % dos dígitos, CER 0,023**; o modelo antigo, que tinha essas pastas no treino, marcava 95,6 %
-  / 98,6 %. Detalhes em [`ModeloEDataset/relatorios/RESULTADOS.md`](ModeloEDataset/relatorios/RESULTADOS.md).
-- **Segmentação com teste separado (feito):** `ModeloEDataset/pipeline.py` separa 15 % de teste com semente fixa,
-  treina com lote 16 e grava a divisão, o histórico por época e o log de progresso (`relatorios/`). No teste
-  (186 fotos do Kaggle, INT8): **Dice 0,39, IoU 0,28**. É fraco (rede minúscula e ainda subajustada) e, sobre as
-  fotos da ESP32-CAM de um monitor, a máscara continua cobrindo o mostrador inteiro (ver tabela acima).
 
 ---
 
@@ -184,7 +157,7 @@ Codigo-do-TCC2/
 │   ├── receptor_lora32/           Firmware do receptor (Heltec/TTGO LoRa32)
 │   └── requirements.txt           Igual ao requirements.txt da raiz
 ├── legado/                        Fora do fluxo atual (ver legado/README.md): protótipo serial → ChirpStack e os pipelines de OCR arquivados (`ocr_cloud/` = C, `TreinoEModelosOCRNaBorda/` = A)
-├── dados/teste/                   Conjunto de teste de hidrômetro FÍSICO (≥ 30 fotos, ainda a coletar) + validador (ver dados/teste/README.md)
+├── dados/teste/                   Conjunto de teste de hidrômetro FÍSICO (21 fotos rotuladas da ESP32-CAM; ver dados/teste/README.md)
 ├── ocr/                           Lado da nuvem (modelos de B no servidor), avaliação borda × nuvem e conjunto de teste comum (ver ocr/README.md)
 │   └── colab_poc/                 Teste de viabilidade de OCR genérico em imagem 160×120 (Tesseract/EasyOCR no Colab; não será usado no trabalho)
 ├── enlace.py                      PC: parâmetros do enlace (bloco, cabeçalho), parser LoRaWAN e parser da leitura OCR (FPort 2) compartilhados

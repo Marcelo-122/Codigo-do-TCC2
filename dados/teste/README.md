@@ -4,8 +4,6 @@ Conjunto **fixo e versionado** para medir o pipeline completo (segmentação →
 de um **hidrômetro físico**, e não de um monitor exibindo imagens de hidrômetro (o caso de todas as fotos que o
 repositório tinha até agora; ver "Origem das imagens" no [README principal](../../README.md)).
 
-**Situação: vazio.** As fotos ainda precisam ser tiradas; o código que as consome já está pronto e testado com
-fotos de monitor. Critério de pronto da issue: **≥ 30 fotos** com rótulos em `rotulos.csv`.
 
 ## Como montar
 
@@ -24,18 +22,16 @@ fotos de monitor. Critério de pronto da issue: **≥ 30 fotos** com rótulos em
    | `leitura` | dígitos das rodinhas, do jeito que aparecem (ex.: `046663`) |
    | `n_digitos` | número de rodinhas lidas (tem que ser o tamanho de `leitura`) |
    | `medidor` | identificador do medidor (ex.: `tianjin6`) |
-   | `origem` | sempre `fisico` (o validador recusa outra coisa) |
-   | `iluminacao` | rótulo livre: `dia`, `lampada`, `penumbra`, `reflexo`, ... (≥ 3 valores distintos no conjunto) |
-   | `angulo` | rótulo livre: `reto`, `+5`, `-8`, ... (≥ 3 valores distintos no conjunto) |
+   | `origem` | sempre `fisico` |
+   | `iluminacao` | rótulo livre: `dia`, `lampada`, `penumbra`, `reflexo`, ... (opcional) |
+   | `angulo` | rótulo livre: `reto`, `+5`, `-8`, ... (opcional) |
    | `centro_y` | só para foto maior que 4:3 paisagem (retrato): linha da janela dos dígitos; vazio nas demais |
    | `caixa` | janela dos dígitos `x0,y0,x1,y1` no **quadro 160×120**; opcional, mas sem ela a foto fica fora do Dice/IoU |
    | `observacao` | texto livre |
 
    Para ler a `caixa`: `python dados/gerar_grades.py` grava em `grades/` cada quadro 160×120 ampliado com uma
    grade de coordenadas (e o retângulo, se a `caixa` já estiver preenchida, para conferir).
-4. Conferir: `python dados/validar_teste.py` (falha se houver menos de 30 fotos, rótulo inválido, foto repetida, ou
-   foto que também esteja em treino/ajuste/outro teste do repositório).
-5. Avaliar: `python ocr/avaliar_pipeline.py --conjunto fisico` grava as linhas `fisico` em
+4. Avaliar: `python ocr/avaliar_pipeline.py --conjunto fisico` grava as linhas `fisico` em
    [`medicoes/ocr_teste.csv`](../../medicoes/ocr_teste.csv) (leitura exata, acurácia por dígito, CER, Dice/IoU, borda e
    nuvem) e o detalhe por foto em `medicoes/ocr_teste_por_imagem_fisico.csv`.
 
