@@ -17,10 +17,13 @@ e gravados por [`grab_image_debug.py`](../test_images/debug_ocr_esp32cam/grab_im
 | `latencia_ponta_a_ponta.csv` | mesmo firmware, medido no PC por `latencia_ponta_a_ponta.py auto` | 31 disparos (30 com envio) | uma linha por leitura: chunks enviados/recebidos, bytes do JPEG, RSSI, tempo até o 1º/último chunk e até a imagem completa |
 | `latencia_ocr.csv` | `Rede/transmissor_ocr_esp32cam`, medido no PC por `latencia_ponta_a_ponta.py auto --fluxo ocr` | 34 disparos (27 uplinks recebidos) | uma linha por leitura: RSSI, tempo até a linha `[ocr] leitura=` e até o dado no PC, dígitos lidos, `achou_caixa`; 2026-10-27, 12:59 a 13:27 |
 | `latencia_ocr_tentativa1.csv` | mesmo firmware, primeira tentativa | 28 disparos (1 uplink recebido) | tentativa em que o receptor não entregou nenhum uplink ao PC durante 22 min (12:25 a 12:46); **não entra nas estatísticas**, fica como registro |
-| `transmissao.csv` | `Rede/transmissor_esp32cam` (fluxo de imagem) | — | uma linha por imagem: PDR, tempo de rádio, latência ([`medir_transmissao.md`](medir_transmissao.md)) |
+| `transmissao.csv` | `Rede/transmissor_esp32cam` (fluxo de imagem, `CAPTURE` pelo PC) | 30 envios | uma linha por imagem: PDR, tempo de rádio, latência ([`medir_transmissao.md`](medir_transmissao.md)); corrida de 2026-10-27, 14:59 a 16:44 |
+| `transmissao_execucoes_anteriores.csv` | mesmo firmware, 5 execuções interrompidas | 21 linhas | execuções das 13:41 a 14:55 que pegaram as janelas de silêncio do receptor (ver "Enlace do fluxo de imagem"); **fora das estatísticas**; os logs e as imagens delas foram apagados |
+| `logs/<execução>/` e `imagens/` | `reconstrutor.py` | 1 execução | `chunks.csv`, `eventos.jsonl`, `serial_rx.txt` (DevAddr mascarado), `serial_tx.txt` e `meta.json` da corrida de `transmissao.csv`; as 21 imagens completas dela (`..._L<id>.jpg`) |
 | `transmissao_ocr.csv` | `Rede/transmissor_ocr_esp32cam` (fluxo de OCR, FPort 2) | — | uma linha por leitura recebida: dígitos, FCnt, RSSI, tempo de rádio, latência ([`medir_transmissao.md`](medir_transmissao.md)) |
 
-Os dois últimos são gerados pelo `reconstrutor.py` e ainda não têm medições em placa.
+Os dois últimos são gerados pelo `reconstrutor.py`. O `transmissao.csv` tem a corrida de 30 envios do fluxo de imagem; o
+`transmissao_ocr.csv` ainda não tem medições em placa.
 
 Todas as capturas são de 2026-09-27 (17:54 a 19:02). Os arquivos `v1`/`teste2` foram
 mantidos por serem medições reais, mas **não entram** na contagem do critério de pronto
@@ -98,8 +101,8 @@ pacotes entregues") compara fluxos, não etapas:
 **Resultado para a H2.** A latência está confirmada com folga (18,84 s contra 189 s). A taxa de entrega depende da
 métrica: por **leitura** entregue o fluxo local foi melhor (27 de 34, 79,4%, contra 20 de 30, 66,7%, na imagem), mas
 a diferença não é estatisticamente distinguível com essas amostras (Fisher exato, p = 0,27); por **pacote**, o fluxo
-de imagem foi melhor (699 de 713, 98,0%, contra 79,4%). Ver as seções de entrega abaixo. `transmissao.csv` e
-`transmissao_ocr.csv` (PDR com FCnt e tempo de rádio, pelo `reconstrutor.py`) ainda não foram gerados.
+de imagem foi melhor (699 de 713, 98,0%, contra 79,4%). Ver as seções de entrega abaixo. O `transmissao.csv` (imagem, 30
+envios, pelo `reconstrutor.py`) confirma o PDR por pacote do fluxo de imagem (98,7%); o `transmissao_ocr.csv` ainda não foi gerado.
 
 ## Consumo do fluxo de imagem (teste curto, câmera ligada durante o envio)
 
@@ -237,6 +240,42 @@ quando o intervalo chega a 1 h, e a diferença cai para ≈ 5%.
   o receptor não entregou nenhum uplink ao PC até as 12:46:19, e a causa não foi identificada (o script dessa tentativa
   ainda não tinha o `--debug`). Essas 28 linhas **não entram** nas estatísticas acima.
 
+## Enlace do fluxo de imagem: PDR, tempo de rádio e latência (`transmissao.csv`, 30 envios)
+
+`python reconstrutor.py --tx --envios 30 --distancia 2 --rotulo "bancada, imagem"` (2026-10-27, 14:59 a 16:44), com o nó
+`transmissor_esp32cam` sempre ligado e o PC mandando `CAPTURE`. Enlace AU915, canal 64, SF8/BW 500 kHz, 175 B por bloco, 7 s
+entre blocos, nó e receptor a ≈ 2 m. Comando de PDR e colunas em [`medir_transmissao.md`](medir_transmissao.md).
+
+| Grandeza | Valor (30 envios) |
+|---|---|
+| Imagens completas | **21 de 30 (70,0%)**; as 9 incompletas perderam 1 ou 2 blocos cada |
+| PDR do enlace (blocos únicos / blocos enviados) | **749 / 759 = 98,7%** |
+| PDR da leitura (blocos únicos / total da imagem) | mediana 1,00, média 0,99, mínimo 0,92 |
+| Tempo de rádio por envio (**calculado**, Semtech AN1200.13) | mediana 3,41 s (2,58 a 3,48 s) |
+| Latência até a imagem completa (n = 21) | **mediana 197,1 s**, de 148,1 a 204,9 s |
+| Blocos por imagem / JPEG | 19 a 26 (mediana 25,5) / 3.323 a 4.468 bytes (mediana 4.379) |
+| RSSI médio | de −33,5 a −31,8 dBm |
+| Tentativas / ocupado / falhas no nó | 759 / 0 / 0 |
+
+- **Conferência:** o nó informou `[envio] concluido: N ok, 0 falhas` em todos os envios; as perdas estão na recepção. Dos
+  751 frames recebidos, 749 viraram blocos novos, 1 era de outro dispositivo (DevAddr diferente, ignorado) e 1 chegou com o
+  cabeçalho corrompido (`total` divergente). O MIC não é validado (não temos a chave de rede), então um frame com bits
+  errados que passe o CRC do rádio entra como bloco; confira a imagem antes de usá-la.
+- **A imagem versionada:** as 21 imagens completas estão em `imagens/`, por exemplo `20261027_145936_bancada-imagem_L60485.jpg`
+  (160×120, mostrador do hidrômetro legível), cada uma com o SHA-256 em `transmissao.csv` e o log em
+  `logs/20261027_145936_bancada-imagem/`.
+- **Perdas no último bloco:** dos 10 blocos perdidos, 4 foram o último da imagem, 2 o primeiro, 1 o penúltimo e 3 do meio.
+  Pelo acaso seriam ≈ 0,4 no último (p < 0,001, binomial simples). A perda do último não aparece como lacuna de `FCnt`
+  (não há frame depois dele). O nó não faz nada depois do último envio além de imprimir `concluido`; a causa não foi
+  investigada.
+- **Janelas de silêncio do receptor (execuções anteriores).** Entre 12:25 e 14:42 o receptor ficou mudo por 15 a 25 min
+  seguidos, enquanto o nó registrava `AT_TX_OK` em todos os blocos: 125 blocos consecutivos perdidos das 14:18 às 14:42,
+  além de rajadas de 15, 14, 10, 8 e 7. Nelas, 185 dos 191 blocos perdidos estavam em rajadas, e as perdas isoladas eram
+  1,9% (a mesma de 09:34 a 11:20). A corrida de `transmissao.csv` (14:59 a 16:44) **não teve nenhuma janela**, então a
+  hipótese de uma recorrência de ≈ 1 h não se confirmou. A causa não foi identificada. As 21 linhas dessas execuções
+  estão em `transmissao_execucoes_anteriores.csv` e não entram nas estatísticas; os logs e as imagens delas foram
+  apagados.
+
 ## Pendente
 
 - **Consumo, fluxo de imagem:** separar o sleep do Radioenge (`SLEEP:60` com ele desconectado); autonomia com a
@@ -252,6 +291,9 @@ quando o intervalo chega a 1 h, e a diferença cai para ≈ 5%.
   padrão (≈ 114 mA acordado, ≈ 25 mA dormindo). Roteiro em
   [`teste_deep_sleep.md`](teste_deep_sleep.md).
 - **Taxa de pacotes entregues (H2):** medida nos dois fluxos pelos CSVs de latência (imagem: 98,0% dos pacotes e
-  20 de 30 imagens; OCR: 79,4% das leituras). `transmissao.csv` (imagem) e `transmissao_ocr.csv` (OCR), gerados pelo
-  `reconstrutor.py` com FCnt e tempo de rádio, ainda sem medições em placa; ver
-  [`medir_transmissao.md`](medir_transmissao.md).
+  20 de 30 imagens; OCR: 79,4% das leituras) e, no fluxo de imagem, pelo `transmissao.csv` (98,7% dos pacotes, 21 de 30
+  imagens). Falta o `transmissao_ocr.csv` (OCR), gerado pelo `reconstrutor.py --tx --fluxo ocr`, ainda sem medições
+  em placa; ver [`medir_transmissao.md`](medir_transmissao.md).
+- **Janelas de silêncio do receptor:** a causa não foi identificada (ver "Enlace do fluxo de imagem").
+- **Perda do último bloco:** 4 dos 10 blocos perdidos na corrida de `transmissao.csv` foram o último da imagem
+  (esperado ≈ 0,4); a causa não foi investigada.

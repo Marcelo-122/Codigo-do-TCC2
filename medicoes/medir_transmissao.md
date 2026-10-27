@@ -6,9 +6,11 @@ entre execuções), `logs/<execução>/` e `imagens/`. Para o fluxo de OCR na bo
 leitura) a saída é `transmissao_ocr.csv`; veja [Fluxo OCR](#fluxo-ocr-na-borda-fport-2) abaixo.
 
 > **Status:** a lógica (contagem de perdas, duplicatas, FCnt, PDR, latência, timeouts, reconexão da
-> serial, formato dos arquivos) foi testada com nó e receptor **simulados** (59 verificações, sem
-> hardware). **Nada disso foi rodado ainda com as placas.** Antes de valer como dado do TCC, faça
-> uma execução curta (`--envios 1`) e confira a linha do CSV contra o que o nó imprimiu.
+> serial, formato dos arquivos) foi testada com nó e receptor simulados (59 verificações) e depois
+> rodada com as placas no fluxo de imagem: 30 envios em 2026-10-27, 14:59 a 16:44 (`transmissao.csv`; resultados em
+> [`README.md`](README.md)). O fluxo de OCR (`--fluxo ocr`, `transmissao_ocr.csv`) ainda não foi medido com este
+> script. `recuperar_imagens.py` refaz as imagens de uma execução a partir do `serial_rx.txt` e confere cada uma pelo
+> SHA-256 do CSV (precisa do `.env`); **não apague `logs/` nem `imagens/`**.
 
 ## Como rodar
 

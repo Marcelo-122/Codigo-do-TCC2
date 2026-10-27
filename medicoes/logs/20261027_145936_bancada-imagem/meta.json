@@ -1,0 +1,60 @@
+{
+  "run_id": "20261027_145936_bancada-imagem",
+  "inicio": "2026-10-27T14:59:36.494-03:00",
+  "fim": "2026-10-27T16:44:33.223-03:00",
+  "modo": "tx_controlado",
+  "rotulo": "bancada, imagem",
+  "distancia_m": 2.0,
+  "comando": [
+    "reconstrutor.py",
+    "--tx",
+    "--envios",
+    "30",
+    "--distancia",
+    "2",
+    "--rotulo",
+    "bancada, imagem"
+  ],
+  "host": "Faisca",
+  "so": "Windows-11-10.0.26300-SP0",
+  "python": "3.13.9",
+  "pyserial": "3.5",
+  "git": {
+    "commit": "0bcb4110",
+    "alterado": false
+  },
+  "enlace": {
+    "sf": 8,
+    "bw_khz": 500,
+    "freq_mhz": 915.9,
+    "chunk_bytes": 175,
+    "cabecalho_bytes": 6,
+    "fport": 1,
+    "fport_leitura": 2,
+    "intervalo_envio_s": 7.0
+  },
+  "tempo_no_ar": "calculado (Semtech AN1200.13, analise_tempo_no_ar.py), nao medido",
+  "privacidade": "DevAddr e chaves nao sao gravados; DevAddr mascarado em serial_rx.txt",
+  "portas": {
+    "rx": "COM8",
+    "tx": "COM5"
+  },
+  "envios_pedidos": 30,
+  "fluxo": "imagem",
+  "grace_s": 3.0,
+  "timeout_inatividade_s": 300.0,
+  "timeout_leitura_s": 900.0,
+  "contadores": {
+    "frames_rx": 751,
+    "frames_novo": 749,
+    "leituras": 30,
+    "leituras_completa": 21,
+    "leituras_incompleta": 9,
+    "frames_ignorados": 1,
+    "ignorado_dev_addr_diferente": 1,
+    "frames_total_divergente": 1
+  },
+  "motivo_fim": "fim_da_execucao",
+  "erro": null,
+  "leituras": 30
+}
