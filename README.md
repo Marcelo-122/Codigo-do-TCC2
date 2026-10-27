@@ -179,7 +179,7 @@ ESP32 nem testado em placa**; a parte do PC foi testada só com frames sintétic
 ```
 Codigo-do-TCC2/
 ├── Rede/                          Firmwares do enlace LoRaWAN (Arduino IDE)
-│   ├── transmissor_esp32cam/      Transmissor do fluxo de IMAGEM (FPort 1): câmera (CAPTURE), reenvio (RESEND), envio vindo do PC (SEND), teste de enlace (SENDALL) e modo autônomo com deep sleep (AUTO/STOP/SLEEP; testado em placa em um teste curto de 3 ciclos, medição completa pendente). No modo autônomo desliga a câmera após a captura (alteração ainda não testada em placa)
+│   ├── transmissor_esp32cam/      Transmissor do fluxo de IMAGEM (FPort 1): câmera (CAPTURE), reenvio (RESEND), envio vindo do PC (SEND), teste de enlace (SENDALL) e modo autônomo com deep sleep (AUTO/STOP/SLEEP; testado em placa, com consumo e latência ponta a ponta medidos em 30 ciclos). No modo autônomo desliga a câmera após a captura
 │   ├── transmissor_ocr_esp32cam/  Transmissor do fluxo de OCR NA BORDA (FPort 2): captura, lê os dígitos na ESP32-CAM (segmentação + classificador, TFLite Micro) e envia só a leitura (9 bytes) em um uplink; mesmo deep sleep e mesma linha [CICLO_FIM]. Contém cópias de `modelo.h`/`modelo_digito.h`. Ainda não compilado com a toolchain do ESP32 nem testado em placa
 │   ├── receptor_lora32/           Firmware do receptor (Heltec/TTGO LoRa32)
 │   └── requirements.txt           Igual ao requirements.txt da raiz
@@ -584,8 +584,11 @@ conjuntos de imagens reais `imagem_capturada_N.jpg`).
 
 Achado importante: a inferência da segmentação levou **~15,6 s por frame** em hardware real
 (mediana de 15.564 ms em 61 capturas, ver [`medicoes/`](medicoes/README.md)) — aceitável para
-calibração, mas precisa ser otimizada antes de uso em produção. Consumo de corrente, deep sleep e
-latência ponta a ponta **ainda não foram medidos**.
+calibração, mas precisa ser otimizada antes de uso em produção. No fluxo de imagem (`Rede/transmissor_esp32cam`)
+o consumo e a latência ponta a ponta foram medidos em 30 ciclos de `AUTO:30` com a câmera desligada após a
+captura: ≈ 4,64 mAh por leitura e latência mediana de 189 s até a imagem completa, mas só 20 das 30 imagens
+chegaram completas (ver [`medicoes/`](medicoes/README.md)). O fluxo de OCR na borda
+(`Rede/transmissor_ocr_esp32cam`) **ainda não foi medido**, em consumo nem em latência.
 
 ---
 

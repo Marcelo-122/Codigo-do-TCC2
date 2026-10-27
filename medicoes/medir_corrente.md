@@ -103,22 +103,22 @@ Saída esperada: uma linha por ciclo com `periodo_s`, `ativo_s`, `mAh`, corrente
 
 ## Medição de referência (teste curto, câmera ligada durante o envio)
 
-Antes de desligar a câmera após a captura, um teste curto no modo `AUTO:30` (2026-10-27, Uno a 100 Hz, `corrente/teste.csv`, 744,8 s, tensão média 4,876 V, `JANELA_STOP_MS = 1500`) deu, com 3 ciclos completos:
+Antes de desligar a câmera após a captura, um teste curto no modo `AUTO:30` (2026-10-27, Uno a 100 Hz, `corrente/teste_1.csv`, 1.024 s, tensão média 4,874 V, `JANELA_STOP_MS = 1500`) deu, com 4 ciclos completos:
 
 ```bash
-python corrente.py analisar corrente/teste.csv --offset-ma 0.0 --init-s 2.699 --captura-s 0.01 --envio-s 139.7 --min-sleep-s 5
+python corrente.py analisar corrente/teste_1.csv --offset-ma 0.0 --init-s 2.699 --captura-s 0.01 --envio-s 139.7 --min-sleep-s 5
 ```
 
 | Grandeza | Valor |
 |---|---|
-| `mAh por leitura` | **6,62** (desvio 0,005 mAh, n = 3; sleep de 30 s) |
-| Período do ciclo | 172,2 s (142,8 s acordado + 30 s de sleep) |
+| `mAh por leitura` | **6,62** (desvio 0,005 mAh, n = 4; sleep de 30 s) |
+| Período do ciclo | 172,1 s (≈ 142,7 s acordado + 30 s de sleep) |
 | Corrente média acordado | ≈ 162 mA (base de ≈ 159 mA entre os chunks) |
 | Corrente em sleep | ≈ 24,1 mA (p5 23,2 / p95 25,2), incluindo o Radioenge |
 | Pico | ≈ 297 mA |
 | Antes de iniciar a câmera | ≈ 77 mA (o degrau até ~159 mA aparece quando a câmera inicia) |
 
-Leitura: o consumo é dominado pela espera de 7 s entre chunks com CPU e câmera ligadas (≈ 95% da carga do ciclo); os picos de TX somam ≈ 2%. Como são só 3 ciclos e o firmware mudou depois (câmera desligada), **isto é referência de "antes da otimização", não o resultado do critério de pronto** (≥ 30 ciclos). Guarde o `teste.csv` para comparar.
+Leitura: o consumo é dominado pela espera de 7 s entre chunks com CPU e câmera ligadas (≈ 95% da carga do ciclo); os picos de TX somam ≈ 2%. Como são só 4 ciclos e o firmware mudou depois (câmera desligada), **isto é referência de "antes da otimização", não o resultado do critério de pronto** (≥ 30 ciclos). Guarde o `teste_1.csv` para comparar.
 
 ## O que enviar ("valor e como mediu")
 

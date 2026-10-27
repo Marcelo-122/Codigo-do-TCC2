@@ -66,8 +66,9 @@ rodam juntos e a leitura sai pela serial. A evidência está em
 [`medicoes/debug_metricas.csv`](../../medicoes/debug_metricas.csv) (61
 capturas de 2026-09-27, ver [`medicoes/README.md`](../../medicoes/README.md)):
 `arena_digito_bytes` = 28.556 e `leitura=046663` repetida no medidor de teste.
-O que **ainda não foi medido** em placa: consumo de corrente, deep sleep e
-latência ponta a ponta (issue de medições de H2/H3).
+Este firmware de debug **não** tem deep sleep nem foi medido em corrente. O consumo e o deep sleep do nó
+foram testados em `Rede/transmissor_esp32cam` (30 ciclos do fluxo de imagem); o consumo e a latência ponta a ponta
+do fluxo de OCR na borda seguem pendentes (ver [`medicoes/README.md`](../../medicoes/README.md)).
 
 Os pontos abaixo são os que mais costumam precisar de ajuste **ao recompilar
 com outra biblioteca/versão**:

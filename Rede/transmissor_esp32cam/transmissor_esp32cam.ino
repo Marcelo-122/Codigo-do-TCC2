@@ -93,7 +93,7 @@ const int JPEG_QUALITY = 90;
 // sleep sobe. O Radioenge continua alimentado (so o ESP32 dorme), entao a sessao
 // LoRaWAN e o contador de quadros ficam no modulo.
 #define FLASH_LED_GPIO GPIO_NUM_4
-#define AUTO_AO_LIGAR  1                      // 1 = modo autonomo ja no power-on
+#define AUTO_AO_LIGAR  0                     // 1 = modo autonomo ja no power-on
 const uint32_t INTERVALO_PADRAO_S = 30;       // dormida padrao do AUTO
 const uint32_t INTERVALO_MIN_S    = 10;
 const unsigned long JANELA_STOP_MS = 0;       // tempo acordado esperando STOP; ponha 0
