@@ -561,7 +561,7 @@ calibração, mas precisa ser otimizada antes de uso em produção. No fluxo de 
 o consumo e a latência ponta a ponta foram medidos em 30 ciclos de `AUTO:30` com a câmera desligada após a
 captura: ≈ 4,64 mAh por leitura e latência mediana de 189 s até a imagem completa, mas só 20 das 30 imagens
 chegaram completas (ver [`medicoes/`](medicoes/README.md)). O fluxo de OCR na borda
-(`Rede/transmissor_ocr_esp32cam`) teve o consumo medido em 30 ciclos (0,825 mAh por leitura, 5,6 vezes menos que
+(`Rede/transmissor_ocr_esp32cam`) teve o consumo medido em 32 ciclos (0,824 mAh por leitura, 5,6 vezes menos que
 a imagem, com ciclo acordado de 19,45 s), e a latência ponta a ponta vista pelo PC foi de 18,84 s (mediana, contra
 189 s da imagem). Só 27 de 34 uplinks do OCR e 20 de 30 imagens chegaram completos ao PC.
 

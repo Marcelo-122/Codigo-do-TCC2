@@ -74,6 +74,17 @@ python corrente.py capturar COM5 corrente/sleep.csv --baud 115200     # deixe ~4
 python corrente.py analisar corrente/sleep.csv --offset-ma 0.0
 ```
 Vale a linha "Nivel de sleep". Para esta medição o script reclama que não há 2 ciclos; o nível de sleep aparece antes disso.
+O subcomando `sleep` faz isso direto (usa o maior trecho de sono da captura e descarta 2 s em cada ponta):
+
+```bash
+python corrente.py sleep corrente/sleep.csv --offset-ma 0.0
+```
+
+**A2. Sleep com e sem o Radioenge** (separa o que é do módulo e o que é da placa). Faça as duas capturas em seguida, na mesma
+bancada: primeiro `corrente/sleep_com_radioenge.csv` e depois `corrente/sleep_sem_radioenge.csv`, cada uma com o nó em
+`SLEEP:60` e ~2 min de captura. Para a segunda, desligue o nó e desconecte do Radioenge o **VCC (3V3)** e os dois fios da
+UART (GPIO14 e GPIO15), deixando só o GND: com a UART ligada e o módulo sem alimentação, a corrente pode entrar por
+ele e falsear a medida. A diferença entre as duas é a corrente do Radioenge parado.
 
 **B. Ciclos completos.** Comece o logger e depois mande `AUTO:60` ao nó (ou deixe `AUTO_AO_LIGAR 1` e `JANELA_STOP_MS = 0` para o consumo de produção). Capture pelo menos 3 ciclos para testar e **≥ 30 ciclos** para o critério de pronto. Copie do log do nó o `[CICLO_FIM]` de um ciclo para pegar `t_ate_ciclo_ms`, `t_captura_ms`, `t_envio_ms`:
 

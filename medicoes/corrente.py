@@ -163,10 +163,13 @@ def analisar(args):
     for r in linhas:
         print("  ".join(f"{r[c]:>12.3f}" if c != "ciclo" else f"{r[c]:>12d}" for c in cab))
 
-    mah = [r["mAh"] for r in linhas]
-    periodo = st.fmean(r["periodo_s"] for r in linhas)
+    excluidos = set(args.excluir_ciclos or [])  # ex.: despertar sem envio (nao e uma leitura)
+    usados = [r for r in linhas if r["ciclo"] not in excluidos]
+    mah = [r["mAh"] for r in usados]
+    periodo = st.fmean(r["periodo_s"] for r in usados)
     sd = st.stdev(mah) if len(mah) > 1 else float("nan")
-    print(f"\nmAh por leitura: {st.fmean(mah):.4f} (desvio {sd:.4f}, n={len(mah)} ciclos)")
+    nota = f", excluidos os ciclos {sorted(excluidos)}" if excluidos else ""
+    print(f"\nmAh por leitura: {st.fmean(mah):.4f} (desvio {sd:.4f}, n={len(mah)} ciclos{nota})")
     print(f"Periodo medio do ciclo: {periodo:.1f} s; corrente media do ciclo: {st.fmean(mah) * 3600 / periodo:.2f} mA")
     print("Para o criterio de pronto (>= 30 leituras por fluxo) sao necessarios >= 30 ciclos.")
     if args.bateria_mah:
@@ -182,22 +185,69 @@ def analisar(args):
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
 
-            plt.figure(figsize=(12, 4))
-            plt.plot(t, i, lw=0.5)
-            plt.axhline(limiar, color="r", ls="--", lw=0.8, label="limiar sleep/ativo")
-            plt.xlabel("s")
-            plt.ylabel("mA")
-            plt.legend()
-            plt.tight_layout()
-            plt.savefig(args.png, dpi=120)
+            import numpy as np
+
+            ta, ia = np.asarray(t), np.asarray(i)
+            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 7))
+            # Visao geral: media de cada 1 s. Desenhar as 100 amostras/s de uma corrida de horas faz os
+            # picos de TX (a cada ~8 s) preencherem o grafico de azul e parecerem corrente alta o tempo todo.
+            seg = np.floor(ta).astype(int)
+            media_1s = np.bincount(seg, weights=ia) / np.maximum(np.bincount(seg), 1)
+            ax1.plot(np.arange(len(media_1s)), media_1s, lw=0.7)
+            ax1.axhline(limiar, color="r", ls="--", lw=0.8, label="limiar sleep/ativo")
+            ax1.set_title(f"{len(usados)} ciclos, media de 1 s (mAh por leitura {st.fmean(mah):.2f})")
+            ax1.set_xlabel("s")
+            ax1.set_ylabel("mA (media de 1 s)")
+            ax1.legend()
+            # Um ciclo ampliado, com as amostras originais (100 Hz), para ver os picos de verdade.
+            k = min(1, len(acordes) - 2)
+            a, b = acordes[k], acordes[k + 1]
+            ax2.plot(ta[a:b] - ta[a], ia[a:b], lw=0.5)
+            ax2.axhline(limiar, color="r", ls="--", lw=0.8)
+            ax2.set_title(f"ciclo {k + 1} ampliado (amostras de 100 Hz)")
+            ax2.set_xlabel("s desde o despertar")
+            ax2.set_ylabel("mA")
+            fig.tight_layout()
+            fig.savefig(args.png, dpi=120)
             print(f"Grafico em {args.png}")
         except ImportError:
             print("matplotlib nao instalado: grafico ignorado.")
 
 
+def nivel_do_sleep(args):
+    """Corrente do sleep numa captura com um unico trecho de sono (ex.: SLEEP:60)."""
+    t, i, v = carregar(args.csv, args.offset_ma)
+    baixos = sorted(i)[: max(10, len(i) // 10)]
+    nivel = st.median(baixos)
+    limiar = args.limiar_ma if args.limiar_ma else nivel + max(5.0, 0.5 * nivel)
+    trechos = achar_sleeps(t, i, limiar, args.min_sleep_s)
+    if not trechos:
+        sys.exit(f"Nenhum trecho abaixo de {limiar:.1f} mA por >= {args.min_sleep_s} s. Ajuste --limiar-ma ou --min-sleep-s.")
+    ini, fim = max(trechos, key=lambda r: t[r[1] - 1] - t[r[0]])
+    a = indice_em(t, t[ini] + args.margem_s, ini, fim)          # descarta as transicoes das pontas
+    b = indice_em(t, t[fim - 1] - args.margem_s, a, fim)
+    seg = i[a:b]
+    if len(seg) < 10:
+        sys.exit("Trecho de sleep curto demais depois de descontar a margem.")
+    print(f"{len(t)} amostras em {t[-1]:.1f} s, tensao media {st.fmean(v):.3f} V; limiar sleep/ativo {limiar:.1f} mA")
+    print(f"Trecho de sleep usado: {t[ini]:.1f} a {t[fim - 1]:.1f} s ({t[fim - 1] - t[ini]:.1f} s; "
+          f"{t[b] - t[a]:.1f} s depois de descontar {args.margem_s:g} s em cada ponta)")
+    print(f"Corrente em sleep: media {st.fmean(seg):.2f} mA, mediana {st.median(seg):.2f}, "
+          f"desvio {st.stdev(seg):.2f}, min {min(seg):.2f}, max {max(seg):.2f} (offset {args.offset_ma:g} mA descontado)")
+    antes = [x for x in i[:ini] if x >= limiar]
+    if len(antes) > 100:
+        print(f"Corrente acordado antes do sleep: media {st.fmean(antes):.1f} mA ({len(antes) / 100:.0f} s)")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("sleep", help="corrente do sleep de uma captura com um unico SLEEP:<s>")
+    s.add_argument("csv")
+    s.add_argument("--offset-ma", type=float, default=0.0)
+    s.add_argument("--limiar-ma", type=float, default=None, help="limiar sleep/ativo (padrao: automatico)")
+    s.add_argument("--min-sleep-s", type=float, default=10.0)
+    s.add_argument("--margem-s", type=float, default=2.0, help="segundos descartados no inicio e no fim do sleep")
     c = sub.add_parser("capturar")
     c.add_argument("porta")
     c.add_argument("saida")
@@ -208,6 +258,8 @@ def main():
     a.add_argument("--limiar-ma", type=float, default=None, help="limiar sleep/ativo (padrao: automatico)")
     a.add_argument("--min-sleep-s", type=float, default=2.0)
     a.add_argument("--max-amostras", type=int, default=None, help="analisa so as primeiras N amostras do arquivo")
+    a.add_argument("--excluir-ciclos", type=int, nargs="+", metavar="N",
+                   help="numeros dos ciclos (como na tabela) a deixar fora da media, ex.: um despertar sem envio")
     a.add_argument("--init-s", type=float, help="t_ate_ciclo_ms do no, em s")
     a.add_argument("--captura-s", type=float, help="t_captura_ms do no, em s")
     a.add_argument("--envio-s", type=float, help="t_envio_ms do no, em s")
@@ -218,6 +270,8 @@ def main():
     args = p.parse_args()
     if args.cmd == "capturar":
         capturar(args.porta, args.saida, args.baud)
+    elif args.cmd == "sleep":
+        nivel_do_sleep(args)
     else:
         analisar(args)
 
