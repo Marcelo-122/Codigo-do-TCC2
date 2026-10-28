@@ -14,7 +14,7 @@ Tempos em ms desde o disparo: `t_ate_foto_ms`, `t_ate_primeiro_chunk_ms`, `t_ate
 `t_envio_ms` (último − primeiro chunk) e **`t_ate_disponivel_ms`**, que é a latência ponta a ponta:
 a imagem remontada no PC.
 
-Definições adotadas (confirme que batem com a issue):
+Definições adotadas:
 - **"Servidor"** = o PC que remonta a imagem a partir do receptor Heltec (é o que existe hoje no
   repositório). Se o destino passar a ser o ChirpStack, o marco final muda para a chegada no MQTT.
 - **Disparo** no modo `capture` = instante em que o PC escreve `CAPTURE`. No modo `auto` = primeira

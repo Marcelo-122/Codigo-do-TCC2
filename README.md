@@ -17,6 +17,7 @@ O trabalho une duas frentes que se complementam:
 
 - [Decisão: pipeline de OCR na borda](#decisão-pipeline-de-ocr-na-borda)
 - [Origem das imagens e como o pipeline é avaliado](#origem-das-imagens-e-como-o-pipeline-é-avaliado)
+- [Hipóteses avaliadas](#hipóteses-avaliadas)
 - [Visão geral da arquitetura](#visão-geral-da-arquitetura)
 - [Estrutura do repositório](#estrutura-do-repositório)
 - [Como reproduzir](#como-reproduzir)
@@ -114,6 +115,18 @@ câmera, a lente e a compressão, mas **não** o reflexo, a iluminação e o ân
 INT8 (caixa prevista pelo **modelo de segmentação** → fatias iguais → classificador de dígito, sem caixa manual) nos
 dois fluxos, borda (quadro 160×120 direto) e nuvem (o mesmo quadro depois do JPEG q90), e grava em
 [`medicoes/ocr_teste.csv`](medicoes/ocr_teste.csv): taxa de leitura exata, acurácia por dígito, CER, Dice/IoU da
+
+---
+
+## Hipóteses avaliadas
+
+As medições em [`medicoes/`](medicoes/README.md) comparam os dois fluxos, **imagem** (o JPEG vai pelo enlace e o OCR
+roda no servidor) e **OCR na borda** (só a leitura vai pelo enlace), segundo duas hipóteses do trabalho:
+
+| Hipótese | Enunciado | Métricas | Resultado medido |
+|---|---|---|---|
+| **H2** (latência e entrega) | "O método de processamento local apresenta menor latência e maior valor de taxa de pacotes entregues" | Latência ponta a ponta; taxa de entrega por leitura e por pacote | Latência confirmada (mediana de 18,84 s contra 189 s). Entrega por leitura: 79,4 % contra 66,7 %, diferença sem significância estatística (Fisher, p = 0,27). Por pacote o fluxo de imagem foi melhor (98,0 % contra 79,4 %) |
+| **H3** (energia) | Consumo de energia dos dois fluxos | mAh por leitura; autonomia estimada | O OCR na borda gasta 5,6 a 7,2 vezes menos por leitura. O efeito na autonomia vai de 1,1× a 6× conforme a corrente de sleep, que ainda inclui o Radioenge |
 
 ---
 
@@ -241,7 +254,7 @@ python scripts/download_datasets.py             # baixa os do Kaggle
 |---|---|---|
 | `legado/ocr_cloud/` (treino) | Digits 0–9 | `legado/ocr_cloud/num_dataset/` |
 | `legado/TreinoEModelosOCRNaBorda/` | Yandex.Toloka + Digits 0–9 | `dataset/images/`, `dataset/masks/`, `dataset/num/`; depois `gerar_blackout.py` e `gerador_sintetico.py` criam `visores_blackout/` e `visores_sinteticos/` |
-| `ModeloEDataset/` | Yandex.Toloka + Word-Wheel (Dryad, **download manual**, 2,8 GB) | `dataset/images/`, `dataset/masks/`, `dataset/Word-Wheel_Water_Meter_Dataset/`. As fotos de cartaz do TCC I não estão no repo: use `--cartaz PASTA` em `preparar_dataset_dominio_esp32.py` |
+| `ModeloEDataset/` | Yandex.Toloka + Word-Wheel (Dryad, **download manual**, 2,8 GB) | `dataset/images/`, `dataset/masks/`, `dataset/Word-Wheel_Water_Meter_Dataset/`. As fotos de domínio (3 fotos da ESP32-CAM em `Imagens/`) já estão no repo |
 
 **3. Rodar cada parte** (detalhes nas seções abaixo):
 
@@ -372,7 +385,7 @@ python -m venv .venv
 # Em outro terminal serial (ou no Monitor Serial do transmissor) envie:  CAPTURE
 ```
 
-Para **medir** (a issue pede ≥ 30 envios a distâncias fixas), deixe o PC controlar o nó também:
+Para **medir** (≥ 30 envios a cada distância fixa), deixe o PC controlar o nó também:
 feche o Monitor Serial e rode, por exemplo,
 
 ```bash
@@ -535,7 +548,7 @@ python -m venv .venv                 # Python 3.10 (TensorFlow sem wheel estáve
 .venv\Scripts\pip install -r requirements.txt
 .venv\Scripts\python preparar_dataset_digitos.py
 .venv\Scripts\python preparar_dataset_dryad.py          # requer o dataset Dryad local (2,8 GB, não versionado)
-.venv\Scripts\python preparar_dataset_dominio_esp32.py --cartaz PASTA_COM_AS_FOTOS_DE_CARTAZ   # opcional; sem a pasta, essas amostras são rejeitadas
+.venv\Scripts\python preparar_dataset_dominio_esp32.py   # as 3 fotos de domínio de dominio_labels.csv (Imagens/)
 .venv\Scripts\python treinar_classificador_digitos.py
 .venv\Scripts\python gerar_header.py --tflite modelos/modelo_digito.tflite --header modelos/modelo_digito.h --array-name modelo_digito_tflite
 ```
@@ -667,5 +680,5 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 
 - **Marcelo Fernandes** — enlace LoRaWAN, integração com a ESP32-CAM, `ModeloEDataset/` e `test_images/`
 - **Gustavo Santos** — `legado/TreinoEModelosOCRNaBorda/` (treino e modelos de OCR na borda; autor do modelo de segmentação original citado em `ModeloEDataset/`)
-- **ChristianDev123** — `poc_diminuicao_imagem/` e `legado/ocr_cloud/`
+- **Christian Lima** — `poc_diminuicao_imagem/` e `legado/ocr_cloud/`
 

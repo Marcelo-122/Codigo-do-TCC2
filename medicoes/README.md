@@ -1,5 +1,7 @@
 # Medições em hardware (H2 – latência, H3 – energia)
 
+As hipóteses H2 e H3 estão definidas no [README da raiz](../README.md#hipóteses-avaliadas).
+
 Dados brutos capturados na ESP32-CAM pelo firmware
 [`debug_ocr_esp32cam`](../test_images/debug_ocr_esp32cam/debug_ocr_esp32cam.ino)
 e gravados por [`grab_image_debug.py`](../test_images/debug_ocr_esp32cam/grab_image_debug.py).
@@ -26,7 +28,7 @@ Os dois últimos são gerados pelo `reconstrutor.py`. O `transmissao.csv` tem a 
 `transmissao_ocr.csv` ainda não tem medições em placa.
 
 Todas as capturas são de 2026-09-27 (17:54 a 19:02). Os arquivos `v1`/`teste2` foram
-mantidos por serem medições reais, mas **não entram** na contagem do critério de pronto
+mantidos por serem medições reais, mas **não entram** nos resultados abaixo
 (firmware diferente).
 
 > **Correção do CSV.** O `debug_metricas.csv` original misturava 28 linhas do firmware antigo
@@ -212,6 +214,37 @@ O que a tabela mede de cada fluxo é o **custo de uma leitura**: 4,64 contra 0,8
 4,46 contra 0,62 mAh (7,2 vezes) só do tempo acordado. Isso é o que a H3 compara durante a transmissão. A autonomia depende
 também do sleep, como mostra a próxima seção.
 
+### Autonomia: o piso de sleep esconde a diferença entre os fluxos
+
+Em sleep o protótipo consome **≈ 24 mA**, e isso é um defeito da bancada, não uma característica dos fluxos: o ESP32 em
+deep sleep gasta microampères, mas o Radioenge continua ligado (o firmware só dorme o ESP32), e a placa ESP32-CAM tem
+regulador, LED e a câmera em power-down. A medição de sleep inclui tudo isso, e **ainda não foi separada** (falta medir o
+`SLEEP:60` com o Radioenge desconectado). Com intervalos longos, esses 24 mA dominam a conta dos dois fluxos: em 1 h são
+22,7 mAh de sleep, contra 4,5 mAh (imagem) ou 0,6 mAh (OCR) da leitura. Por isso, com o piso medido, a autonomia dos dois
+fica próxima (3,1 e 3,4 dias), embora uma leitura de imagem custe 7 vezes mais.
+
+Autonomia estimada para a bateria hipotética de 2000 mAh, variando o piso de sleep (mesmo valor nos dois fluxos, para
+isolar o efeito do fluxo). **Só a linha de 24 mA usa um valor medido; os demais pisos são hipóteses.**
+
+| Intervalo | Piso de sleep | Imagem | OCR | OCR / imagem |
+|---|---|---|---|---|
+| 10 min | 24 mA (medido) | 1,9 dia | 3,1 dias | 1,6× |
+| 10 min | 5 mA | 2,8 dias | 9,8 dias | 3,5× |
+| 10 min | 1 mA | 3,0 dias | 17,8 dias | 5,9× |
+| 10 min | 0,1 mA | 3,1 dias | 21,9 dias | 7,0× |
+| 1 h | 24 mA (medido) | 3,1 dias | 3,4 dias | 1,1× |
+| 1 h | 5 mA | 9,1 dias | 14,9 dias | 1,6× |
+| 1 h | 1 mA | 15,4 dias | 51,7 dias | 3,4× |
+| 1 h | 0,1 mA | 18,3 dias | 116,1 dias | 6,3× |
+
+Cálculo: `mAh por leitura = corrente acordado × tempo acordado + piso de sleep × (intervalo − tempo acordado)`, com 84,5 mA e
+189,9 s (imagem) e 114,4 mA e 19,45 s (OCR); o modelo reproduz os 4,64 e os 0,824 mAh medidos com o sleep de 30 s. Os
+1,1 e 1,4 dia da tabela anterior usam o sleep medido em cada corrida (23,7 e 25,2 mA); a diferença entre corridas
+também explica por que a linha de 1 h dava 3,1 e 3,2 dias antes e agora 3,1 e 3,4.
+
+**Para a H3**, o resultado é: por leitura, o fluxo de imagem gasta 5,6 a 7,2 vezes mais energia, e o efeito sobre a
+autonomia vai de pequeno (1,1× em 1 h, com o piso medido) a grande (6× com piso de 0,1 mA) conforme o piso de sleep. Só
+dá para afirmar a autonomia real depois de medir o sleep sem o Radioenge e com o regulador que o campo usará.
 
 ## Latência ponta a ponta e entrega do fluxo de OCR (34 leituras)
 

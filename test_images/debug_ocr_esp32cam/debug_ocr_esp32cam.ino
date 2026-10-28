@@ -28,18 +28,18 @@
 //    Os #include abaixo assumem os caminhos de header mais comuns entre
 //    essas bibliotecas (tensorflow/lite/micro/...). Se o compilador
 //    reclamar de "file not found", é o primeiro lugar pra olhar: pode
-//    precisar ajustar os caminhos dos #include conforme a biblioteca que
-//    você instalou.
+//    precisar ajustar os caminhos dos #include conforme a biblioteca
+//    instalada.
 // 2) Board: "AI Thinker ESP32-CAM" no Arduino IDE, com PSRAM habilitada
 //    ("PSRAM: Enabled"). Os dois modelos juntos (segmentação ~1,6 MB +
 //    classificador de dígito ~110 KB de ativação intermediária, medido em
 //    Python) não cabem na RAM interna (~520 KB) - os dois tensor arenas
 //    são alocados da PSRAM de propósito (TENSOR_ARENA_SIZE e
 //    DIGIT_ARENA_SIZE abaixo).
-// 3) Ligue a ESP32CAM na mesma porta serial que você já usa com
-//    grab_image.py, mas rode o NOVO script Python
-//    (grab_image_debug.py, no mesmo diretório) em vez do grab_image.py
-//    original - ele espera tanto a imagem quanto a linha de métricas.
+// 3) Ligue a ESP32CAM na mesma porta serial usada pelo grab_image.py
+//    (TX_SERIAL_PORT no .env), mas rode o grab_image_debug.py (no mesmo
+//    diretório) em vez do grab_image.py - ele espera tanto a imagem
+//    quanto a linha de métricas.
 // ------------------------------------------------------------------
 
 #include "esp_camera.h"

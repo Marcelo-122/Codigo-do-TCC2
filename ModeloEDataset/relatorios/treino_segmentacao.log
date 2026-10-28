@@ -1,0 +1,450 @@
+-> Carregando imagens e máscaras...
+Dataset carregado! Total: 1244 amostras.
+Treino: 872 | validação: 186 | teste: 186
+
+-> Criando modelo
+
+[00:00:10] -> Iniciando Treinamento (lote 16, máx. 600 épocas, paciência 60)
+[00:00:14] época 1/600 loss=1.4005 dice=0.0011 iou=0.0006 | val_loss=1.1760 val_dice=0.0000 val_iou=0.0000 * | no máximo mais ~37 min
+[00:00:23] época 5/600 loss=1.0646 dice=0.0000 iou=0.0000 | val_loss=1.0709 val_dice=0.0000 val_iou=0.0000 | no máximo mais ~26 min
+[00:00:35] época 10/600 loss=0.9807 dice=0.0274 iou=0.0145 | val_loss=0.9816 val_dice=0.0612 val_iou=0.0333 * | no máximo mais ~24 min
+[00:00:37] época 11/600 loss=0.9695 dice=0.0883 iou=0.0487 | val_loss=0.9737 val_dice=0.1088 val_iou=0.0614 * | no máximo mais ~24 min
+[00:00:40] época 12/600 loss=0.9617 dice=0.1202 iou=0.0678 | val_loss=0.9671 val_dice=0.1242 val_iou=0.0706 * | no máximo mais ~24 min
+[00:00:42] época 13/600 loss=0.9557 dice=0.1324 iou=0.0753 | val_loss=0.9619 val_dice=0.1371 val_iou=0.0787 * | no máximo mais ~24 min
+[00:00:44] época 14/600 loss=0.9504 dice=0.1489 iou=0.0860 | val_loss=0.9571 val_dice=0.1560 val_iou=0.0912 * | no máximo mais ~24 min
+[00:00:47] época 15/600 loss=0.9452 dice=0.1652 iou=0.0970 | val_loss=0.9523 val_dice=0.1705 val_iou=0.1010 * | no máximo mais ~24 min
+[00:00:49] época 16/600 loss=0.9403 dice=0.1806 iou=0.1076 | val_loss=0.9474 val_dice=0.1861 val_iou=0.1115 * | no máximo mais ~24 min
+[00:00:52] época 17/600 loss=0.9354 dice=0.1933 iou=0.1163 | val_loss=0.9428 val_dice=0.1971 val_iou=0.1186 * | no máximo mais ~24 min
+[00:00:54] época 18/600 loss=0.9307 dice=0.2007 iou=0.1213 | val_loss=0.9378 val_dice=0.2044 val_iou=0.1234 * | no máximo mais ~24 min
+[00:00:57] época 19/600 loss=0.9261 dice=0.2068 iou=0.1255 | val_loss=0.9329 val_dice=0.2111 val_iou=0.1278 * | no máximo mais ~24 min
+[00:00:59] época 20/600 loss=0.9217 dice=0.2122 iou=0.1291 | val_loss=0.9281 val_dice=0.2160 val_iou=0.1311 * | no máximo mais ~24 min
+[00:01:02] época 21/600 loss=0.9173 dice=0.2172 iou=0.1325 | val_loss=0.9233 val_dice=0.2203 val_iou=0.1342 * | no máximo mais ~24 min
+[00:01:04] época 22/600 loss=0.9131 dice=0.2222 iou=0.1359 | val_loss=0.9187 val_dice=0.2242 val_iou=0.1370 * | no máximo mais ~24 min
+[00:01:06] época 23/600 loss=0.9089 dice=0.2266 iou=0.1389 | val_loss=0.9141 val_dice=0.2279 val_iou=0.1397 * | no máximo mais ~24 min
+[00:01:09] época 24/600 loss=0.9048 dice=0.2307 iou=0.1418 | val_loss=0.9101 val_dice=0.2304 val_iou=0.1417 * | no máximo mais ~23 min
+[00:01:11] época 25/600 loss=0.9010 dice=0.2348 iou=0.1447 | val_loss=0.9065 val_dice=0.2336 val_iou=0.1441 * | no máximo mais ~23 min
+[00:01:14] época 26/600 loss=0.8975 dice=0.2387 iou=0.1474 | val_loss=0.9029 val_dice=0.2363 val_iou=0.1462 * | no máximo mais ~23 min
+[00:01:16] época 27/600 loss=0.8942 dice=0.2424 iou=0.1500 | val_loss=0.8997 val_dice=0.2398 val_iou=0.1488 * | no máximo mais ~23 min
+[00:01:19] época 28/600 loss=0.8910 dice=0.2457 iou=0.1524 | val_loss=0.8966 val_dice=0.2423 val_iou=0.1507 * | no máximo mais ~23 min
+[00:01:21] época 29/600 loss=0.8880 dice=0.2489 iou=0.1547 | val_loss=0.8937 val_dice=0.2448 val_iou=0.1526 * | no máximo mais ~23 min
+[00:01:24] época 30/600 loss=0.8853 dice=0.2518 iou=0.1568 | val_loss=0.8910 val_dice=0.2463 val_iou=0.1539 * | no máximo mais ~23 min
+[00:01:26] época 31/600 loss=0.8828 dice=0.2545 iou=0.1588 | val_loss=0.8884 val_dice=0.2485 val_iou=0.1556 * | no máximo mais ~23 min
+[00:01:29] época 32/600 loss=0.8803 dice=0.2570 iou=0.1606 | val_loss=0.8859 val_dice=0.2509 val_iou=0.1574 * | no máximo mais ~23 min
+[00:01:31] época 33/600 loss=0.8780 dice=0.2593 iou=0.1623 | val_loss=0.8837 val_dice=0.2526 val_iou=0.1587 * | no máximo mais ~23 min
+[00:01:34] época 34/600 loss=0.8758 dice=0.2615 iou=0.1639 | val_loss=0.8816 val_dice=0.2546 val_iou=0.1603 * | no máximo mais ~23 min
+[00:01:36] época 35/600 loss=0.8737 dice=0.2636 iou=0.1654 | val_loss=0.8795 val_dice=0.2571 val_iou=0.1621 * | no máximo mais ~23 min
+[00:01:39] época 36/600 loss=0.8718 dice=0.2656 iou=0.1669 | val_loss=0.8778 val_dice=0.2582 val_iou=0.1631 * | no máximo mais ~23 min
+[00:01:41] época 37/600 loss=0.8700 dice=0.2674 iou=0.1682 | val_loss=0.8760 val_dice=0.2599 val_iou=0.1644 * | no máximo mais ~23 min
+[00:01:44] época 38/600 loss=0.8682 dice=0.2690 iou=0.1695 | val_loss=0.8744 val_dice=0.2608 val_iou=0.1652 * | no máximo mais ~23 min
+[00:01:46] época 39/600 loss=0.8665 dice=0.2706 iou=0.1706 | val_loss=0.8726 val_dice=0.2625 val_iou=0.1665 * | no máximo mais ~23 min
+[00:01:49] época 40/600 loss=0.8648 dice=0.2721 iou=0.1718 | val_loss=0.8712 val_dice=0.2635 val_iou=0.1673 * | no máximo mais ~23 min
+[00:01:51] época 41/600 loss=0.8632 dice=0.2735 iou=0.1729 | val_loss=0.8699 val_dice=0.2639 val_iou=0.1679 * | no máximo mais ~23 min
+[00:01:54] época 42/600 loss=0.8619 dice=0.2749 iou=0.1739 | val_loss=0.8694 val_dice=0.2639 val_iou=0.1682 * | no máximo mais ~23 min
+[00:02:01] época 45/600 loss=0.8578 dice=0.2790 iou=0.1772 | val_loss=0.8686 val_dice=0.2615 val_iou=0.1674 | no máximo mais ~23 min
+[00:02:11] época 49/600 loss=0.8517 dice=0.2846 iou=0.1815 | val_loss=0.8648 val_dice=0.2641 val_iou=0.1699 * | no máximo mais ~23 min
+[00:02:13] época 50/600 loss=0.8502 dice=0.2861 iou=0.1826 | val_loss=0.8633 val_dice=0.2657 val_iou=0.1711 * | no máximo mais ~23 min
+[00:02:16] época 51/600 loss=0.8488 dice=0.2873 iou=0.1836 | val_loss=0.8623 val_dice=0.2663 val_iou=0.1717 * | no máximo mais ~23 min
+[00:02:18] época 52/600 loss=0.8475 dice=0.2886 iou=0.1846 | val_loss=0.8614 val_dice=0.2668 val_iou=0.1722 * | no máximo mais ~23 min
+[00:02:21] época 53/600 loss=0.8461 dice=0.2900 iou=0.1857 | val_loss=0.8599 val_dice=0.2684 val_iou=0.1735 * | no máximo mais ~23 min
+[00:02:24] época 54/600 loss=0.8446 dice=0.2913 iou=0.1867 | val_loss=0.8583 val_dice=0.2700 val_iou=0.1747 * | no máximo mais ~22 min
+[00:02:26] época 55/600 loss=0.8432 dice=0.2927 iou=0.1878 | val_loss=0.8569 val_dice=0.2713 val_iou=0.1758 * | no máximo mais ~23 min
+[00:02:29] época 56/600 loss=0.8419 dice=0.2939 iou=0.1888 | val_loss=0.8555 val_dice=0.2727 val_iou=0.1769 * | no máximo mais ~22 min
+[00:02:31] época 57/600 loss=0.8405 dice=0.2953 iou=0.1900 | val_loss=0.8541 val_dice=0.2741 val_iou=0.1780 * | no máximo mais ~22 min
+[00:02:34] época 58/600 loss=0.8392 dice=0.2965 iou=0.1910 | val_loss=0.8529 val_dice=0.2752 val_iou=0.1789 * | no máximo mais ~22 min
+[00:02:36] época 59/600 loss=0.8379 dice=0.2977 iou=0.1919 | val_loss=0.8520 val_dice=0.2758 val_iou=0.1795 * | no máximo mais ~22 min
+[00:02:39] época 60/600 loss=0.8366 dice=0.2990 iou=0.1930 | val_loss=0.8505 val_dice=0.2773 val_iou=0.1808 * | no máximo mais ~22 min
+[00:02:41] época 61/600 loss=0.8353 dice=0.3003 iou=0.1941 | val_loss=0.8495 val_dice=0.2780 val_iou=0.1814 * | no máximo mais ~22 min
+[00:02:44] época 62/600 loss=0.8339 dice=0.3013 iou=0.1949 | val_loss=0.8477 val_dice=0.2798 val_iou=0.1828 * | no máximo mais ~22 min
+[00:02:46] época 63/600 loss=0.8326 dice=0.3025 iou=0.1960 | val_loss=0.8469 val_dice=0.2804 val_iou=0.1834 * | no máximo mais ~22 min
+[00:02:49] época 64/600 loss=0.8313 dice=0.3037 iou=0.1970 | val_loss=0.8458 val_dice=0.2812 val_iou=0.1842 * | no máximo mais ~22 min
+[00:02:51] época 65/600 loss=0.8300 dice=0.3049 iou=0.1979 | val_loss=0.8443 val_dice=0.2827 val_iou=0.1853 * | no máximo mais ~22 min
+[00:02:53] época 66/600 loss=0.8287 dice=0.3061 iou=0.1989 | val_loss=0.8431 val_dice=0.2840 val_iou=0.1864 * | no máximo mais ~22 min
+[00:02:56] época 67/600 loss=0.8275 dice=0.3072 iou=0.1998 | val_loss=0.8422 val_dice=0.2846 val_iou=0.1870 * | no máximo mais ~22 min
+[00:02:58] época 68/600 loss=0.8262 dice=0.3084 iou=0.2009 | val_loss=0.8409 val_dice=0.2858 val_iou=0.1880 * | no máximo mais ~22 min
+[00:03:01] época 69/600 loss=0.8251 dice=0.3094 iou=0.2017 | val_loss=0.8400 val_dice=0.2865 val_iou=0.1886 * | no máximo mais ~22 min
+[00:03:03] época 70/600 loss=0.8240 dice=0.3104 iou=0.2026 | val_loss=0.8391 val_dice=0.2871 val_iou=0.1893 * | no máximo mais ~22 min
+[00:03:06] época 71/600 loss=0.8229 dice=0.3115 iou=0.2035 | val_loss=0.8381 val_dice=0.2882 val_iou=0.1901 * | no máximo mais ~22 min
+[00:03:08] época 72/600 loss=0.8218 dice=0.3124 iou=0.2042 | val_loss=0.8373 val_dice=0.2888 val_iou=0.1907 * | no máximo mais ~22 min
+[00:03:11] época 73/600 loss=0.8207 dice=0.3134 iou=0.2050 | val_loss=0.8357 val_dice=0.2906 val_iou=0.1921 * | no máximo mais ~22 min
+[00:03:13] época 74/600 loss=0.8196 dice=0.3145 iou=0.2060 | val_loss=0.8345 val_dice=0.2919 val_iou=0.1932 * | no máximo mais ~22 min
+[00:03:16] época 75/600 loss=0.8185 dice=0.3154 iou=0.2067 | val_loss=0.8330 val_dice=0.2936 val_iou=0.1944 * | no máximo mais ~22 min
+[00:03:21] época 77/600 loss=0.8165 dice=0.3172 iou=0.2082 | val_loss=0.8311 val_dice=0.2956 val_iou=0.1961 * | no máximo mais ~22 min
+[00:03:23] época 78/600 loss=0.8154 dice=0.3182 iou=0.2090 | val_loss=0.8301 val_dice=0.2966 val_iou=0.1970 * | no máximo mais ~22 min
+[00:03:26] época 79/600 loss=0.8145 dice=0.3190 iou=0.2097 | val_loss=0.8292 val_dice=0.2975 val_iou=0.1977 * | no máximo mais ~22 min
+[00:03:28] época 80/600 loss=0.8135 dice=0.3198 iou=0.2104 | val_loss=0.8281 val_dice=0.2985 val_iou=0.1985 * | no máximo mais ~21 min
+[00:03:31] época 81/600 loss=0.8126 dice=0.3206 iou=0.2110 | val_loss=0.8270 val_dice=0.2999 val_iou=0.1995 * | no máximo mais ~21 min
+[00:03:33] época 82/600 loss=0.8117 dice=0.3214 iou=0.2117 | val_loss=0.8259 val_dice=0.3010 val_iou=0.2003 * | no máximo mais ~21 min
+[00:03:36] época 83/600 loss=0.8108 dice=0.3222 iou=0.2124 | val_loss=0.8247 val_dice=0.3022 val_iou=0.2012 * | no máximo mais ~21 min
+[00:03:38] época 84/600 loss=0.8100 dice=0.3230 iou=0.2130 | val_loss=0.8231 val_dice=0.3042 val_iou=0.2026 * | no máximo mais ~21 min
+[00:03:41] época 85/600 loss=0.8092 dice=0.3238 iou=0.2137 | val_loss=0.8231 val_dice=0.3038 val_iou=0.2025 | no máximo mais ~21 min
+[00:03:46] época 87/600 loss=0.8077 dice=0.3251 iou=0.2149 | val_loss=0.8217 val_dice=0.3048 val_iou=0.2034 * | no máximo mais ~21 min
+[00:03:48] época 88/600 loss=0.8069 dice=0.3258 iou=0.2155 | val_loss=0.8210 val_dice=0.3055 val_iou=0.2039 * | no máximo mais ~21 min
+[00:03:51] época 89/600 loss=0.8061 dice=0.3266 iou=0.2161 | val_loss=0.8204 val_dice=0.3061 val_iou=0.2044 * | no máximo mais ~21 min
+[00:03:54] época 90/600 loss=0.8054 dice=0.3273 iou=0.2167 | val_loss=0.8196 val_dice=0.3068 val_iou=0.2050 * | no máximo mais ~21 min
+[00:03:56] época 91/600 loss=0.8046 dice=0.3279 iou=0.2172 | val_loss=0.8191 val_dice=0.3072 val_iou=0.2053 * | no máximo mais ~21 min
+[00:03:59] época 92/600 loss=0.8039 dice=0.3287 iou=0.2179 | val_loss=0.8184 val_dice=0.3077 val_iou=0.2057 * | no máximo mais ~21 min
+[00:04:01] época 93/600 loss=0.8032 dice=0.3292 iou=0.2183 | val_loss=0.8175 val_dice=0.3086 val_iou=0.2064 * | no máximo mais ~21 min
+[00:04:03] época 94/600 loss=0.8025 dice=0.3298 iou=0.2189 | val_loss=0.8170 val_dice=0.3090 val_iou=0.2067 * | no máximo mais ~21 min
+[00:04:06] época 95/600 loss=0.8018 dice=0.3305 iou=0.2194 | val_loss=0.8165 val_dice=0.3091 val_iou=0.2068 * | no máximo mais ~21 min
+[00:04:08] época 96/600 loss=0.8011 dice=0.3310 iou=0.2199 | val_loss=0.8155 val_dice=0.3106 val_iou=0.2080 * | no máximo mais ~21 min
+[00:04:16] época 99/600 loss=0.7991 dice=0.3328 iou=0.2214 | val_loss=0.8143 val_dice=0.3107 val_iou=0.2083 * | no máximo mais ~21 min
+[00:04:18] época 100/600 loss=0.7984 dice=0.3334 iou=0.2220 | val_loss=0.8135 val_dice=0.3120 val_iou=0.2092 * | no máximo mais ~21 min
+[00:04:21] época 101/600 loss=0.7976 dice=0.3341 iou=0.2225 | val_loss=0.8129 val_dice=0.3127 val_iou=0.2098 * | no máximo mais ~21 min
+[00:04:23] época 102/600 loss=0.7970 dice=0.3346 iou=0.2230 | val_loss=0.8124 val_dice=0.3129 val_iou=0.2100 * | no máximo mais ~21 min
+[00:04:26] época 103/600 loss=0.7964 dice=0.3350 iou=0.2234 | val_loss=0.8117 val_dice=0.3137 val_iou=0.2107 * | no máximo mais ~21 min
+[00:04:28] época 104/600 loss=0.7957 dice=0.3355 iou=0.2238 | val_loss=0.8112 val_dice=0.3139 val_iou=0.2110 * | no máximo mais ~20 min
+[00:04:30] época 105/600 loss=0.7951 dice=0.3361 iou=0.2244 | val_loss=0.8111 val_dice=0.3139 val_iou=0.2110 | no máximo mais ~20 min
+[00:04:33] época 106/600 loss=0.7944 dice=0.3368 iou=0.2249 | val_loss=0.8104 val_dice=0.3149 val_iou=0.2118 * | no máximo mais ~20 min
+[00:04:38] época 108/600 loss=0.7933 dice=0.3377 iou=0.2257 | val_loss=0.8098 val_dice=0.3150 val_iou=0.2119 * | no máximo mais ~20 min
+[00:04:40] época 109/600 loss=0.7927 dice=0.3382 iou=0.2262 | val_loss=0.8094 val_dice=0.3153 val_iou=0.2122 * | no máximo mais ~20 min
+[00:04:43] época 110/600 loss=0.7920 dice=0.3388 iou=0.2267 | val_loss=0.8087 val_dice=0.3157 val_iou=0.2126 * | no máximo mais ~20 min
+[00:04:45] época 111/600 loss=0.7914 dice=0.3394 iou=0.2273 | val_loss=0.8083 val_dice=0.3161 val_iou=0.2129 * | no máximo mais ~20 min
+[00:04:48] época 112/600 loss=0.7908 dice=0.3399 iou=0.2277 | val_loss=0.8077 val_dice=0.3167 val_iou=0.2134 * | no máximo mais ~20 min
+[00:04:50] época 113/600 loss=0.7902 dice=0.3405 iou=0.2282 | val_loss=0.8071 val_dice=0.3171 val_iou=0.2137 * | no máximo mais ~20 min
+[00:04:53] época 114/600 loss=0.7897 dice=0.3410 iou=0.2287 | val_loss=0.8067 val_dice=0.3175 val_iou=0.2141 * | no máximo mais ~20 min
+[00:04:55] época 115/600 loss=0.7891 dice=0.3414 iou=0.2291 | val_loss=0.8065 val_dice=0.3174 val_iou=0.2141 | no máximo mais ~20 min
+[00:04:58] época 116/600 loss=0.7885 dice=0.3419 iou=0.2295 | val_loss=0.8059 val_dice=0.3179 val_iou=0.2145 * | no máximo mais ~20 min
+[00:05:00] época 117/600 loss=0.7880 dice=0.3424 iou=0.2300 | val_loss=0.8053 val_dice=0.3186 val_iou=0.2151 * | no máximo mais ~20 min
+[00:05:03] época 118/600 loss=0.7873 dice=0.3430 iou=0.2305 | val_loss=0.8047 val_dice=0.3189 val_iou=0.2154 * | no máximo mais ~20 min
+[00:05:05] época 119/600 loss=0.7868 dice=0.3436 iou=0.2310 | val_loss=0.8045 val_dice=0.3191 val_iou=0.2156 * | no máximo mais ~20 min
+[00:05:07] época 120/600 loss=0.7862 dice=0.3441 iou=0.2314 | val_loss=0.8041 val_dice=0.3193 val_iou=0.2159 * | no máximo mais ~20 min
+[00:05:10] época 121/600 loss=0.7857 dice=0.3445 iou=0.2318 | val_loss=0.8036 val_dice=0.3201 val_iou=0.2165 * | no máximo mais ~20 min
+[00:05:15] época 123/600 loss=0.7846 dice=0.3454 iou=0.2327 | val_loss=0.8027 val_dice=0.3208 val_iou=0.2171 * | no máximo mais ~20 min
+[00:05:17] época 124/600 loss=0.7840 dice=0.3461 iou=0.2332 | val_loss=0.8018 val_dice=0.3221 val_iou=0.2180 * | no máximo mais ~20 min
+[00:05:20] época 125/600 loss=0.7834 dice=0.3465 iou=0.2336 | val_loss=0.8012 val_dice=0.3227 val_iou=0.2186 * | no máximo mais ~20 min
+[00:05:22] época 126/600 loss=0.7828 dice=0.3470 iou=0.2341 | val_loss=0.8008 val_dice=0.3227 val_iou=0.2186 * | no máximo mais ~20 min
+[00:05:25] época 127/600 loss=0.7824 dice=0.3474 iou=0.2344 | val_loss=0.8005 val_dice=0.3229 val_iou=0.2189 * | no máximo mais ~20 min
+[00:05:27] época 128/600 loss=0.7819 dice=0.3479 iou=0.2349 | val_loss=0.8002 val_dice=0.3233 val_iou=0.2192 * | no máximo mais ~19 min
+[00:05:32] época 130/600 loss=0.7809 dice=0.3488 iou=0.2357 | val_loss=0.7990 val_dice=0.3247 val_iou=0.2204 * | no máximo mais ~19 min
+[00:05:42] época 134/600 loss=0.7789 dice=0.3505 iou=0.2372 | val_loss=0.7981 val_dice=0.3247 val_iou=0.2207 * | no máximo mais ~19 min
+[00:05:44] época 135/600 loss=0.7784 dice=0.3509 iou=0.2377 | val_loss=0.7974 val_dice=0.3254 val_iou=0.2212 * | no máximo mais ~19 min
+[00:05:49] época 137/600 loss=0.7773 dice=0.3519 iou=0.2385 | val_loss=0.7964 val_dice=0.3262 val_iou=0.2219 * | no máximo mais ~19 min
+[00:05:52] época 138/600 loss=0.7767 dice=0.3524 iou=0.2390 | val_loss=0.7959 val_dice=0.3268 val_iou=0.2224 * | no máximo mais ~19 min
+[00:05:54] época 139/600 loss=0.7763 dice=0.3527 iou=0.2393 | val_loss=0.7954 val_dice=0.3274 val_iou=0.2229 * | no máximo mais ~19 min
+[00:05:57] época 140/600 loss=0.7758 dice=0.3532 iou=0.2397 | val_loss=0.7951 val_dice=0.3276 val_iou=0.2232 * | no máximo mais ~19 min
+[00:05:59] época 141/600 loss=0.7753 dice=0.3536 iou=0.2401 | val_loss=0.7945 val_dice=0.3285 val_iou=0.2238 * | no máximo mais ~19 min
+[00:06:02] época 142/600 loss=0.7747 dice=0.3541 iou=0.2405 | val_loss=0.7941 val_dice=0.3289 val_iou=0.2242 * | no máximo mais ~19 min
+[00:06:04] época 143/600 loss=0.7743 dice=0.3544 iou=0.2408 | val_loss=0.7940 val_dice=0.3290 val_iou=0.2244 * | no máximo mais ~19 min
+[00:06:11] época 145/600 loss=0.7735 dice=0.3552 iou=0.2415 | val_loss=0.7938 val_dice=0.3287 val_iou=0.2243 | no máximo mais ~19 min
+[00:06:19] época 148/600 loss=0.7721 dice=0.3565 iou=0.2427 | val_loss=0.7928 val_dice=0.3292 val_iou=0.2249 * | no máximo mais ~19 min
+[00:06:21] época 149/600 loss=0.7715 dice=0.3569 iou=0.2431 | val_loss=0.7923 val_dice=0.3297 val_iou=0.2254 * | no máximo mais ~19 min
+[00:06:23] época 150/600 loss=0.7710 dice=0.3573 iou=0.2435 | val_loss=0.7922 val_dice=0.3297 val_iou=0.2255 * | no máximo mais ~19 min
+[00:06:26] época 151/600 loss=0.7705 dice=0.3579 iou=0.2440 | val_loss=0.7914 val_dice=0.3307 val_iou=0.2263 * | no máximo mais ~19 min
+[00:06:28] época 152/600 loss=0.7697 dice=0.3586 iou=0.2447 | val_loss=0.7907 val_dice=0.3315 val_iou=0.2269 * | no máximo mais ~19 min
+[00:06:31] época 153/600 loss=0.7692 dice=0.3591 iou=0.2451 | val_loss=0.7903 val_dice=0.3320 val_iou=0.2273 * | no máximo mais ~19 min
+[00:06:33] época 154/600 loss=0.7687 dice=0.3595 iou=0.2455 | val_loss=0.7898 val_dice=0.3324 val_iou=0.2278 * | no máximo mais ~18 min
+[00:06:35] época 155/600 loss=0.7682 dice=0.3599 iou=0.2459 | val_loss=0.7894 val_dice=0.3329 val_iou=0.2283 * | no máximo mais ~18 min
+[00:06:38] época 156/600 loss=0.7677 dice=0.3605 iou=0.2464 | val_loss=0.7886 val_dice=0.3340 val_iou=0.2291 * | no máximo mais ~18 min
+[00:06:41] época 157/600 loss=0.7672 dice=0.3610 iou=0.2468 | val_loss=0.7883 val_dice=0.3342 val_iou=0.2293 * | no máximo mais ~18 min
+[00:06:43] época 158/600 loss=0.7666 dice=0.3614 iou=0.2472 | val_loss=0.7875 val_dice=0.3352 val_iou=0.2300 * | no máximo mais ~18 min
+[00:06:46] época 159/600 loss=0.7660 dice=0.3621 iou=0.2478 | val_loss=0.7870 val_dice=0.3356 val_iou=0.2304 * | no máximo mais ~18 min
+[00:06:49] época 160/600 loss=0.7655 dice=0.3624 iou=0.2482 | val_loss=0.7869 val_dice=0.3353 val_iou=0.2302 | no máximo mais ~18 min
+[00:06:51] época 161/600 loss=0.7651 dice=0.3628 iou=0.2485 | val_loss=0.7864 val_dice=0.3357 val_iou=0.2306 * | no máximo mais ~18 min
+[00:06:54] época 162/600 loss=0.7646 dice=0.3634 iou=0.2490 | val_loss=0.7862 val_dice=0.3359 val_iou=0.2308 * | no máximo mais ~18 min
+[00:06:57] época 163/600 loss=0.7642 dice=0.3638 iou=0.2494 | val_loss=0.7856 val_dice=0.3364 val_iou=0.2313 * | no máximo mais ~18 min
+[00:07:03] época 165/600 loss=0.7633 dice=0.3646 iou=0.2502 | val_loss=0.7855 val_dice=0.3364 val_iou=0.2314 | no máximo mais ~18 min
+[00:07:06] época 166/600 loss=0.7628 dice=0.3652 iou=0.2507 | val_loss=0.7851 val_dice=0.3367 val_iou=0.2316 * | no máximo mais ~18 min
+[00:07:09] época 167/600 loss=0.7623 dice=0.3656 iou=0.2510 | val_loss=0.7846 val_dice=0.3373 val_iou=0.2321 * | no máximo mais ~18 min
+[00:07:14] época 169/600 loss=0.7613 dice=0.3665 iou=0.2518 | val_loss=0.7839 val_dice=0.3379 val_iou=0.2327 * | no máximo mais ~18 min
+[00:07:17] época 170/600 loss=0.7608 dice=0.3670 iou=0.2523 | val_loss=0.7835 val_dice=0.3383 val_iou=0.2331 * | no máximo mais ~18 min
+[00:07:22] época 172/600 loss=0.7599 dice=0.3680 iou=0.2532 | val_loss=0.7834 val_dice=0.3386 val_iou=0.2335 * | no máximo mais ~18 min
+[00:07:25] época 173/600 loss=0.7594 dice=0.3684 iou=0.2536 | val_loss=0.7829 val_dice=0.3393 val_iou=0.2341 * | no máximo mais ~18 min
+[00:07:28] época 174/600 loss=0.7589 dice=0.3690 iou=0.2541 | val_loss=0.7825 val_dice=0.3395 val_iou=0.2344 * | no máximo mais ~18 min
+[00:07:30] época 175/600 loss=0.7584 dice=0.3694 iou=0.2545 | val_loss=0.7820 val_dice=0.3400 val_iou=0.2347 * | no máximo mais ~18 min
+[00:07:33] época 176/600 loss=0.7579 dice=0.3698 iou=0.2550 | val_loss=0.7816 val_dice=0.3406 val_iou=0.2352 * | no máximo mais ~18 min
+[00:07:35] época 177/600 loss=0.7574 dice=0.3704 iou=0.2554 | val_loss=0.7810 val_dice=0.3413 val_iou=0.2358 * | no máximo mais ~18 min
+[00:07:38] época 178/600 loss=0.7569 dice=0.3708 iou=0.2558 | val_loss=0.7805 val_dice=0.3420 val_iou=0.2364 * | no máximo mais ~18 min
+[00:07:40] época 179/600 loss=0.7563 dice=0.3713 iou=0.2563 | val_loss=0.7798 val_dice=0.3429 val_iou=0.2371 * | no máximo mais ~18 min
+[00:07:43] época 180/600 loss=0.7557 dice=0.3718 iou=0.2568 | val_loss=0.7794 val_dice=0.3433 val_iou=0.2374 * | no máximo mais ~18 min
+[00:07:45] época 181/600 loss=0.7554 dice=0.3721 iou=0.2570 | val_loss=0.7792 val_dice=0.3435 val_iou=0.2376 * | no máximo mais ~18 min
+[00:07:48] época 182/600 loss=0.7550 dice=0.3724 iou=0.2573 | val_loss=0.7790 val_dice=0.3437 val_iou=0.2378 * | no máximo mais ~18 min
+[00:07:50] época 183/600 loss=0.7546 dice=0.3728 iou=0.2577 | val_loss=0.7787 val_dice=0.3440 val_iou=0.2381 * | no máximo mais ~17 min
+[00:07:53] época 184/600 loss=0.7541 dice=0.3733 iou=0.2581 | val_loss=0.7783 val_dice=0.3443 val_iou=0.2382 * | no máximo mais ~17 min
+[00:07:55] época 185/600 loss=0.7536 dice=0.3737 iou=0.2585 | val_loss=0.7780 val_dice=0.3446 val_iou=0.2385 * | no máximo mais ~17 min
+[00:07:58] época 186/600 loss=0.7532 dice=0.3740 iou=0.2588 | val_loss=0.7777 val_dice=0.3449 val_iou=0.2387 * | no máximo mais ~17 min
+[00:08:05] época 189/600 loss=0.7519 dice=0.3751 iou=0.2599 | val_loss=0.7768 val_dice=0.3458 val_iou=0.2396 * | no máximo mais ~17 min
+[00:08:07] época 190/600 loss=0.7515 dice=0.3755 iou=0.2603 | val_loss=0.7768 val_dice=0.3455 val_iou=0.2394 | no máximo mais ~17 min
+[00:08:12] época 192/600 loss=0.7508 dice=0.3761 iou=0.2608 | val_loss=0.7764 val_dice=0.3462 val_iou=0.2401 * | no máximo mais ~17 min
+[00:08:20] época 195/600 loss=0.7497 dice=0.3771 iou=0.2617 | val_loss=0.7759 val_dice=0.3467 val_iou=0.2406 * | no máximo mais ~17 min
+[00:08:22] época 196/600 loss=0.7492 dice=0.3775 iou=0.2621 | val_loss=0.7751 val_dice=0.3475 val_iou=0.2412 * | no máximo mais ~17 min
+[00:08:25] época 197/600 loss=0.7487 dice=0.3780 iou=0.2626 | val_loss=0.7748 val_dice=0.3475 val_iou=0.2413 * | no máximo mais ~17 min
+[00:08:27] época 198/600 loss=0.7483 dice=0.3784 iou=0.2629 | val_loss=0.7745 val_dice=0.3476 val_iou=0.2415 * | no máximo mais ~17 min
+[00:08:30] época 199/600 loss=0.7478 dice=0.3787 iou=0.2632 | val_loss=0.7745 val_dice=0.3477 val_iou=0.2416 * | no máximo mais ~17 min
+[00:08:32] época 200/600 loss=0.7474 dice=0.3791 iou=0.2636 | val_loss=0.7741 val_dice=0.3482 val_iou=0.2420 * | no máximo mais ~17 min
+[00:08:35] época 201/600 loss=0.7470 dice=0.3795 iou=0.2639 | val_loss=0.7734 val_dice=0.3492 val_iou=0.2428 * | no máximo mais ~17 min
+[00:08:37] época 202/600 loss=0.7466 dice=0.3798 iou=0.2642 | val_loss=0.7731 val_dice=0.3493 val_iou=0.2429 * | no máximo mais ~17 min
+[00:08:40] época 203/600 loss=0.7462 dice=0.3802 iou=0.2646 | val_loss=0.7729 val_dice=0.3496 val_iou=0.2433 * | no máximo mais ~17 min
+[00:08:42] época 204/600 loss=0.7459 dice=0.3804 iou=0.2648 | val_loss=0.7725 val_dice=0.3501 val_iou=0.2437 * | no máximo mais ~17 min
+[00:08:44] época 205/600 loss=0.7456 dice=0.3808 iou=0.2651 | val_loss=0.7724 val_dice=0.3500 val_iou=0.2436 | no máximo mais ~17 min
+[00:08:47] época 206/600 loss=0.7452 dice=0.3811 iou=0.2655 | val_loss=0.7721 val_dice=0.3503 val_iou=0.2439 * | no máximo mais ~16 min
+[00:08:52] época 208/600 loss=0.7446 dice=0.3817 iou=0.2660 | val_loss=0.7717 val_dice=0.3505 val_iou=0.2441 * | no máximo mais ~16 min
+[00:08:54] época 209/600 loss=0.7442 dice=0.3821 iou=0.2664 | val_loss=0.7713 val_dice=0.3509 val_iou=0.2445 * | no máximo mais ~16 min
+[00:08:57] época 210/600 loss=0.7438 dice=0.3824 iou=0.2667 | val_loss=0.7709 val_dice=0.3514 val_iou=0.2450 * | no máximo mais ~16 min
+[00:09:02] época 212/600 loss=0.7431 dice=0.3830 iou=0.2672 | val_loss=0.7704 val_dice=0.3519 val_iou=0.2454 * | no máximo mais ~16 min
+[00:09:04] época 213/600 loss=0.7428 dice=0.3833 iou=0.2675 | val_loss=0.7703 val_dice=0.3519 val_iou=0.2455 * | no máximo mais ~16 min
+[00:09:07] época 214/600 loss=0.7423 dice=0.3838 iou=0.2680 | val_loss=0.7699 val_dice=0.3522 val_iou=0.2457 * | no máximo mais ~16 min
+[00:09:09] época 215/600 loss=0.7420 dice=0.3841 iou=0.2682 | val_loss=0.7698 val_dice=0.3525 val_iou=0.2460 * | no máximo mais ~16 min
+[00:09:14] época 217/600 loss=0.7414 dice=0.3846 iou=0.2687 | val_loss=0.7693 val_dice=0.3528 val_iou=0.2464 * | no máximo mais ~16 min
+[00:09:17] época 218/600 loss=0.7410 dice=0.3850 iou=0.2691 | val_loss=0.7689 val_dice=0.3533 val_iou=0.2468 * | no máximo mais ~16 min
+[00:09:19] época 219/600 loss=0.7406 dice=0.3854 iou=0.2694 | val_loss=0.7688 val_dice=0.3535 val_iou=0.2470 * | no máximo mais ~16 min
+[00:09:22] época 220/600 loss=0.7403 dice=0.3856 iou=0.2697 | val_loss=0.7688 val_dice=0.3533 val_iou=0.2469 | no máximo mais ~16 min
+[00:09:29] época 223/600 loss=0.7394 dice=0.3864 iou=0.2704 | val_loss=0.7684 val_dice=0.3540 val_iou=0.2476 * | no máximo mais ~16 min
+[00:09:31] época 224/600 loss=0.7391 dice=0.3867 iou=0.2707 | val_loss=0.7682 val_dice=0.3541 val_iou=0.2476 * | no máximo mais ~16 min
+[00:09:34] época 225/600 loss=0.7388 dice=0.3869 iou=0.2709 | val_loss=0.7680 val_dice=0.3543 val_iou=0.2479 * | no máximo mais ~16 min
+[00:09:44] época 229/600 loss=0.7375 dice=0.3882 iou=0.2720 | val_loss=0.7673 val_dice=0.3550 val_iou=0.2485 * | no máximo mais ~15 min
+[00:09:46] época 230/600 loss=0.7372 dice=0.3884 iou=0.2723 | val_loss=0.7675 val_dice=0.3544 val_iou=0.2481 | no máximo mais ~15 min
+[00:09:54] época 233/600 loss=0.7363 dice=0.3893 iou=0.2731 | val_loss=0.7671 val_dice=0.3552 val_iou=0.2488 * | no máximo mais ~15 min
+[00:09:56] época 234/600 loss=0.7360 dice=0.3896 iou=0.2734 | val_loss=0.7670 val_dice=0.3553 val_iou=0.2489 * | no máximo mais ~15 min
+[00:09:59] época 235/600 loss=0.7356 dice=0.3900 iou=0.2737 | val_loss=0.7667 val_dice=0.3554 val_iou=0.2490 * | no máximo mais ~15 min
+[00:10:01] época 236/600 loss=0.7352 dice=0.3904 iou=0.2741 | val_loss=0.7662 val_dice=0.3560 val_iou=0.2495 * | no máximo mais ~15 min
+[00:10:04] época 237/600 loss=0.7348 dice=0.3907 iou=0.2744 | val_loss=0.7660 val_dice=0.3560 val_iou=0.2496 * | no máximo mais ~15 min
+[00:10:09] época 239/600 loss=0.7342 dice=0.3914 iou=0.2751 | val_loss=0.7658 val_dice=0.3560 val_iou=0.2497 * | no máximo mais ~15 min
+[00:10:11] época 240/600 loss=0.7340 dice=0.3916 iou=0.2753 | val_loss=0.7655 val_dice=0.3564 val_iou=0.2500 * | no máximo mais ~15 min
+[00:10:16] época 242/600 loss=0.7333 dice=0.3921 iou=0.2758 | val_loss=0.7649 val_dice=0.3570 val_iou=0.2505 * | no máximo mais ~15 min
+[00:10:19] época 243/600 loss=0.7329 dice=0.3926 iou=0.2763 | val_loss=0.7648 val_dice=0.3571 val_iou=0.2506 * | no máximo mais ~15 min
+[00:10:24] época 245/600 loss=0.7322 dice=0.3933 iou=0.2769 | val_loss=0.7645 val_dice=0.3574 val_iou=0.2510 * | no máximo mais ~15 min
+[00:10:26] época 246/600 loss=0.7318 dice=0.3936 iou=0.2773 | val_loss=0.7643 val_dice=0.3575 val_iou=0.2511 * | no máximo mais ~15 min
+[00:10:29] época 247/600 loss=0.7315 dice=0.3940 iou=0.2776 | val_loss=0.7644 val_dice=0.3576 val_iou=0.2513 * | no máximo mais ~15 min
+[00:10:31] época 248/600 loss=0.7311 dice=0.3943 iou=0.2779 | val_loss=0.7639 val_dice=0.3580 val_iou=0.2516 * | no máximo mais ~15 min
+[00:10:33] época 249/600 loss=0.7307 dice=0.3947 iou=0.2783 | val_loss=0.7635 val_dice=0.3585 val_iou=0.2520 * | no máximo mais ~15 min
+[00:10:36] época 250/600 loss=0.7303 dice=0.3951 iou=0.2787 | val_loss=0.7628 val_dice=0.3591 val_iou=0.2524 * | no máximo mais ~15 min
+[00:10:38] época 251/600 loss=0.7299 dice=0.3954 iou=0.2790 | val_loss=0.7626 val_dice=0.3593 val_iou=0.2526 * | no máximo mais ~15 min
+[00:10:41] época 252/600 loss=0.7297 dice=0.3957 iou=0.2793 | val_loss=0.7623 val_dice=0.3600 val_iou=0.2532 * | no máximo mais ~15 min
+[00:10:43] época 253/600 loss=0.7293 dice=0.3960 iou=0.2796 | val_loss=0.7621 val_dice=0.3602 val_iou=0.2534 * | no máximo mais ~14 min
+[00:10:48] época 255/600 loss=0.7287 dice=0.3966 iou=0.2801 | val_loss=0.7619 val_dice=0.3603 val_iou=0.2535 * | no máximo mais ~14 min
+[00:10:59] época 259/600 loss=0.7274 dice=0.3978 iou=0.2814 | val_loss=0.7614 val_dice=0.3607 val_iou=0.2540 * | no máximo mais ~14 min
+[00:11:01] época 260/600 loss=0.7270 dice=0.3981 iou=0.2817 | val_loss=0.7610 val_dice=0.3612 val_iou=0.2544 * | no máximo mais ~14 min
+[00:11:04] época 261/600 loss=0.7266 dice=0.3986 iou=0.2821 | val_loss=0.7605 val_dice=0.3615 val_iou=0.2547 * | no máximo mais ~14 min
+[00:11:06] época 262/600 loss=0.7262 dice=0.3989 iou=0.2824 | val_loss=0.7605 val_dice=0.3616 val_iou=0.2549 * | no máximo mais ~14 min
+[00:11:09] época 263/600 loss=0.7259 dice=0.3992 iou=0.2826 | val_loss=0.7601 val_dice=0.3620 val_iou=0.2552 * | no máximo mais ~14 min
+[00:11:14] época 265/600 loss=0.7253 dice=0.3997 iou=0.2832 | val_loss=0.7600 val_dice=0.3621 val_iou=0.2553 * | no máximo mais ~14 min
+[00:11:16] época 266/600 loss=0.7249 dice=0.4000 iou=0.2835 | val_loss=0.7597 val_dice=0.3621 val_iou=0.2554 * | no máximo mais ~14 min
+[00:11:26] época 270/600 loss=0.7237 dice=0.4012 iou=0.2846 | val_loss=0.7594 val_dice=0.3622 val_iou=0.2556 * | no máximo mais ~14 min
+[00:11:29] época 271/600 loss=0.7234 dice=0.4014 iou=0.2848 | val_loss=0.7592 val_dice=0.3624 val_iou=0.2557 * | no máximo mais ~14 min
+[00:11:31] época 272/600 loss=0.7231 dice=0.4017 iou=0.2851 | val_loss=0.7591 val_dice=0.3624 val_iou=0.2558 * | no máximo mais ~14 min
+[00:11:34] época 273/600 loss=0.7228 dice=0.4019 iou=0.2853 | val_loss=0.7589 val_dice=0.3625 val_iou=0.2558 * | no máximo mais ~14 min
+[00:11:36] época 274/600 loss=0.7226 dice=0.4021 iou=0.2856 | val_loss=0.7587 val_dice=0.3628 val_iou=0.2561 * | no máximo mais ~14 min
+[00:11:39] época 275/600 loss=0.7222 dice=0.4025 iou=0.2859 | val_loss=0.7582 val_dice=0.3630 val_iou=0.2562 * | no máximo mais ~14 min
+[00:11:41] época 276/600 loss=0.7219 dice=0.4028 iou=0.2862 | val_loss=0.7580 val_dice=0.3634 val_iou=0.2566 * | no máximo mais ~14 min
+[00:11:44] época 277/600 loss=0.7216 dice=0.4031 iou=0.2865 | val_loss=0.7574 val_dice=0.3640 val_iou=0.2571 * | no máximo mais ~13 min
+[00:11:46] época 278/600 loss=0.7213 dice=0.4033 iou=0.2867 | val_loss=0.7575 val_dice=0.3640 val_iou=0.2572 * | no máximo mais ~13 min
+[00:11:49] época 279/600 loss=0.7211 dice=0.4035 iou=0.2869 | val_loss=0.7574 val_dice=0.3640 val_iou=0.2571 * | no máximo mais ~13 min
+[00:11:52] época 280/600 loss=0.7208 dice=0.4037 iou=0.2872 | val_loss=0.7572 val_dice=0.3641 val_iou=0.2572 * | no máximo mais ~13 min
+[00:11:54] época 281/600 loss=0.7204 dice=0.4040 iou=0.2874 | val_loss=0.7571 val_dice=0.3643 val_iou=0.2574 * | no máximo mais ~13 min
+[00:11:56] época 282/600 loss=0.7201 dice=0.4042 iou=0.2877 | val_loss=0.7569 val_dice=0.3645 val_iou=0.2575 * | no máximo mais ~13 min
+[00:11:59] época 283/600 loss=0.7199 dice=0.4045 iou=0.2879 | val_loss=0.7568 val_dice=0.3646 val_iou=0.2577 * | no máximo mais ~13 min
+[00:12:01] época 284/600 loss=0.7196 dice=0.4048 iou=0.2882 | val_loss=0.7565 val_dice=0.3648 val_iou=0.2578 * | no máximo mais ~13 min
+[00:12:04] época 285/600 loss=0.7193 dice=0.4049 iou=0.2883 | val_loss=0.7563 val_dice=0.3649 val_iou=0.2579 * | no máximo mais ~13 min
+[00:12:06] época 286/600 loss=0.7191 dice=0.4052 iou=0.2886 | val_loss=0.7563 val_dice=0.3649 val_iou=0.2579 * | no máximo mais ~13 min
+[00:12:09] época 287/600 loss=0.7188 dice=0.4055 iou=0.2889 | val_loss=0.7561 val_dice=0.3653 val_iou=0.2582 * | no máximo mais ~13 min
+[00:12:11] época 288/600 loss=0.7184 dice=0.4058 iou=0.2892 | val_loss=0.7559 val_dice=0.3653 val_iou=0.2582 * | no máximo mais ~13 min
+[00:12:16] época 290/600 loss=0.7179 dice=0.4062 iou=0.2895 | val_loss=0.7555 val_dice=0.3657 val_iou=0.2585 * | no máximo mais ~13 min
+[00:12:19] época 291/600 loss=0.7177 dice=0.4064 iou=0.2898 | val_loss=0.7554 val_dice=0.3659 val_iou=0.2587 * | no máximo mais ~13 min
+[00:12:21] época 292/600 loss=0.7174 dice=0.4067 iou=0.2900 | val_loss=0.7551 val_dice=0.3661 val_iou=0.2589 * | no máximo mais ~13 min
+[00:12:29] época 295/600 loss=0.7165 dice=0.4076 iou=0.2909 | val_loss=0.7547 val_dice=0.3664 val_iou=0.2592 * | no máximo mais ~13 min
+[00:12:31] época 296/600 loss=0.7162 dice=0.4078 iou=0.2911 | val_loss=0.7542 val_dice=0.3671 val_iou=0.2599 * | no máximo mais ~13 min
+[00:12:41] época 300/600 loss=0.7147 dice=0.4092 iou=0.2925 | val_loss=0.7542 val_dice=0.3664 val_iou=0.2594 | no máximo mais ~13 min
+[00:12:44] época 301/600 loss=0.7143 dice=0.4095 iou=0.2928 | val_loss=0.7532 val_dice=0.3676 val_iou=0.2604 * | no máximo mais ~12 min
+[00:12:46] época 302/600 loss=0.7138 dice=0.4098 iou=0.2931 | val_loss=0.7528 val_dice=0.3677 val_iou=0.2607 * | no máximo mais ~12 min
+[00:12:49] época 303/600 loss=0.7135 dice=0.4101 iou=0.2934 | val_loss=0.7525 val_dice=0.3680 val_iou=0.2610 * | no máximo mais ~12 min
+[00:12:51] época 304/600 loss=0.7131 dice=0.4105 iou=0.2938 | val_loss=0.7520 val_dice=0.3685 val_iou=0.2614 * | no máximo mais ~12 min
+[00:12:53] época 305/600 loss=0.7127 dice=0.4108 iou=0.2941 | val_loss=0.7516 val_dice=0.3689 val_iou=0.2617 * | no máximo mais ~12 min
+[00:12:56] época 306/600 loss=0.7123 dice=0.4112 iou=0.2945 | val_loss=0.7511 val_dice=0.3695 val_iou=0.2623 * | no máximo mais ~12 min
+[00:12:58] época 307/600 loss=0.7119 dice=0.4117 iou=0.2949 | val_loss=0.7509 val_dice=0.3696 val_iou=0.2623 * | no máximo mais ~12 min
+[00:13:01] época 308/600 loss=0.7116 dice=0.4121 iou=0.2953 | val_loss=0.7505 val_dice=0.3701 val_iou=0.2627 * | no máximo mais ~12 min
+[00:13:03] época 309/600 loss=0.7111 dice=0.4125 iou=0.2958 | val_loss=0.7504 val_dice=0.3701 val_iou=0.2628 * | no máximo mais ~12 min
+[00:13:06] época 310/600 loss=0.7108 dice=0.4129 iou=0.2961 | val_loss=0.7500 val_dice=0.3704 val_iou=0.2631 * | no máximo mais ~12 min
+[00:13:08] época 311/600 loss=0.7104 dice=0.4133 iou=0.2965 | val_loss=0.7497 val_dice=0.3707 val_iou=0.2633 * | no máximo mais ~12 min
+[00:13:11] época 312/600 loss=0.7100 dice=0.4136 iou=0.2968 | val_loss=0.7497 val_dice=0.3707 val_iou=0.2634 * | no máximo mais ~12 min
+[00:13:13] época 313/600 loss=0.7097 dice=0.4139 iou=0.2970 | val_loss=0.7494 val_dice=0.3709 val_iou=0.2636 * | no máximo mais ~12 min
+[00:13:16] época 314/600 loss=0.7094 dice=0.4142 iou=0.2974 | val_loss=0.7490 val_dice=0.3711 val_iou=0.2639 * | no máximo mais ~12 min
+[00:13:18] época 315/600 loss=0.7091 dice=0.4144 iou=0.2975 | val_loss=0.7488 val_dice=0.3714 val_iou=0.2641 * | no máximo mais ~12 min
+[00:13:23] época 317/600 loss=0.7085 dice=0.4150 iou=0.2981 | val_loss=0.7483 val_dice=0.3714 val_iou=0.2643 * | no máximo mais ~12 min
+[00:13:26] época 318/600 loss=0.7082 dice=0.4152 iou=0.2983 | val_loss=0.7478 val_dice=0.3720 val_iou=0.2647 * | no máximo mais ~12 min
+[00:13:28] época 319/600 loss=0.7079 dice=0.4154 iou=0.2986 | val_loss=0.7476 val_dice=0.3721 val_iou=0.2649 * | no máximo mais ~12 min
+[00:13:31] época 320/600 loss=0.7075 dice=0.4158 iou=0.2989 | val_loss=0.7471 val_dice=0.3727 val_iou=0.2653 * | no máximo mais ~12 min
+[00:13:41] época 324/600 loss=0.7064 dice=0.4167 iou=0.2998 | val_loss=0.7463 val_dice=0.3729 val_iou=0.2657 * | no máximo mais ~12 min
+[00:13:43] época 325/600 loss=0.7061 dice=0.4170 iou=0.3001 | val_loss=0.7464 val_dice=0.3727 val_iou=0.2655 | no máximo mais ~11 min
+[00:13:56] época 330/600 loss=0.7047 dice=0.4182 iou=0.3012 | val_loss=0.7458 val_dice=0.3731 val_iou=0.2659 * | no máximo mais ~11 min
+[00:13:58] época 331/600 loss=0.7044 dice=0.4184 iou=0.3014 | val_loss=0.7454 val_dice=0.3736 val_iou=0.2664 * | no máximo mais ~11 min
+[00:14:01] época 332/600 loss=0.7041 dice=0.4186 iou=0.3017 | val_loss=0.7450 val_dice=0.3742 val_iou=0.2669 * | no máximo mais ~11 min
+[00:14:08] época 335/600 loss=0.7034 dice=0.4192 iou=0.3023 | val_loss=0.7450 val_dice=0.3738 val_iou=0.2666 | no máximo mais ~11 min
+[00:14:20] época 340/600 loss=0.7021 dice=0.4202 iou=0.3033 | val_loss=0.7443 val_dice=0.3741 val_iou=0.2668 | no máximo mais ~11 min
+[00:14:23] época 341/600 loss=0.7019 dice=0.4204 iou=0.3035 | val_loss=0.7440 val_dice=0.3744 val_iou=0.2671 * | no máximo mais ~11 min
+[00:14:25] época 342/600 loss=0.7016 dice=0.4206 iou=0.3037 | val_loss=0.7438 val_dice=0.3746 val_iou=0.2673 * | no máximo mais ~11 min
+[00:14:31] época 344/600 loss=0.7010 dice=0.4211 iou=0.3042 | val_loss=0.7431 val_dice=0.3753 val_iou=0.2678 * | no máximo mais ~11 min
+[00:14:33] época 345/600 loss=0.7008 dice=0.4214 iou=0.3045 | val_loss=0.7432 val_dice=0.3752 val_iou=0.2677 | no máximo mais ~11 min
+[00:14:41] época 348/600 loss=0.7001 dice=0.4219 iou=0.3050 | val_loss=0.7430 val_dice=0.3754 val_iou=0.2679 * | no máximo mais ~11 min
+[00:14:43] época 349/600 loss=0.6999 dice=0.4221 iou=0.3051 | val_loss=0.7426 val_dice=0.3758 val_iou=0.2683 * | no máximo mais ~10 min
+[00:14:46] época 350/600 loss=0.6996 dice=0.4223 iou=0.3054 | val_loss=0.7426 val_dice=0.3757 val_iou=0.2683 | no máximo mais ~10 min
+[00:14:48] época 351/600 loss=0.6994 dice=0.4226 iou=0.3056 | val_loss=0.7423 val_dice=0.3762 val_iou=0.2687 * | no máximo mais ~10 min
+[00:14:51] época 352/600 loss=0.6992 dice=0.4228 iou=0.3059 | val_loss=0.7420 val_dice=0.3765 val_iou=0.2689 * | no máximo mais ~10 min
+[00:14:53] época 353/600 loss=0.6989 dice=0.4230 iou=0.3061 | val_loss=0.7418 val_dice=0.3769 val_iou=0.2692 * | no máximo mais ~10 min
+[00:14:56] época 354/600 loss=0.6987 dice=0.4232 iou=0.3063 | val_loss=0.7416 val_dice=0.3771 val_iou=0.2695 * | no máximo mais ~10 min
+[00:14:58] época 355/600 loss=0.6984 dice=0.4234 iou=0.3065 | val_loss=0.7415 val_dice=0.3772 val_iou=0.2696 * | no máximo mais ~10 min
+[00:15:01] época 356/600 loss=0.6982 dice=0.4236 iou=0.3066 | val_loss=0.7410 val_dice=0.3775 val_iou=0.2699 * | no máximo mais ~10 min
+[00:15:03] época 357/600 loss=0.6980 dice=0.4238 iou=0.3069 | val_loss=0.7407 val_dice=0.3778 val_iou=0.2701 * | no máximo mais ~10 min
+[00:15:06] época 358/600 loss=0.6978 dice=0.4239 iou=0.3070 | val_loss=0.7406 val_dice=0.3780 val_iou=0.2703 * | no máximo mais ~10 min
+[00:15:08] época 359/600 loss=0.6976 dice=0.4241 iou=0.3072 | val_loss=0.7405 val_dice=0.3782 val_iou=0.2705 * | no máximo mais ~10 min
+[00:15:11] época 360/600 loss=0.6974 dice=0.4242 iou=0.3073 | val_loss=0.7402 val_dice=0.3786 val_iou=0.2708 * | no máximo mais ~10 min
+[00:15:13] época 361/600 loss=0.6972 dice=0.4244 iou=0.3075 | val_loss=0.7402 val_dice=0.3786 val_iou=0.2709 * | no máximo mais ~10 min
+[00:15:23] época 365/600 loss=0.6965 dice=0.4250 iou=0.3081 | val_loss=0.7407 val_dice=0.3775 val_iou=0.2701 | no máximo mais ~10 min
+[00:15:35] época 370/600 loss=0.6958 dice=0.4258 iou=0.3089 | val_loss=0.7412 val_dice=0.3764 val_iou=0.2692 | no máximo mais ~10 min
+[00:15:48] época 375/600 loss=0.6948 dice=0.4266 iou=0.3097 | val_loss=0.7409 val_dice=0.3766 val_iou=0.2695 | no máximo mais ~9 min
+[00:16:00] época 380/600 loss=0.6939 dice=0.4274 iou=0.3105 | val_loss=0.7405 val_dice=0.3770 val_iou=0.2699 | no máximo mais ~9 min
+[00:16:13] época 385/600 loss=0.6931 dice=0.4282 iou=0.3113 | val_loss=0.7401 val_dice=0.3773 val_iou=0.2702 | no máximo mais ~9 min
+[00:16:20] época 388/600 loss=0.6925 dice=0.4286 iou=0.3117 | val_loss=0.7391 val_dice=0.3787 val_iou=0.2715 * | no máximo mais ~9 min
+[00:16:23] época 389/600 loss=0.6923 dice=0.4288 iou=0.3119 | val_loss=0.7390 val_dice=0.3788 val_iou=0.2716 * | no máximo mais ~9 min
+[00:16:25] época 390/600 loss=0.6921 dice=0.4290 iou=0.3121 | val_loss=0.7387 val_dice=0.3791 val_iou=0.2717 * | no máximo mais ~9 min
+[00:16:28] época 391/600 loss=0.6919 dice=0.4292 iou=0.3122 | val_loss=0.7383 val_dice=0.3795 val_iou=0.2719 * | no máximo mais ~9 min
+[00:16:38] época 395/600 loss=0.6912 dice=0.4299 iou=0.3129 | val_loss=0.7383 val_dice=0.3795 val_iou=0.2720 * | no máximo mais ~9 min
+[00:16:40] época 396/600 loss=0.6910 dice=0.4301 iou=0.3131 | val_loss=0.7382 val_dice=0.3795 val_iou=0.2720 * | no máximo mais ~9 min
+[00:16:43] época 397/600 loss=0.6909 dice=0.4302 iou=0.3132 | val_loss=0.7381 val_dice=0.3796 val_iou=0.2721 * | no máximo mais ~8 min
+[00:16:50] época 400/600 loss=0.6904 dice=0.4306 iou=0.3136 | val_loss=0.7381 val_dice=0.3798 val_iou=0.2724 * | no máximo mais ~8 min
+[00:17:03] época 405/600 loss=0.6895 dice=0.4314 iou=0.3143 | val_loss=0.7382 val_dice=0.3793 val_iou=0.2720 | no máximo mais ~8 min
+[00:17:15] época 410/600 loss=0.6888 dice=0.4320 iou=0.3149 | val_loss=0.7376 val_dice=0.3797 val_iou=0.2724 | no máximo mais ~8 min
+[00:17:17] época 411/600 loss=0.6886 dice=0.4322 iou=0.3150 | val_loss=0.7372 val_dice=0.3802 val_iou=0.2728 * | no máximo mais ~8 min
+[00:17:20] época 412/600 loss=0.6885 dice=0.4323 iou=0.3152 | val_loss=0.7371 val_dice=0.3803 val_iou=0.2731 * | no máximo mais ~8 min
+[00:17:25] época 414/600 loss=0.6882 dice=0.4326 iou=0.3154 | val_loss=0.7371 val_dice=0.3803 val_iou=0.2731 * | no máximo mais ~8 min
+[00:17:27] época 415/600 loss=0.6880 dice=0.4328 iou=0.3155 | val_loss=0.7369 val_dice=0.3805 val_iou=0.2733 * | no máximo mais ~8 min
+[00:17:30] época 416/600 loss=0.6879 dice=0.4328 iou=0.3156 | val_loss=0.7359 val_dice=0.3817 val_iou=0.2743 * | no máximo mais ~8 min
+[00:17:32] época 417/600 loss=0.6877 dice=0.4330 iou=0.3158 | val_loss=0.7352 val_dice=0.3825 val_iou=0.2749 * | no máximo mais ~8 min
+[00:17:35] época 418/600 loss=0.6875 dice=0.4332 iou=0.3160 | val_loss=0.7351 val_dice=0.3826 val_iou=0.2750 * | no máximo mais ~8 min
+[00:17:37] época 419/600 loss=0.6873 dice=0.4333 iou=0.3161 | val_loss=0.7350 val_dice=0.3828 val_iou=0.2751 * | no máximo mais ~8 min
+[00:17:40] época 420/600 loss=0.6872 dice=0.4335 iou=0.3163 | val_loss=0.7352 val_dice=0.3825 val_iou=0.2749 | no máximo mais ~7 min
+[00:17:42] época 421/600 loss=0.6871 dice=0.4336 iou=0.3164 | val_loss=0.7349 val_dice=0.3829 val_iou=0.2752 * | no máximo mais ~7 min
+[00:17:47] época 423/600 loss=0.6867 dice=0.4339 iou=0.3166 | val_loss=0.7347 val_dice=0.3831 val_iou=0.2754 * | no máximo mais ~7 min
+[00:17:50] época 424/600 loss=0.6866 dice=0.4342 iou=0.3169 | val_loss=0.7346 val_dice=0.3832 val_iou=0.2755 * | no máximo mais ~7 min
+[00:17:52] época 425/600 loss=0.6864 dice=0.4342 iou=0.3169 | val_loss=0.7346 val_dice=0.3833 val_iou=0.2755 * | no máximo mais ~7 min
+[00:17:55] época 426/600 loss=0.6862 dice=0.4344 iou=0.3171 | val_loss=0.7346 val_dice=0.3834 val_iou=0.2755 * | no máximo mais ~7 min
+[00:18:02] época 429/600 loss=0.6858 dice=0.4348 iou=0.3175 | val_loss=0.7344 val_dice=0.3837 val_iou=0.2759 * | no máximo mais ~7 min
+[00:18:05] época 430/600 loss=0.6857 dice=0.4350 iou=0.3176 | val_loss=0.7342 val_dice=0.3840 val_iou=0.2760 * | no máximo mais ~7 min
+[00:18:07] época 431/600 loss=0.6855 dice=0.4351 iou=0.3177 | val_loss=0.7340 val_dice=0.3841 val_iou=0.2762 * | no máximo mais ~7 min
+[00:18:10] época 432/600 loss=0.6854 dice=0.4352 iou=0.3179 | val_loss=0.7340 val_dice=0.3843 val_iou=0.2764 * | no máximo mais ~7 min
+[00:18:12] época 433/600 loss=0.6853 dice=0.4353 iou=0.3180 | val_loss=0.7338 val_dice=0.3844 val_iou=0.2765 * | no máximo mais ~7 min
+[00:18:15] época 434/600 loss=0.6851 dice=0.4355 iou=0.3181 | val_loss=0.7337 val_dice=0.3845 val_iou=0.2766 * | no máximo mais ~7 min
+[00:18:17] época 435/600 loss=0.6850 dice=0.4356 iou=0.3182 | val_loss=0.7334 val_dice=0.3849 val_iou=0.2769 * | no máximo mais ~7 min
+[00:18:19] época 436/600 loss=0.6849 dice=0.4357 iou=0.3183 | val_loss=0.7333 val_dice=0.3850 val_iou=0.2770 * | no máximo mais ~7 min
+[00:18:22] época 437/600 loss=0.6847 dice=0.4359 iou=0.3184 | val_loss=0.7330 val_dice=0.3853 val_iou=0.2773 * | no máximo mais ~7 min
+[00:18:27] época 439/600 loss=0.6845 dice=0.4362 iou=0.3188 | val_loss=0.7327 val_dice=0.3856 val_iou=0.2775 * | no máximo mais ~7 min
+[00:18:29] época 440/600 loss=0.6844 dice=0.4363 iou=0.3188 | val_loss=0.7331 val_dice=0.3852 val_iou=0.2773 | no máximo mais ~7 min
+[00:18:42] época 445/600 loss=0.6837 dice=0.4368 iou=0.3193 | val_loss=0.7325 val_dice=0.3858 val_iou=0.2777 * | no máximo mais ~6 min
+[00:18:54] época 450/600 loss=0.6831 dice=0.4373 iou=0.3198 | val_loss=0.7329 val_dice=0.3852 val_iou=0.2772 | no máximo mais ~6 min
+[00:19:07] época 455/600 loss=0.6827 dice=0.4380 iou=0.3204 | val_loss=0.7332 val_dice=0.3847 val_iou=0.2768 | no máximo mais ~6 min
+[00:19:19] época 460/600 loss=0.6822 dice=0.4384 iou=0.3209 | val_loss=0.7332 val_dice=0.3850 val_iou=0.2770 | no máximo mais ~6 min
+[00:19:29] época 464/600 loss=0.6818 dice=0.4388 iou=0.3212 | val_loss=0.7326 val_dice=0.3860 val_iou=0.2778 * | no máximo mais ~6 min
+[00:19:31] época 465/600 loss=0.6815 dice=0.4389 iou=0.3213 | val_loss=0.7326 val_dice=0.3859 val_iou=0.2778 | no máximo mais ~6 min
+[00:19:34] época 466/600 loss=0.6814 dice=0.4389 iou=0.3214 | val_loss=0.7323 val_dice=0.3864 val_iou=0.2782 * | no máximo mais ~6 min
+[00:19:36] época 467/600 loss=0.6813 dice=0.4390 iou=0.3215 | val_loss=0.7323 val_dice=0.3865 val_iou=0.2782 * | no máximo mais ~6 min
+[00:19:39] época 468/600 loss=0.6812 dice=0.4391 iou=0.3216 | val_loss=0.7321 val_dice=0.3866 val_iou=0.2784 * | no máximo mais ~5 min
+[00:19:41] época 469/600 loss=0.6811 dice=0.4392 iou=0.3217 | val_loss=0.7319 val_dice=0.3870 val_iou=0.2787 * | no máximo mais ~5 min
+[00:19:44] época 470/600 loss=0.6810 dice=0.4393 iou=0.3217 | val_loss=0.7318 val_dice=0.3871 val_iou=0.2788 * | no máximo mais ~5 min
+[00:19:46] época 471/600 loss=0.6808 dice=0.4394 iou=0.3219 | val_loss=0.7316 val_dice=0.3874 val_iou=0.2790 * | no máximo mais ~5 min
+[00:19:49] época 472/600 loss=0.6807 dice=0.4395 iou=0.3220 | val_loss=0.7314 val_dice=0.3876 val_iou=0.2791 * | no máximo mais ~5 min
+[00:19:56] época 475/600 loss=0.6804 dice=0.4399 iou=0.3224 | val_loss=0.7317 val_dice=0.3875 val_iou=0.2790 | no máximo mais ~5 min
+[00:20:04] época 478/600 loss=0.6802 dice=0.4400 iou=0.3225 | val_loss=0.7313 val_dice=0.3877 val_iou=0.2792 * | no máximo mais ~5 min
+[00:20:09] época 480/600 loss=0.6800 dice=0.4402 iou=0.3226 | val_loss=0.7313 val_dice=0.3877 val_iou=0.2792 * | no máximo mais ~5 min
+[00:20:14] época 482/600 loss=0.6798 dice=0.4403 iou=0.3227 | val_loss=0.7311 val_dice=0.3878 val_iou=0.2793 * | no máximo mais ~5 min
+[00:20:16] época 483/600 loss=0.6797 dice=0.4404 iou=0.3228 | val_loss=0.7308 val_dice=0.3882 val_iou=0.2796 * | no máximo mais ~5 min
+[00:20:19] época 484/600 loss=0.6797 dice=0.4404 iou=0.3229 | val_loss=0.7307 val_dice=0.3883 val_iou=0.2797 * | no máximo mais ~5 min
+[00:20:22] época 485/600 loss=0.6796 dice=0.4405 iou=0.3229 | val_loss=0.7307 val_dice=0.3884 val_iou=0.2799 * | no máximo mais ~5 min
+[00:20:24] época 486/600 loss=0.6795 dice=0.4405 iou=0.3230 | val_loss=0.7305 val_dice=0.3886 val_iou=0.2800 * | no máximo mais ~5 min
+[00:20:27] época 487/600 loss=0.6794 dice=0.4406 iou=0.3231 | val_loss=0.7301 val_dice=0.3890 val_iou=0.2803 * | no máximo mais ~5 min
+[00:20:29] época 488/600 loss=0.6793 dice=0.4407 iou=0.3232 | val_loss=0.7297 val_dice=0.3894 val_iou=0.2805 * | no máximo mais ~5 min
+[00:20:32] época 489/600 loss=0.6792 dice=0.4409 iou=0.3233 | val_loss=0.7295 val_dice=0.3896 val_iou=0.2807 * | no máximo mais ~5 min
+[00:20:34] época 490/600 loss=0.6791 dice=0.4409 iou=0.3234 | val_loss=0.7289 val_dice=0.3903 val_iou=0.2813 * | no máximo mais ~5 min
+[00:20:37] época 491/600 loss=0.6790 dice=0.4411 iou=0.3235 | val_loss=0.7288 val_dice=0.3905 val_iou=0.2815 * | no máximo mais ~5 min
+[00:20:39] época 492/600 loss=0.6789 dice=0.4412 iou=0.3236 | val_loss=0.7286 val_dice=0.3907 val_iou=0.2816 * | no máximo mais ~4 min
+[00:20:44] época 494/600 loss=0.6787 dice=0.4413 iou=0.3238 | val_loss=0.7285 val_dice=0.3910 val_iou=0.2819 * | no máximo mais ~4 min
+[00:20:46] época 495/600 loss=0.6786 dice=0.4412 iou=0.3237 | val_loss=0.7287 val_dice=0.3906 val_iou=0.2815 | no máximo mais ~4 min
+[00:20:49] época 496/600 loss=0.6786 dice=0.4414 iou=0.3238 | val_loss=0.7284 val_dice=0.3912 val_iou=0.2819 * | no máximo mais ~4 min
+[00:20:59] época 500/600 loss=0.6781 dice=0.4418 iou=0.3242 | val_loss=0.7287 val_dice=0.3906 val_iou=0.2815 | no máximo mais ~4 min
+[00:21:01] época 501/600 loss=0.6781 dice=0.4419 iou=0.3243 | val_loss=0.7282 val_dice=0.3912 val_iou=0.2819 * | no máximo mais ~4 min
+[00:21:12] época 505/600 loss=0.6778 dice=0.4422 iou=0.3246 | val_loss=0.7290 val_dice=0.3904 val_iou=0.2813 | no máximo mais ~4 min
+[00:21:26] época 510/600 loss=0.6776 dice=0.4424 iou=0.3248 | val_loss=0.7285 val_dice=0.3910 val_iou=0.2820 | no máximo mais ~4 min
+[00:21:29] época 511/600 loss=0.6774 dice=0.4424 iou=0.3249 | val_loss=0.7281 val_dice=0.3915 val_iou=0.2824 * | no máximo mais ~4 min
+[00:21:32] época 512/600 loss=0.6773 dice=0.4426 iou=0.3250 | val_loss=0.7279 val_dice=0.3917 val_iou=0.2826 * | no máximo mais ~4 min
+[00:21:34] época 513/600 loss=0.6771 dice=0.4427 iou=0.3251 | val_loss=0.7276 val_dice=0.3920 val_iou=0.2829 * | no máximo mais ~4 min
+[00:21:40] época 515/600 loss=0.6769 dice=0.4429 iou=0.3253 | val_loss=0.7276 val_dice=0.3919 val_iou=0.2828 | no máximo mais ~4 min
+[00:21:45] época 517/600 loss=0.6767 dice=0.4431 iou=0.3255 | val_loss=0.7273 val_dice=0.3924 val_iou=0.2831 * | no máximo mais ~3 min
+[00:21:48] época 518/600 loss=0.6766 dice=0.4432 iou=0.3256 | val_loss=0.7271 val_dice=0.3927 val_iou=0.2834 * | no máximo mais ~3 min
+[00:21:50] época 519/600 loss=0.6765 dice=0.4433 iou=0.3257 | val_loss=0.7268 val_dice=0.3929 val_iou=0.2835 * | no máximo mais ~3 min
+[00:21:53] época 520/600 loss=0.6764 dice=0.4434 iou=0.3258 | val_loss=0.7267 val_dice=0.3932 val_iou=0.2838 * | no máximo mais ~3 min
+[00:21:59] época 522/600 loss=0.6761 dice=0.4436 iou=0.3260 | val_loss=0.7267 val_dice=0.3933 val_iou=0.2838 * | no máximo mais ~3 min
+[00:22:04] época 524/600 loss=0.6760 dice=0.4438 iou=0.3262 | val_loss=0.7265 val_dice=0.3933 val_iou=0.2838 * | no máximo mais ~3 min
+[00:22:07] época 525/600 loss=0.6758 dice=0.4439 iou=0.3263 | val_loss=0.7265 val_dice=0.3932 val_iou=0.2837 | no máximo mais ~3 min
+[00:22:15] época 528/600 loss=0.6757 dice=0.4441 iou=0.3265 | val_loss=0.7263 val_dice=0.3934 val_iou=0.2838 * | no máximo mais ~3 min
+[00:22:17] época 529/600 loss=0.6756 dice=0.4442 iou=0.3265 | val_loss=0.7263 val_dice=0.3935 val_iou=0.2839 * | no máximo mais ~3 min
+[00:22:20] época 530/600 loss=0.6755 dice=0.4443 iou=0.3266 | val_loss=0.7263 val_dice=0.3933 val_iou=0.2838 | no máximo mais ~3 min
+[00:22:27] época 533/600 loss=0.6753 dice=0.4443 iou=0.3267 | val_loss=0.7262 val_dice=0.3936 val_iou=0.2839 * | no máximo mais ~3 min
+[00:22:32] época 535/600 loss=0.6752 dice=0.4445 iou=0.3268 | val_loss=0.7262 val_dice=0.3934 val_iou=0.2838 | no máximo mais ~3 min
+[00:22:37] época 537/600 loss=0.6749 dice=0.4447 iou=0.3270 | val_loss=0.7261 val_dice=0.3936 val_iou=0.2840 * | no máximo mais ~3 min
+[00:22:45] época 540/600 loss=0.6748 dice=0.4448 iou=0.3271 | val_loss=0.7266 val_dice=0.3932 val_iou=0.2839 | no máximo mais ~3 min
+[00:22:57] época 545/600 loss=0.6745 dice=0.4451 iou=0.3274 | val_loss=0.7263 val_dice=0.3935 val_iou=0.2842 | no máximo mais ~2 min
+[00:23:07] época 549/600 loss=0.6742 dice=0.4453 iou=0.3276 | val_loss=0.7261 val_dice=0.3937 val_iou=0.2844 * | no máximo mais ~2 min
+[00:23:10] época 550/600 loss=0.6742 dice=0.4454 iou=0.3277 | val_loss=0.7260 val_dice=0.3938 val_iou=0.2845 * | no máximo mais ~2 min
+[00:23:12] época 551/600 loss=0.6740 dice=0.4456 iou=0.3278 | val_loss=0.7257 val_dice=0.3942 val_iou=0.2848 * | no máximo mais ~2 min
+[00:23:15] época 552/600 loss=0.6739 dice=0.4456 iou=0.3278 | val_loss=0.7256 val_dice=0.3942 val_iou=0.2847 * | no máximo mais ~2 min
+[00:23:22] época 555/600 loss=0.6736 dice=0.4459 iou=0.3282 | val_loss=0.7255 val_dice=0.3942 val_iou=0.2849 * | no máximo mais ~2 min
+[00:23:27] época 557/600 loss=0.6734 dice=0.4460 iou=0.3283 | val_loss=0.7252 val_dice=0.3944 val_iou=0.2851 * | no máximo mais ~2 min
+[00:23:32] época 559/600 loss=0.6733 dice=0.4462 iou=0.3284 | val_loss=0.7249 val_dice=0.3945 val_iou=0.2851 * | no máximo mais ~2 min
+[00:23:35] época 560/600 loss=0.6731 dice=0.4462 iou=0.3285 | val_loss=0.7253 val_dice=0.3942 val_iou=0.2850 | no máximo mais ~2 min
+[00:23:42] época 563/600 loss=0.6729 dice=0.4465 iou=0.3288 | val_loss=0.7244 val_dice=0.3949 val_iou=0.2854 * | no máximo mais ~2 min
+[00:23:45] época 564/600 loss=0.6728 dice=0.4466 iou=0.3288 | val_loss=0.7244 val_dice=0.3949 val_iou=0.2855 * | no máximo mais ~2 min
+[00:23:47] época 565/600 loss=0.6728 dice=0.4467 iou=0.3289 | val_loss=0.7245 val_dice=0.3948 val_iou=0.2855 | no máximo mais ~1 min
+[00:23:55] época 568/600 loss=0.6725 dice=0.4469 iou=0.3292 | val_loss=0.7243 val_dice=0.3950 val_iou=0.2857 * | no máximo mais ~1 min
+[00:23:57] época 569/600 loss=0.6725 dice=0.4470 iou=0.3292 | val_loss=0.7242 val_dice=0.3951 val_iou=0.2858 * | no máximo mais ~1 min
+[00:24:00] época 570/600 loss=0.6724 dice=0.4470 iou=0.3293 | val_loss=0.7241 val_dice=0.3952 val_iou=0.2858 * | no máximo mais ~1 min
+[00:24:05] época 572/600 loss=0.6724 dice=0.4471 iou=0.3293 | val_loss=0.7241 val_dice=0.3952 val_iou=0.2859 * | no máximo mais ~1 min
+[00:24:12] época 575/600 loss=0.6721 dice=0.4473 iou=0.3295 | val_loss=0.7240 val_dice=0.3954 val_iou=0.2861 * | no máximo mais ~1 min
+[00:24:15] época 576/600 loss=0.6721 dice=0.4473 iou=0.3295 | val_loss=0.7240 val_dice=0.3954 val_iou=0.2862 * | no máximo mais ~1 min
+[00:24:20] época 578/600 loss=0.6719 dice=0.4476 iou=0.3298 | val_loss=0.7239 val_dice=0.3955 val_iou=0.2862 * | no máximo mais ~1 min
+[00:24:22] época 579/600 loss=0.6719 dice=0.4474 iou=0.3296 | val_loss=0.7238 val_dice=0.3958 val_iou=0.2864 * | no máximo mais ~1 min
+[00:24:25] época 580/600 loss=0.6718 dice=0.4475 iou=0.3297 | val_loss=0.7236 val_dice=0.3959 val_iou=0.2864 * | no máximo mais ~1 min
+[00:24:27] época 581/600 loss=0.6717 dice=0.4476 iou=0.3298 | val_loss=0.7235 val_dice=0.3962 val_iou=0.2867 * | no máximo mais ~1 min
+[00:24:37] época 585/600 loss=0.6714 dice=0.4479 iou=0.3302 | val_loss=0.7236 val_dice=0.3962 val_iou=0.2868 | no máximo mais ~1 min
+[00:24:50] época 590/600 loss=0.6711 dice=0.4483 iou=0.3305 | val_loss=0.7239 val_dice=0.3956 val_iou=0.2865 | no máximo mais ~0 min
+[00:25:02] época 595/600 loss=0.6708 dice=0.4485 iou=0.3307 | val_loss=0.7238 val_dice=0.3955 val_iou=0.2864 | no máximo mais ~0 min
+[00:25:15] época 600/600 loss=0.6704 dice=0.4488 iou=0.3310 | val_loss=0.7237 val_dice=0.3954 val_iou=0.2863 | no máximo mais ~0 min
+[00:25:15] Treino parou na época 600; melhor val_dice=0.3962 (época 581, pesos restaurados)
+
+-> Iniciando Conversão para int8
+Saved artifact at 'C:\Users\marce\OneDrive\Documentos\ProjetosWindows\TCC2\Codigo-do-TCC2\ModeloEDataset\_savedmodel_segmentacao'. The following endpoints are available:
+
+* Endpoint 'serve'
+  args_0 (POSITIONAL_ONLY): List[TensorSpec(shape=(None, 192, 192, 1), dtype=tf.float32, name='keras_tensor_8')]
+Output Type:
+  TensorSpec(shape=(None, 192, 192, 1), dtype=tf.float32, name=None)
+Captures:
+  2036018489376: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2034951775936: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2036020606960: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2036021840000: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2036021838416: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2036021844224: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2036021847920: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2036021305136: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2036028313264: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2036028320128: TensorSpec(shape=(), dtype=tf.resource, name=None)
+
+->Arquivo 'modelos/modelo_esp32.tflite' gerado.
+
+-> Avaliando Dice/IoU no conjunto de teste
+{
+  "n_teste": 186,
+  "seed": 42,
+  "lote": 16,
+  "perda": "bce_dice",
+  "epocas_executadas": 600,
+  "melhor_epoca": 581,
+  "float": {
+    "dice": 0.3870879112530008,
+    "iou": 0.28214455422450174
+  },
+  "int8": {
+    "dice": 0.3896937043068503,
+    "iou": 0.2835609061715567
+  },
+  "mascara_vazia_int8": 1,
+  "duracao_s": 1549
+}

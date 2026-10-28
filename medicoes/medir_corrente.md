@@ -5,7 +5,7 @@ O INA219 vai **em série na alimentação** e uma segunda placa (o logger) lê o
 
 ## Material
 - Módulo INA219 (shunt R100 = 0,1 Ω) e uma segunda placa com I2C para o logger: um **Arduino Uno** (A4/A5, 100 amostras/s a 115200 baud). Um ESP32-S3 foi tentado no início e abandonado (suspeita de mau contato no breadboard); o [`ina219_logger.ino`](ina219_logger/ina219_logger.ino) ainda compila para ESP32 (500 amostras/s a 921600 baud), mas este guia usa o Uno.
-- Na bancada, o 5 V vem do **USB da ESP32-CAM-MB** e passa pelo INA219 antes de chegar à ESP32-CAM; a mesma MB dá a serial do nó (sem FTDI). Para a autonomia de produção, a bateria que o nó usará de verdade; o critério de pronto pede o mesmo hardware e a mesma bateria nos dois fluxos.
+- Na bancada, o 5 V vem do **USB da ESP32-CAM-MB** e passa pelo INA219 antes de chegar à ESP32-CAM; a mesma MB dá a serial do nó (sem FTDI). Para a autonomia de produção, a bateria que o nó usará de verdade; use o mesmo hardware e a mesma bateria nos dois fluxos.
 - Fios curtos e, junto ao nó, um capacitor de 100–470 µF entre o lado Vin− (5 V depois do shunt) e GND (a ESP32-CAM sofre brownout nos picos de TX). Um de 100 µF / 50 V, ligado no Vin− e no GND do logger, foi usado.
 - Com bateria no lugar do USB da MB: um adaptador USB-serial (FTDI) **só com TX, RX e GND** para ler o log do nó. Não ligue o 5 V dele.
 
@@ -86,7 +86,7 @@ bancada: primeiro `corrente/sleep_com_radioenge.csv` e depois `corrente/sleep_se
 UART (GPIO14 e GPIO15), deixando só o GND: com a UART ligada e o módulo sem alimentação, a corrente pode entrar por
 ele e falsear a medida. A diferença entre as duas é a corrente do Radioenge parado.
 
-**B. Ciclos completos.** Comece o logger e depois mande `AUTO:60` ao nó (ou deixe `AUTO_AO_LIGAR 1` e `JANELA_STOP_MS = 0` para o consumo de produção). Capture pelo menos 3 ciclos para testar e **≥ 30 ciclos** para o critério de pronto. Copie do log do nó o `[CICLO_FIM]` de um ciclo para pegar `t_ate_ciclo_ms`, `t_captura_ms`, `t_envio_ms`:
+**B. Ciclos completos.** Comece o logger e depois mande `AUTO:60` ao nó (ou deixe `AUTO_AO_LIGAR 1` e `JANELA_STOP_MS = 0` para o consumo de produção). Capture pelo menos 3 ciclos para testar e **≥ 30 ciclos** para o resultado. Copie do log do nó o `[CICLO_FIM]` de um ciclo para pegar `t_ate_ciclo_ms`, `t_captura_ms`, `t_envio_ms`:
 
 ```bash
 python corrente.py analisar corrente/auto60.csv --offset-ma 0.0 \
@@ -98,7 +98,7 @@ python corrente.py analisar corrente/auto60.csv --offset-ma 0.0 \
 Cuidados que apareceram na prática:
 - **O `analisar` só funciona com o nó em `AUTO`.** Ele acha os ciclos pelos trechos de sleep e aborta com `Menos de 2 trechos de sleep` se o nó nunca dorme (modo `CAPTURE`, `reconstrutor.py --tx`). Por isso a corrente se mede com o nó em `AUTO` e a medição de PDR/latência com `--tx`, em corridas separadas.
 - **N ciclos completos pedem N + 1 trechos de sleep** (um ciclo vai de um despertar ao seguinte): 30 ciclos de ~172 s (142,8 s acordado + 30 s de sleep) são ~90 min de captura. O primeiro ciclo, parcial, não conta.
-- **Configuração do transmissor.** `Rede/transmissor_esp32cam/transmissor_esp32cam.ino` está hoje com `AUTO_AO_LIGAR 1`, `INTERVALO_PADRAO_S = 30` e `JANELA_STOP_MS = 0` (consumo de produção: o nó cicla sozinho ao receber energia e não aceita `STOP`; para parar, desplugue o USB da MB). Para o `reconstrutor.py --tx` e para o dia a dia, volte para `0`, `600` e `1500`. O `mAh por leitura` vale para o intervalo de sleep usado: para outro `T` em segundos, ≈ carga acordado + corrente de sleep × `T` / 3600.
+- **Configuração do transmissor.** Os dois transmissores (`Rede/transmissor_esp32cam` e `Rede/transmissor_ocr_esp32cam`) estão hoje com `AUTO_AO_LIGAR 0`, `INTERVALO_PADRAO_S = 30` e `JANELA_STOP_MS = 0`: no power-on o nó fica no modo interativo e entra no modo autônomo com o comando `AUTO`; com a janela em 0 ele não aceita `STOP` (para parar, desplugue o USB da MB). Para o nó já ciclar sozinho ao receber energia, use `AUTO_AO_LIGAR 1`; para poder mandar `STOP`, ponha `JANELA_STOP_MS = 1500`. O `mAh por leitura` vale para o intervalo de sleep usado: para outro `T` em segundos, ≈ carga acordado + corrente de sleep × `T` / 3600.
 - **Câmera desligada após a captura.** No modo `AUTO` o transmissor de imagem chama `desligarCamera()` (`esp_camera_deinit()` + PWDN) logo depois de gerar o JPEG, porque a câmera ligada durante os ~140 s de envio custava ~80 mA. Essa alteração **ainda não foi medida em placa**; a medição de referência abaixo é de antes dela.
 - Dê um nome diferente a cada captura (`teste.csv`, `teste_cam_off.csv`, `auto30_30ciclos.csv`...): o `capturar` sobrescreve o arquivo, e um arquivo só com o cabeçalho (20 bytes) quer dizer que a captura não gravou nada.
 
@@ -106,7 +106,7 @@ Saída esperada: uma linha por ciclo com `periodo_s`, `ativo_s`, `mAh`, corrente
 
 ## Como interpretar
 
-- **mAh por leitura** é o número do critério de pronto: a carga de um ciclo inteiro, do despertar ao próximo, incluindo o sleep.
+- **mAh por leitura** é o número principal: a carga de um ciclo inteiro, do despertar ao próximo, incluindo o sleep.
 - **Sleep:** deve ficar claramente abaixo da corrente do nó acordado e parado. Se ficar próxima, o chip não está entrando em deep sleep.
 - **Envio (TX):** no fluxo de imagem domina o tempo ativo (`t_envio_ms` ≈ `(chunks − 1) × 7 s`). Picos curtos acima da média marcam cada pacote de ~136 ms.
 - A autonomia do script é um limite superior: não considera eficiência do regulador, auto-descarga nem queda de capacidade da bateria com temperatura.
@@ -129,7 +129,7 @@ python corrente.py analisar corrente/teste_1.csv --offset-ma 0.0 --init-s 2.699 
 | Pico | ≈ 297 mA |
 | Antes de iniciar a câmera | ≈ 77 mA (o degrau até ~159 mA aparece quando a câmera inicia) |
 
-Leitura: o consumo é dominado pela espera de 7 s entre chunks com CPU e câmera ligadas (≈ 95% da carga do ciclo); os picos de TX somam ≈ 2%. Como são só 4 ciclos e o firmware mudou depois (câmera desligada), **isto é referência de "antes da otimização", não o resultado do critério de pronto** (≥ 30 ciclos). Guarde o `teste_1.csv` para comparar.
+Leitura: o consumo é dominado pela espera de 7 s entre chunks com CPU e câmera ligadas (≈ 95% da carga do ciclo); os picos de TX somam ≈ 2%. Como são só 4 ciclos e o firmware mudou depois (câmera desligada), **isto é referência de "antes da otimização", não o resultado final** (≥ 30 ciclos). Guarde o `teste_1.csv` para comparar.
 
 ## O que enviar ("valor e como mediu")
 

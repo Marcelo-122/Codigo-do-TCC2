@@ -4,7 +4,7 @@
 > Depois disso, o `transmissor_esp32cam` foi gravado e rodou um `AUTO:30` de 3 ciclos (2026-10-27): deep sleep
 > confirmado pelo log (`DEEPSLEEP_RESET`, `causa=timer`, `ciclo` incrementando) e pela corrente (~159 mA acordado,
 > ~24 mA dormindo, medidos com INA219). O passo 4 (`STOP`) e a medição de ≥ 30 ciclos seguem pendentes. O
-> `transmissor_ocr_esp32cam` ainda não foi testado em placa. Se não compilar, cole o erro do Arduino IDE e eu corrijo.
+> `transmissor_ocr_esp32cam` ainda não foi testado em placa.
 
 ## O que foi implementado
 
@@ -14,8 +14,8 @@ continuam como estavam, e o modo padrão no power-on continua sendo o interativo
 | Comando | Efeito |
 |---|---|
 | `SLEEP:<s>` | Deep sleep único de `<s>` segundos, sem captura. Serve para medir a corrente de sleep. |
-| `AUTO[:<s>]` | Modo autônomo: captura, envia todos os chunks, entra em deep sleep por `<s>` s (padrão 600, mínimo 10) e repete ao acordar. |
-| `STOP` | Sai do modo autônomo. Só é lido numa janela de 1,5 s (`JANELA_STOP_MS`) logo após cada despertar. |
+| `AUTO[:<s>]` | Modo autônomo: captura, envia todos os chunks, entra em deep sleep por `<s>` s (padrão 30, `INTERVALO_PADRAO_S`; mínimo 10) e repete ao acordar. |
+| `STOP` | Sai do modo autônomo. Só é lido durante `JANELA_STOP_MS` logo após cada despertar. No código atual a janela é 0, o que desliga o `STOP`; para este roteiro, ponha `1500`. |
 
 Antes de dormir o firmware chama `esp_camera_deinit()`, coloca a câmera em power-down (GPIO32 em
 nível alto) e apaga o flash (GPIO4), segurando os dois com `rtc_gpio_hold`. O contador de ciclos e o
@@ -43,7 +43,7 @@ Material: ESP32-CAM com o Radioenge ligado como hoje, monitor serial (Arduino ID
   `[boot] causa=timer ciclo=0 auto=0`. O banner aparece mais rápido que no power-on, porque o
   `delay(1000)` só roda no power-on.
 - Esperado: `[camera] pronta.` após acordar. Se aparecer `[camera] erro: 0x...`, o hold do GPIO32
-  não foi liberado: me mande o log.
+  não foi liberado.
 - O LED do flash deve ficar apagado durante o sleep.
 
 **3. Ciclo autônomo curto.** Envie `AUTO:30`.
@@ -64,27 +64,18 @@ Material: ESP32-CAM com o Radioenge ligado como hoje, monitor serial (Arduino ID
 **5. Corrente (Prova de que dorme de verdade).** Com amperímetro ou INA219 em série na alimentação de 5 V:
 - Meça o ESP32-CAM acordado e parado, depois dentro do `SLEEP:60`.
 - Esperado: queda **clara** (de dezenas de mA para poucos mA). Se a corrente dormindo ficar
-  próxima da acordada, o chip não está entrando em deep sleep: me mande o log serial.
+  próxima da acordada, o chip não está entrando em deep sleep.
 - Não espere microampères: o chip sozinho consome da ordem de µA, mas a placa AI-Thinker tem regulador
   e outros componentes que costumam deixar a corrente da placa em alguns mA. Esse valor medido é exatamente o que a H3 precisa.
 - O Radioenge continua alimentado e entra na conta. Meça com ele ligado e desligado (ou só o ESP32)
   para separar as parcelas.
 
-## O que me enviar
-
-Cole, de um `AUTO:30` com pelo menos 3 ciclos:
-1. As linhas `[boot]` e `[CICLO_FIM]` de cada ciclo.
-2. Se o item 2 ou o 3 falhar, o log completo do ciclo que falhou.
-3. Corrente em sleep e acordado (valor e como mediu).
-
-Com isso eu atualizo o `medicoes/README.md` e marcamos o item como feito, ou ajusto o firmware.
-
 ## Limitações conhecidas
 
 - A cada ciclo, o período real é `t_ativo + sleep_s` (o sleep não compensa o tempo acordado).
 - Entre chunks o nó fica em `delay(7000)` com a CPU ligada. Um light sleep ali reduziria o consumo do fluxo de imagem.
-- A janela de 1,5 s para o `STOP` entra no tempo ativo de cada ciclo. Para medir consumo de produção,
-  ponha `JANELA_STOP_MS = 0` (e use `AUTO_AO_LIGAR 1`).
+- A janela do `STOP` (`JANELA_STOP_MS`) entra no tempo ativo de cada ciclo. O código atual já está com `0`, o valor
+  para medir o consumo de produção (com `AUTO_AO_LIGAR 1`, o nó também cicla sozinho no power-on).
 - Este roteiro cobre o fluxo de imagem (`transmissor_esp32cam`). O fluxo "OCR na borda" (só a leitura trafega) tem firmware próprio,
   [`Rede/transmissor_ocr_esp32cam`](../Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino), com o mesmo deep sleep
   (`AUTO`/`STOP`/`SLEEP`, memória RTC, hold de PWDN/flash) e o comando `LER` no lugar de `CAPTURE`. Os mesmos passos valem

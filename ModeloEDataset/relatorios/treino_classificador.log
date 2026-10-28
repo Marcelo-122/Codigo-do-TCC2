@@ -1,0 +1,248 @@
+[00:00:00] -> Carregando dataset principal (Kaggle + Dryad train)
+Classes: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+Recortes: treino=41660 validacao=7378 (divisao por foto, seed=42)
+Contagem por classe (treino): {'0': 17422, '1': 4225, '2': 3271, '3': 3086, '4': 2552, '5': 2453, '6': 2342, '7': 2059, '8': 2164, '9': 2086}
+Class weight: {'0': 0.24, '1': 0.99, '2': 1.27, '3': 1.35, '4': 1.63, '5': 1.7, '6': 1.78, '7': 2.02, '8': 1.93, '9': 2.0}
+Model: "functional_1"
+┌─────────────────────────────────┬────────────────────────┬───────────────┐
+│ Layer (type)                    │ Output Shape           │       Param # │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ input_layer_1 (InputLayer)      │ (None, 28, 28, 1)      │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ conv2d (Conv2D)                 │ (None, 28, 28, 16)     │           160 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ conv2d_1 (Conv2D)               │ (None, 28, 28, 16)     │         2,320 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d (MaxPooling2D)    │ (None, 14, 14, 16)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ conv2d_2 (Conv2D)               │ (None, 14, 14, 32)     │         4,640 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ conv2d_3 (Conv2D)               │ (None, 14, 14, 32)     │         9,248 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d_1 (MaxPooling2D)  │ (None, 7, 7, 32)       │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ conv2d_4 (Conv2D)               │ (None, 7, 7, 64)       │        18,496 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d_2 (MaxPooling2D)  │ (None, 3, 3, 64)       │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ flatten (Flatten)               │ (None, 576)            │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense (Dense)                   │ (None, 64)             │        36,928 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dropout (Dropout)               │ (None, 64)             │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense_1 (Dense)                 │ (None, 10)             │           650 │
+└─────────────────────────────────┴────────────────────────┴───────────────┘
+ Total params: 72,442 (282.98 KB)
+ Trainable params: 72,442 (282.98 KB)
+ Non-trainable params: 0 (0.00 B)
+
+[00:00:01] -> Fase A: treino principal (máx. 60 épocas, parada antecipada com paciência 10)
+[00:00:07]   Fase A época 1: passo 100/326 loss=2.3076 acc=0.0967
+[00:00:10]   Fase A época 1: passo 200/326 loss=2.1969 acc=0.2172
+[00:00:13]   Fase A época 1: passo 300/326 loss=1.9935 acc=0.3241
+[00:00:16] Fase A época 1/60 (14s) loss=1.9475 acc=0.3448 val_loss=1.1300 val_acc=0.6358 | no máximo mais ~14 min
+[00:00:19]   Fase A época 2: passo 100/326 loss=1.3470 acc=0.6155
+[00:00:22]   Fase A época 2: passo 200/326 loss=1.2737 acc=0.6373
+[00:00:26]   Fase A época 2: passo 300/326 loss=1.2107 acc=0.6561
+[00:00:28] Fase A época 2/60 (12s) loss=1.1918 acc=0.6620 val_loss=0.7188 val_acc=0.7887 | no máximo mais ~13 min
+[00:00:32]   Fase A época 3: passo 100/326 loss=0.9921 acc=0.7131
+[00:00:35]   Fase A época 3: passo 200/326 loss=0.9536 acc=0.7266
+[00:00:39]   Fase A época 3: passo 300/326 loss=0.9216 acc=0.7371
+[00:00:40] Fase A época 3/60 (13s) loss=0.9120 acc=0.7401 val_loss=0.6138 val_acc=0.8191 | no máximo mais ~12 min
+[00:00:44]   Fase A época 4: passo 100/326 loss=0.7642 acc=0.7795
+[00:00:48]   Fase A época 4: passo 200/326 loss=0.7638 acc=0.7809
+[00:00:51]   Fase A época 4: passo 300/326 loss=0.7490 acc=0.7841
+[00:00:53] Fase A época 4/60 (12s) loss=0.7492 acc=0.7841 val_loss=0.4990 val_acc=0.8575 | no máximo mais ~12 min
+[00:00:56]   Fase A época 5: passo 100/326 loss=0.6832 acc=0.7999
+[00:01:00]   Fase A época 5: passo 200/326 loss=0.6677 acc=0.8062
+[00:01:03]   Fase A época 5: passo 300/326 loss=0.6479 acc=0.8119
+[00:01:05] Fase A época 5/60 (13s) loss=0.6437 acc=0.8129 val_loss=0.4492 val_acc=0.8734 | no máximo mais ~12 min
+[00:01:09]   Fase A época 6: passo 100/326 loss=0.5742 acc=0.8322
+[00:01:12]   Fase A época 6: passo 200/326 loss=0.5785 acc=0.8328
+[00:01:15]   Fase A época 6: passo 300/326 loss=0.5732 acc=0.8334
+[00:01:17] Fase A época 6/60 (12s) loss=0.5696 acc=0.8344 val_loss=0.3962 val_acc=0.8893 | no máximo mais ~11 min
+[00:01:20]   Fase A época 7: passo 100/326 loss=0.5381 acc=0.8448
+[00:01:23]   Fase A época 7: passo 200/326 loss=0.5326 acc=0.8471
+[00:01:26]   Fase A época 7: passo 300/326 loss=0.5285 acc=0.8503
+[00:01:28] Fase A época 7/60 (11s) loss=0.5246 acc=0.8512 val_loss=0.3753 val_acc=0.8970 | no máximo mais ~11 min
+[00:01:32]   Fase A época 8: passo 100/326 loss=0.4769 acc=0.8623
+[00:01:35]   Fase A época 8: passo 200/326 loss=0.4791 acc=0.8630
+[00:01:39]   Fase A época 8: passo 300/326 loss=0.4789 acc=0.8638
+[00:01:41] Fase A época 8/60 (13s) loss=0.4738 acc=0.8645 val_loss=0.3628 val_acc=0.9034 | no máximo mais ~11 min
+[00:01:44]   Fase A época 9: passo 100/326 loss=0.4354 acc=0.8738
+[00:01:47]   Fase A época 9: passo 200/326 loss=0.4387 acc=0.8750
+[00:01:50]   Fase A época 9: passo 300/326 loss=0.4440 acc=0.8742
+[00:01:52] Fase A época 9/60 (11s) loss=0.4445 acc=0.8739 val_loss=0.3523 val_acc=0.9069 | no máximo mais ~10 min
+[00:01:56]   Fase A época 10: passo 100/326 loss=0.4255 acc=0.8786
+[00:02:01]   Fase A época 10: passo 200/326 loss=0.4321 acc=0.8773
+[00:02:04]   Fase A época 10: passo 300/326 loss=0.4205 acc=0.8798
+[00:02:06] Fase A época 10/60 (14s) loss=0.4213 acc=0.8800 val_loss=0.3598 val_acc=0.9011 | no máximo mais ~10 min
+[00:02:10]   Fase A época 11: passo 100/326 loss=0.3970 acc=0.8838
+[00:02:14]   Fase A época 11: passo 200/326 loss=0.3926 acc=0.8863
+[00:02:18]   Fase A época 11: passo 300/326 loss=0.3907 acc=0.8883
+[00:02:21] Fase A época 11/60 (15s) loss=0.3905 acc=0.8883 val_loss=0.3648 val_acc=0.9058 | no máximo mais ~10 min
+[00:02:25]   Fase A época 12: passo 100/326 loss=0.3629 acc=0.8927
+[00:02:28]   Fase A época 12: passo 200/326 loss=0.3725 acc=0.8939
+[00:02:31]   Fase A época 12: passo 300/326 loss=0.3715 acc=0.8939
+[00:02:33] Fase A época 12/60 (12s) loss=0.3691 acc=0.8948 val_loss=0.3173 val_acc=0.9150 | no máximo mais ~10 min
+[00:02:37]   Fase A época 13: passo 100/326 loss=0.3721 acc=0.8975
+[00:02:40]   Fase A época 13: passo 200/326 loss=0.3542 acc=0.9004
+[00:02:43]   Fase A época 13: passo 300/326 loss=0.3552 acc=0.9010
+[00:02:45] Fase A época 13/60 (12s) loss=0.3562 acc=0.9010 val_loss=0.3276 val_acc=0.9103 | no máximo mais ~10 min
+[00:02:49]   Fase A época 14: passo 100/326 loss=0.3577 acc=0.8972
+[00:02:52]   Fase A época 14: passo 200/326 loss=0.3483 acc=0.8989
+[00:02:55]   Fase A época 14: passo 300/326 loss=0.3399 acc=0.9023
+[00:02:57] Fase A época 14/60 (12s) loss=0.3372 acc=0.9025 val_loss=0.3015 val_acc=0.9237 | no máximo mais ~10 min
+[00:03:00]   Fase A época 15: passo 100/326 loss=0.2980 acc=0.9131
+[00:03:04]   Fase A época 15: passo 200/326 loss=0.3205 acc=0.9096
+[00:03:07]   Fase A época 15: passo 300/326 loss=0.3176 acc=0.9098
+[00:03:09] Fase A época 15/60 (12s) loss=0.3218 acc=0.9080 val_loss=0.2845 val_acc=0.9278 | no máximo mais ~9 min
+[00:03:12]   Fase A época 16: passo 100/326 loss=0.3120 acc=0.9126
+[00:03:15]   Fase A época 16: passo 200/326 loss=0.3116 acc=0.9136
+[00:03:18]   Fase A época 16: passo 300/326 loss=0.3058 acc=0.9140
+[00:03:20] Fase A época 16/60 (11s) loss=0.3071 acc=0.9135 val_loss=0.2811 val_acc=0.9318 | no máximo mais ~9 min
+[00:03:24]   Fase A época 17: passo 100/326 loss=0.2819 acc=0.9184
+[00:03:27]   Fase A época 17: passo 200/326 loss=0.2923 acc=0.9162
+[00:03:30]   Fase A época 17: passo 300/326 loss=0.2991 acc=0.9162
+[00:03:32] Fase A época 17/60 (12s) loss=0.2986 acc=0.9159 val_loss=0.2670 val_acc=0.9344 | no máximo mais ~9 min
+[00:03:35]   Fase A época 18: passo 100/326 loss=0.2814 acc=0.9209
+[00:03:39]   Fase A época 18: passo 200/326 loss=0.2810 acc=0.9200
+[00:03:42]   Fase A época 18: passo 300/326 loss=0.2857 acc=0.9188
+[00:03:44] Fase A época 18/60 (12s) loss=0.2869 acc=0.9181 val_loss=0.2787 val_acc=0.9340 | no máximo mais ~9 min
+[00:03:48]   Fase A época 19: passo 100/326 loss=0.2542 acc=0.9266
+[00:03:51]   Fase A época 19: passo 200/326 loss=0.2730 acc=0.9237
+[00:03:54]   Fase A época 19: passo 300/326 loss=0.2764 acc=0.9227
+[00:03:56] Fase A época 19/60 (12s) loss=0.2782 acc=0.9220 val_loss=0.2944 val_acc=0.9275 | no máximo mais ~8 min
+[00:04:00]   Fase A época 20: passo 100/326 loss=0.2735 acc=0.9211
+[00:04:03]   Fase A época 20: passo 200/326 loss=0.2722 acc=0.9213
+[00:04:06]   Fase A época 20: passo 300/326 loss=0.2690 acc=0.9222
+[00:04:08] Fase A época 20/60 (12s) loss=0.2697 acc=0.9221 val_loss=0.2723 val_acc=0.9340 | no máximo mais ~8 min
+[00:04:12]   Fase A época 21: passo 100/326 loss=0.2633 acc=0.9241
+[00:04:15]   Fase A época 21: passo 200/326 loss=0.2667 acc=0.9245
+[00:04:19]   Fase A época 21: passo 300/326 loss=0.2688 acc=0.9243
+[00:04:20] Fase A época 21/60 (12s) loss=0.2677 acc=0.9246 val_loss=0.2639 val_acc=0.9390 | no máximo mais ~8 min
+[00:04:24]   Fase A época 22: passo 100/326 loss=0.2587 acc=0.9258
+[00:04:27]   Fase A época 22: passo 200/326 loss=0.2569 acc=0.9270
+[00:04:30]   Fase A época 22: passo 300/326 loss=0.2525 acc=0.9272
+[00:04:32] Fase A época 22/60 (12s) loss=0.2497 acc=0.9282 val_loss=0.2603 val_acc=0.9394 | no máximo mais ~8 min
+[00:04:36]   Fase A época 23: passo 100/326 loss=0.2358 acc=0.9334
+[00:04:39]   Fase A época 23: passo 200/326 loss=0.2457 acc=0.9288
+[00:04:42]   Fase A época 23: passo 300/326 loss=0.2427 acc=0.9299
+[00:04:44] Fase A época 23/60 (12s) loss=0.2462 acc=0.9301 val_loss=0.2459 val_acc=0.9417 | no máximo mais ~8 min
+[00:04:48]   Fase A época 24: passo 100/326 loss=0.2388 acc=0.9315
+[00:04:51]   Fase A época 24: passo 200/326 loss=0.2374 acc=0.9332
+[00:04:55]   Fase A época 24: passo 300/326 loss=0.2387 acc=0.9319
+[00:04:56] Fase A época 24/60 (12s) loss=0.2411 acc=0.9317 val_loss=0.2354 val_acc=0.9485 | no máximo mais ~7 min
+[00:05:00]   Fase A época 25: passo 100/326 loss=0.2302 acc=0.9358
+[00:05:03]   Fase A época 25: passo 200/326 loss=0.2335 acc=0.9337
+[00:05:06]   Fase A época 25: passo 300/326 loss=0.2339 acc=0.9327
+[00:05:08] Fase A época 25/60 (12s) loss=0.2340 acc=0.9325 val_loss=0.2359 val_acc=0.9461 | no máximo mais ~7 min
+[00:05:12]   Fase A época 26: passo 100/326 loss=0.2300 acc=0.9351
+[00:05:15]   Fase A época 26: passo 200/326 loss=0.2293 acc=0.9356
+[00:05:19]   Fase A época 26: passo 300/326 loss=0.2294 acc=0.9359
+[00:05:20] Fase A época 26/60 (12s) loss=0.2288 acc=0.9359 val_loss=0.2608 val_acc=0.9393 | no máximo mais ~7 min
+[00:05:24]   Fase A época 27: passo 100/326 loss=0.2182 acc=0.9388
+[00:05:27]   Fase A época 27: passo 200/326 loss=0.2146 acc=0.9391
+[00:05:31]   Fase A época 27: passo 300/326 loss=0.2155 acc=0.9389
+[00:05:33] Fase A época 27/60 (13s) loss=0.2193 acc=0.9379 val_loss=0.2347 val_acc=0.9465 | no máximo mais ~7 min
+[00:05:37]   Fase A época 28: passo 100/326 loss=0.2268 acc=0.9320
+[00:05:40]   Fase A época 28: passo 200/326 loss=0.2165 acc=0.9347
+[00:05:43]   Fase A época 28: passo 300/326 loss=0.2153 acc=0.9365
+[00:05:45] Fase A época 28/60 (12s) loss=0.2162 acc=0.9364 val_loss=0.2543 val_acc=0.9424 | no máximo mais ~7 min
+[00:05:49]   Fase A época 29: passo 100/326 loss=0.1960 acc=0.9438
+[00:05:52]   Fase A época 29: passo 200/326 loss=0.2107 acc=0.9402
+[00:05:55]   Fase A época 29: passo 300/326 loss=0.2125 acc=0.9398
+[00:05:57] Fase A época 29/60 (12s) loss=0.2125 acc=0.9399 val_loss=0.2499 val_acc=0.9463 | no máximo mais ~6 min
+[00:06:02]   Fase A época 30: passo 100/326 loss=0.2014 acc=0.9385
+[00:06:05]   Fase A época 30: passo 200/326 loss=0.2048 acc=0.9388
+[00:06:09]   Fase A época 30: passo 300/326 loss=0.2107 acc=0.9393
+[00:06:11] Fase A época 30/60 (13s) loss=0.2096 acc=0.9395 val_loss=0.2449 val_acc=0.9447 | no máximo mais ~6 min
+[00:06:14]   Fase A época 31: passo 100/326 loss=0.1986 acc=0.9427
+[00:06:18]   Fase A época 31: passo 200/326 loss=0.2007 acc=0.9427
+[00:06:21]   Fase A época 31: passo 300/326 loss=0.2048 acc=0.9405
+[00:06:23] Fase A época 31/60 (12s) loss=0.2058 acc=0.9404 val_loss=0.2578 val_acc=0.9442 | no máximo mais ~6 min
+[00:06:27]   Fase A época 32: passo 100/326 loss=0.2089 acc=0.9380
+[00:06:31]   Fase A época 32: passo 200/326 loss=0.2086 acc=0.9395
+[00:06:34]   Fase A época 32: passo 300/326 loss=0.2054 acc=0.9406
+[00:06:36] Fase A época 32/60 (13s) loss=0.2039 acc=0.9410 val_loss=0.2456 val_acc=0.9484 | no máximo mais ~6 min
+[00:06:40]   Fase A época 33: passo 100/326 loss=0.1923 acc=0.9448
+[00:06:44]   Fase A época 33: passo 200/326 loss=0.2064 acc=0.9433
+[00:06:47]   Fase A época 33: passo 300/326 loss=0.2013 acc=0.9439
+[00:06:49] Fase A época 33/60 (13s) loss=0.2019 acc=0.9443 val_loss=0.2653 val_acc=0.9400 | no máximo mais ~6 min
+[00:06:53]   Fase A época 34: passo 100/326 loss=0.1945 acc=0.9465
+[00:06:56]   Fase A época 34: passo 200/326 loss=0.1940 acc=0.9455
+[00:06:59]   Fase A época 34: passo 300/326 loss=0.1939 acc=0.9447
+[00:07:01] Fase A época 34/60 (12s) loss=0.1926 acc=0.9452 val_loss=0.2648 val_acc=0.9425 | no máximo mais ~5 min
+[00:07:05]   Fase A época 35: passo 100/326 loss=0.1877 acc=0.9459
+[00:07:08]   Fase A época 35: passo 200/326 loss=0.1875 acc=0.9456
+[00:07:11]   Fase A época 35: passo 300/326 loss=0.1900 acc=0.9449
+[00:07:13] Fase A época 35/60 (12s) loss=0.1905 acc=0.9443 val_loss=0.2614 val_acc=0.9439 | no máximo mais ~5 min
+[00:07:17]   Fase A época 36: passo 100/326 loss=0.1843 acc=0.9455
+[00:07:20]   Fase A época 36: passo 200/326 loss=0.1830 acc=0.9452
+[00:07:24]   Fase A época 36: passo 300/326 loss=0.1821 acc=0.9459
+[00:07:26] Fase A época 36/60 (13s) loss=0.1828 acc=0.9459 val_loss=0.2472 val_acc=0.9486 | no máximo mais ~5 min
+[00:07:30]   Fase A época 37: passo 100/326 loss=0.1700 acc=0.9482
+[00:07:33]   Fase A época 37: passo 200/326 loss=0.1698 acc=0.9473
+[00:07:37]   Fase A época 37: passo 300/326 loss=0.1768 acc=0.9471
+[00:07:39] Fase A época 37/60 (13s) loss=0.1779 acc=0.9468 val_loss=0.2515 val_acc=0.9452 | no máximo mais ~5 min
+[00:07:40] Fase A - 37 épocas; melhor val_accuracy: 0.9486; val_accuracy com os pesos restaurados: 0.9465
+
+[00:07:40] -> Fase B: fine-tuning de dominio (ESP32CAM real)
+Found 24 files belonging to 7 classes.
+[00:07:45]   Fase B época 1: passo 50/174 loss=0.2247 acc=0.9406
+[00:07:46]   Fase B época 1: passo 100/174 loss=0.2022 acc=0.9453
+[00:07:47]   Fase B época 1: passo 150/174 loss=0.1928 acc=0.9477
+[00:07:49] Fase B época 1/5 (8s) loss=0.1899 acc=0.9490 val_loss=0.2132 val_acc=0.9509 | no máximo mais ~1 min
+[00:07:52]   Fase B época 2: passo 50/174 loss=0.1961 acc=0.9475
+[00:07:53]   Fase B época 2: passo 100/174 loss=0.1849 acc=0.9515
+[00:07:54]   Fase B época 2: passo 150/174 loss=0.1791 acc=0.9520
+[00:07:55] Fase B época 2/5 (7s) loss=0.1823 acc=0.9523 val_loss=0.2125 val_acc=0.9528 | no máximo mais ~0 min
+[00:07:59]   Fase B época 3: passo 50/174 loss=0.1697 acc=0.9552
+[00:08:00]   Fase B época 3: passo 100/174 loss=0.1703 acc=0.9555
+[00:08:01]   Fase B época 3: passo 150/174 loss=0.1669 acc=0.9560
+[00:08:03] Fase B época 3/5 (7s) loss=0.1673 acc=0.9556 val_loss=0.2175 val_acc=0.9523 | no máximo mais ~0 min
+[00:08:07]   Fase B época 4: passo 50/174 loss=0.1683 acc=0.9544
+[00:08:08]   Fase B época 4: passo 100/174 loss=0.1659 acc=0.9559
+[00:08:09]   Fase B época 4: passo 150/174 loss=0.1666 acc=0.9564
+[00:08:11] Fase B época 4/5 (8s) loss=0.1669 acc=0.9562 val_loss=0.2161 val_acc=0.9539 | no máximo mais ~0 min
+[00:08:14]   Fase B época 5: passo 50/174 loss=0.1697 acc=0.9504
+[00:08:15]   Fase B época 5: passo 100/174 loss=0.1791 acc=0.9506
+[00:08:16]   Fase B época 5: passo 150/174 loss=0.1712 acc=0.9531
+[00:08:17] Fase B época 5/5 (7s) loss=0.1712 acc=0.9533 val_loss=0.2169 val_acc=0.9546 | no máximo mais ~0 min
+[00:08:17] Fase B - val_accuracy (dataset principal) apos fine-tuning: 0.9546
+
+[00:08:17] -> modelo_digito.h5 salvo
+Saved artifact at 'C:\Users\marce\OneDrive\Documentos\ProjetosWindows\TCC2\Codigo-do-TCC2\ModeloEDataset\_savedmodel_digito'. The following endpoints are available:
+
+* Endpoint 'serve'
+  args_0 (POSITIONAL_ONLY): TensorSpec(shape=(None, 28, 28, 1), dtype=tf.float32, name='keras_tensor_8')
+Output Type:
+  TensorSpec(shape=(None, 10), dtype=tf.float32, name=None)
+Captures:
+  2434486586000: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2434486593392: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2434486933936: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2434484612512: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2434484613040: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2434474673424: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2434474676944: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2434474677648: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2434474681168: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2434474682576: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2434474678704: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2434474198992: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2434474201280: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2434474202160: TensorSpec(shape=(), dtype=tf.resource, name=None)
+[00:08:18] -> Convertendo para INT8
+[00:08:19] -> C:\Users\marce\OneDrive\Documentos\ProjetosWindows\TCC2\Codigo-do-TCC2\ModeloEDataset\modelos\modelo_digito.tflite gerado (81.5 KB)
+
+[00:08:19] -> Validando modelo INT8 (tf.lite.Interpreter, no PC)
+[00:08:24] Acuracia INT8 em validacao (por foto): 0.9538 (7037/7378)
+Found 24 files belonging to 7 classes.
+[00:08:24] Acuracia INT8 em dominio (ESP32CAM real, ja visto no fine-tuning): 1.0000 (24/24)
+
+Comparacao de tamanho: modelo_digito.tflite = 81.5 KB | modelo_esp32.tflite (segmentacao) = 10.9 KB
+
+Parametros do classificador: 72442
+[00:08:24] FIM

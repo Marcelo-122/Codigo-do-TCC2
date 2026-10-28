@@ -18,7 +18,7 @@ Feche o Monitor Serial da IDE e qualquer outro programa que use as portas (uma p
 em um programa). `.env` com `TX_SERIAL_PORT`, `RX_SERIAL_PORT`, `LORA_APP_SKEY` e `LORA_DEV_ADDR`.
 
 ```bash
-# Medição da issue: o PC dispara CAPTURE, lê nó e receptor e repete 30 vezes a 50 m
+# Medição: o PC dispara CAPTURE, lê nó e receptor e repete 30 vezes a 50 m
 python reconstrutor.py --tx --envios 30 --distancia 50 --rotulo "pátio, antena 2 dBi"
 
 # Só escutando (CAPTURE enviado por outro terminal); latência menos precisa, ver abaixo
@@ -32,7 +32,7 @@ Trinta envios dão **cerca de 1h30 por distância**.
 `--tx` espera cada leitura terminar (imagem completa, ou o nó informar que acabou de enviar, mais 3 s
 de folga), aguarda `--pausa-s` (10 s) e dispara a seguinte. Sem `RESEND`: uma leitura com blocos
 perdidos fica registrada como `incompleta`, e isso é parte do resultado (PDR da leitura).
-A política de perda (reenvio automático com limite) é um passo separado da issue.
+A política de perda (reenvio automático com limite) não está implementada.
 
 ## O que cada execução grava
 
@@ -148,8 +148,8 @@ Frames FPort 1 em uma execução `--fluxo ocr` (e payloads de FPort 2 malformado
   grava o que tem.
 - **DTR/RTS**: as portas são abertas com DTR/RTS desligados para **não resetar** o nó nem o receptor (o
   `orchestrator.py` antigo resetava e esperava 3 s). Se alguma placa só funcionar depois de resetar, aperte o botão.
-- **Relação com `latencia_ponta_a_ponta.py`**: aquele script (issue de métricas e energia) mede a latência dos
+- **Relação com `latencia_ponta_a_ponta.py`**: aquele script mede a latência dos
   dois fluxos com a mesma definição de disparo, em `latencia_ponta_a_ponta.csv`. Os dois abrem as mesmas portas:
-  **não rodem ao mesmo tempo**. Para o enlace, `transmissao.csv` tem tudo o que a issue pede (PDR, tempo de rádio e
-  latência); os números de latência dos dois devem bater.
+  **não rodem ao mesmo tempo**. Para o enlace, `transmissao.csv` tem PDR, tempo de rádio e
+  latência; os números de latência dos dois devem bater.
 - O que **não** está aqui: política de perda (`RESEND` automático com limite) e envio real de ≥ 30 leituras.

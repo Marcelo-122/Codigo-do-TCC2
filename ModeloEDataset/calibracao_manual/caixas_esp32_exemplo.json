@@ -1,0 +1,7 @@
+{
+ "imagem_capturada_118.jpg": {"caixa": [345,175,435,348], "rotacao": 79, "n_digitos": 5, "real": "00282", "caixa_final": [14,32,173,79]},
+ "imagem_capturada_122.jpg": {"caixa": [395,228,450,398], "rotacao": 94, "n_digitos": 5, "real": "00042", "caixa_final": [7,18,163,58]},
+ "imagem_capturada_124.jpg": {"caixa": [352,183,432,356], "rotacao": 82, "n_digitos": 5, "real": "00926", "caixa_final": [10,28,170,76]},
+ "imagem_capturada_142.jpg": {"caixa": [375,200,447,386], "rotacao": 86, "n_digitos": 5, "real": "00803", "caixa_final": [8,20,180,68]},
+ "imagem_capturada_102.jpg": {"caixa": [345,30,425,330], "rotacao": 83, "n_digitos": 6, "real": "046663", "caixa_final": [0,22,308,92]}
+}

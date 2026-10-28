@@ -82,13 +82,13 @@ acuracia_por_classe = {
 }
 
 # ==========================================
-# Avaliacao no conjunto de dominio (fotos reais da ESP32CAM)
+# Avaliacao no conjunto de dominio (fotos reais da ESP32-CAM)
 # ==========================================
 tem_dominio = os.path.isdir(DIR_DOMINIO) and any(os.scandir(DIR_DOMINIO))
 acc_int8_dominio = None
 total_dominio = 0
 if tem_dominio:
-    print("-> Avaliando no conjunto de dominio (fotos reais da ESP32CAM)")
+    print("-> Avaliando no conjunto de dominio (fotos reais da ESP32-CAM)")
     ds_dominio_raw = tf.keras.utils.image_dataset_from_directory(
         DIR_DOMINIO, labels="inferred", label_mode="int", color_mode="grayscale",
         image_size=IMG_SIZE, batch_size=8, shuffle=False, seed=SEED,
@@ -184,7 +184,7 @@ md = f"""# Resultados do classificador de dígitos
 Gerado automaticamente por `gerar_relatorio_resultados.py`, reavaliando os arquivos
 `modelo_digito.h5` (float) e `modelo_digito.tflite` (INT8) já treinados — **não** re-treina
 nada, só mede. Para reproduzir do zero, rode `treinar_classificador_digitos.py` (ver
-[README.md](README.md)).
+[README.md](../README.md)).
 
 ## Resumo
 
@@ -192,7 +192,7 @@ nada, só mede. Para reproduzir do zero, rode `treinar_classificador_digitos.py`
 |---|---|
 | Acurácia — modelo float (`modelo_digito.h5`), validação por foto | **{acc_f:.2%}** |
 | Acurácia — modelo INT8 (`modelo_digito.tflite`), validação por foto | **{acc_int8_val:.2%}** ({acertos_val}/{totais_val}) |
-| Acurácia — modelo INT8, 24 recortes de fotos da ESP32CAM (domínio) | **{f"{acc_int8_dominio:.2%} ({total_dominio} amostras)" if acc_int8_dominio is not None else "N/A"}** — esses recortes entram no fine-tuning, então **não medem generalização** |
+| Acurácia — modelo INT8, 24 recortes de fotos da ESP32-CAM (domínio) | **{f"{acc_int8_dominio:.2%} ({total_dominio} amostras)" if acc_int8_dominio is not None else "N/A"}** — esses recortes entram no fine-tuning, então **não medem generalização** |
 | Parâmetros do modelo | {modelo_float.count_params():,} |
 | Tamanho `modelo_digito.tflite` | {tam_tflite_kb:.1f} KB |
 | Tamanho `modelo_esp32.tflite` (segmentação, referência) | {tam_seg_kb:.1f} KB |
@@ -202,8 +202,8 @@ nada, só mede. Para reproduzir do zero, rode `treinar_classificador_digitos.py`
 ## Teste independente (pastas `test` do Dryad, fora do treino)
 
 Cada imagem 200×60 é cortada em N fatias iguais (como no firmware) e cada fatia vai ao classificador INT8.
-Gerado por [`../ocr/avaliar_teste_publico.py`](../ocr/avaliar_teste_publico.py); as linhas ficam em
-[`../medicoes/ocr_teste.csv`](../medicoes/ocr_teste.csv).
+Gerado por [`ocr/avaliar_teste_publico.py`](../../ocr/avaliar_teste_publico.py); as linhas ficam em
+[`medicoes/ocr_teste.csv`](../../medicoes/ocr_teste.csv).
 
 | Modelo | Imagens | Leitura exata | Dígitos certos | CER |
 |---|---|---|---|---|
@@ -224,7 +224,7 @@ Para comparação: o classificador **antigo**, treinado com essas mesmas pastas 
 
 ## Como verificar independentemente
 
-1. Clone o repositório e siga o "Como rodar" do [README.md](README.md) (baixa os datasets,
+1. Clone o repositório e siga o "Como rodar" do [README.md](../README.md) (baixa os datasets,
    monta o `dataset/digits/`).
 2. Rode `python gerar_relatorio_resultados.py` — ele recalcula tudo acima a partir dos
    arquivos `modelo_digito.h5`/`.tflite` já commitados, sem precisar re-treinar (leva

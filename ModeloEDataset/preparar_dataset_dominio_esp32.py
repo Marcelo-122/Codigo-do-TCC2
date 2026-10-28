@@ -9,7 +9,8 @@ from digitos_comum import segment_cells_iguais, save_digit_crops
 
 DIRETORIO_ATUAL = os.path.dirname(os.path.abspath(__file__))
 # Fotos de cartaz (TCC I) não são versionadas: informe a pasta com --cartaz
-# (padrão: ModeloEDataset/Imagens_cartaz).
+# (padrão: ModeloEDataset/Imagens_cartaz). O dominio_labels.csv atual não tem
+# nenhuma linha source=cartaz, então hoje a opção não muda nada.
 DIR_CARTAZ_PADRAO = os.path.join(DIRETORIO_ATUAL, "Imagens_cartaz")
 DIR_CAMPO = os.path.join(DIRETORIO_ATUAL, "Imagens")
 DIR_OUT = os.path.join(DIRETORIO_ATUAL, "dataset", "digits_domain")

@@ -83,22 +83,22 @@ idêntica às usadas no treino de B (conferido por hash; os nomes de arquivo se 
 
 ## O que mais se testou para melhorar a leitura
 
-Todos com a caixa marcada à mão (o oráculo) e o quadro 160×120, em scripts de análise que **não estão no
-repositório**; só o alinhamento virou código (`--alinhar`, e os fluxos `*_alinhada` de `avaliar.py`).
+Todos com a caixa marcada à mão (o oráculo) e o quadro 160×120. Só o alinhamento e a votação viraram código
+(`--alinhar` e `--votar`, os fluxos `*_alinhada` de `avaliar.py` e a curva de `avaliar_roi_fixa.py`). As outras ideias
+foram testadas em scripts de análise que **não foram guardados** (não estão no repositório nem em cópias locais): essas
+linhas, marcadas "não" abaixo, não podem ser reproduzidas, foram medidas com o classificador anterior e servem só como
+ordem de grandeza.
 
-Os números desta tabela que não vêm de `avaliar*.py` foram medidos em scripts de análise com o classificador
-anterior e **não foram repetidos** com o re-treinado; servem como ordem de grandeza.
-
-| Ideia | Resultado |
-|---|---|
-| **Endireitar a fileira** (as fotos têm de -3° a -9° de inclinação). O ângulo vem das linhas de Hough, sem usar a caixa: erro mediano de 0,4° contra o ângulo medido na janela, 35 de 39 quadros dentro de 2° | **Ajuda**: 46 % → 82 % das leituras, 85 % → 92 % dos dígitos |
-| Endireitar e depois usar a segmentação do modelo | **Não ajuda**: a caixa do modelo continua com cerca de 85 px de altura (a janela tem 18) e 0/39 |
-| Localizar a janela por um "pente" de bordas verticais periódicas, sem o modelo | **Falha**: IoU mediano 0,35 com a janela real, 0/39 leituras |
-| Cortar nas divisórias reais (programação dinâmica sobre o perfil de colunas) em vez de fatias iguais | **Piora**: 62 % das leituras no melhor caso (divisória clara) contra 72 % das fatias iguais, e 21 % com a polaridade escura |
-| Achar cada dígito por componentes conectados (OpenCV), sem caixa | **Falha**: 2/39 leituras; em 32 dos 39 quadros nem acha uma fileira de N dígitos (o dígito encosta na borda da célula) |
-| Procurar, para cada dígito, a posição e a largura em que o classificador fica mais confiante | Ganho pequeno (+2 a +6 pontos de dígitos com erro na caixa de 2 a 5 px) a 15× o custo |
-| Votar entre 5 caixas deslocadas ±2 px | Ajuda com a caixa imprecisa (62 % → 70 % com erro de ±2 px), a 5× o custo do classificador |
-| Redução por média, bilinear ou contraste por fatia | Sem efeito (±2 dígitos em 222) |
+| Ideia | Resultado | Reproduzível |
+|---|---|---|
+| **Endireitar a fileira** (as fotos têm de -3° a -9° de inclinação). O ângulo vem das linhas de Hough, sem usar a caixa: erro mediano de 0,4° contra o ângulo medido na janela, 35 de 39 quadros dentro de 2° | **Ajuda**: 46 % → 82 % das leituras, 85 % → 92 % dos dígitos | sim (`avaliar.py`) |
+| Endireitar e depois usar a segmentação do modelo | **Não ajuda**: a caixa do modelo continua com cerca de 85 px de altura (a janela tem 18) e 0/39 | sim (`avaliar.py`) |
+| Localizar a janela por um "pente" de bordas verticais periódicas, sem o modelo | **Falha**: IoU mediano 0,35 com a janela real, 0/39 leituras | não |
+| Cortar nas divisórias reais (programação dinâmica sobre o perfil de colunas) em vez de fatias iguais | **Piora**: 62 % das leituras no melhor caso (divisória clara) contra 72 % das fatias iguais, e 21 % com a polaridade escura | não |
+| Achar cada dígito por componentes conectados (OpenCV), sem caixa | **Falha**: 2/39 leituras; em 32 dos 39 quadros nem acha uma fileira de N dígitos (o dígito encosta na borda da célula) | não |
+| Procurar, para cada dígito, a posição e a largura em que o classificador fica mais confiante | Ganho pequeno (+2 a +6 pontos de dígitos com erro na caixa de 2 a 5 px) a 15× o custo | não |
+| Votar entre 5 caixas deslocadas ±2 px | Ajuda com a caixa imprecisa (62 % → 70 % com erro de ±2 px), a 5× o custo do classificador | sim (`avaliar_roi_fixa.py`) |
+| Redução por média, bilinear ou contraste por fatia | Sem efeito (±2 dígitos em 222) | não |
 
 **O que falta é achar a janela dos dígitos** (a caixa). Com ela marcada à mão e o quadro endireitado, a leitura
 chega a 82 % das leituras e 92 % dos dígitos; sem ela, 0 %. Os erros que sobram estão no último dígito (rodinha
@@ -136,9 +136,21 @@ ficar na faixa de 62 a 87 % das leituras; acima de ±3 px a leitura cai rápido.
 custo de rodar o classificador 5 vezes. A montagem mecânica (ou uma calibração que refine a ROI com vários quadros)
 precisa chegar a essa precisão.
 
-**Conferência com a calibração manual do autor** (`caixas_esp32_exemplo.json`, fora do repositório; script
-`pipeline_nuvem.py` com caixa, rotação e `caixa_final` por foto): nas 5 fotos do JSON, lidas com o `.tflite` INT8 de B,
-5/5 saem certas em 640×480, 320×240 e 160×120, e 4/5 em 160×120 com JPEG q90. Com a janela exata, a resolução não é o
+**Conferência com a calibração manual do autor**
+([`ModeloEDataset/calibracao_manual/`](../ModeloEDataset/calibracao_manual/caixas_esp32_exemplo.json): as 5 fotos originais
+640×480 e o JSON com caixa, rotação e `caixa_final` por foto; script
+[`ModeloEDataset/ler_com_caixa_manual.py`](../ModeloEDataset/ler_com_caixa_manual.py)): nas 5 fotos, lidas com o `.tflite`
+INT8 de B, 5/5 saem certas em 640×480 (26/26 dígitos, conferido de novo com o classificador atual), 320×240 e 160×120, e
+4/5 em 160×120 com JPEG q90. As três últimas resoluções vieram de um script de análise que não foi guardado; o resultado
+em 640×480 se reproduz com:
+
+```bash
+cd ModeloEDataset
+python ler_com_caixa_manual.py calibracao_manual --caixas calibracao_manual/caixas_esp32_exemplo.json --modelo-digito modelos/modelo_digito.tflite
+```
+
+As fotos 102, 122 e 124 de `teste_comum/imagens/` são outros arquivos (480×640, retrato), então o JSON não vale para
+elas. Com a janela exata, a resolução não é o
 limite. As rotações marcadas à mão (83°, 94° e 82° nas fotos 102, 122 e 124, que implicam −7°, +4° e −8° de inclinação)
 batem com as estimativas automáticas por Hough (−5,5°, +3° e −9°) com diferença de até 1,5°.
 

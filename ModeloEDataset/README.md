@@ -1,10 +1,10 @@
-# Leitura automática de hidrômetro via CNN + TFLite Micro (ESP32CAM)
+# Leitura automática de hidrômetro via CNN + TFLite Micro (ESP32-CAM)
 
 Pipeline para treinar, no PC, os modelos que rodam via **TensorFlow Lite Micro** numa
-**ESP32CAM** real, lendo a leitura (m³) de hidrômetros mecânicos do tipo "word-wheel"
+**ESP32-CAM** real, lendo a leitura (m³) de hidrômetros mecânicos do tipo "word-wheel"
 (rodinhas) a partir de uma foto. Os dois modelos (segmentação + classificador de dígito) já
 foram testados juntos em hardware real — ver
-["Firmware / ferramenta de calibração no ESP32CAM real"](#firmware--ferramenta-de-calibração-no-esp32cam-real).
+["Firmware / ferramenta de calibração no ESP32-CAM real"](#firmware--ferramenta-de-calibração-no-esp32-cam-real).
 
 ## Contexto
 
@@ -30,11 +30,11 @@ ModeloEDataset/
 ├── relatorios/               RESULTADOS.md, TESTE_IMAGENS_NOVAS.md, matriz_confusao.png, resultados_treino.json
 ├── docs/                     paper de referência (Dryad)
 ├── dataset/                  dados (a maior parte gitignored — ver "Como rodar")
-├── Imagens/                   fotos reais da ESP32CAM usadas no fine-tuning (Fase B)
+├── Imagens/                   fotos reais da ESP32-CAM usadas no fine-tuning (Fase B)
 └── Imagens_2/                 fotos novas de teste (nunca usadas no treino)
 
 ../test_images/debug_ocr_esp32cam/   firmware real (fora do ModeloEDataset/, pasta irmã no
-                                       repo) que roda os dois modelos numa ESP32CAM de
+                                       repo) que roda os dois modelos numa ESP32-CAM de
                                        verdade — ver seção "Firmware" abaixo
 ```
 
@@ -46,7 +46,7 @@ em pastas.
 ## Pipeline completo (conceitual)
 
 ```
-Foto do hidrômetro (ESP32CAM)
+Foto do hidrômetro (ESP32-CAM)
         │
         ▼
 [1] modelo de segmentação (modelos/modelo_esp32.tflite, já existente)
@@ -79,11 +79,11 @@ sobreajuste. A acurácia por pixel que o script reportava antes passa de 98 % me
 imagem; Dice e IoU medem só a janela. O modelo antigo, medido nesse mesmo teste (que ele em boa parte viu no treino),
 tinha Dice 0,35.
 
-Os dois modelos são independentes e cabem juntos com folga no ESP32CAM:
+Os dois modelos são independentes e cabem juntos com folga no ESP32-CAM:
 
 | Modelo | Tamanho INT8 | Parâmetros |
 |---|---|---|
-| Segmentação (`modelos/modelo_esp32.tflite`) | 10,9 KB | — |
+| Segmentação (`modelos/modelo_esp32.tflite`) | 11,8 KB | — |
 | Classificador de dígito (`modelos/modelo_digito.tflite`) | 81,5 KB | 72.442 |
 
 ## Fontes de dados
@@ -92,7 +92,7 @@ Rotular dígito-a-dígito é o problema central aqui: nenhum dos datasets crus v
 "aqui está o dígito 7" — só com a leitura total do medidor. Três fontes foram combinadas:
 
 ### 1. Kaggle — *yandex-toloka water-meters-dataset* (já estava no repo)
-[dataset/images](dataset/images) + [dataset/masks](dataset/masks), 1244 fotos reais de
+`dataset/images/` + `dataset/masks/` (não versionados), 1244 fotos reais de
 hidrômetros variados (ângulo arbitrário), com máscara da janela de dígitos e o valor total
 no nome do arquivo (`id_1000_value_176_881.jpg` → 176,881 m³).
 
@@ -114,7 +114,7 @@ Resultado: 195 imagens aceitas (de 1244) → ~1.560 recortes de dígito. Relató
 `dataset/digits_report.csv` + `dataset/digits_preview.png` (amostra visual por classe).
 
 ### 2. Dryad — *Word-Wheel Water Meter Dataset* (Zhao et al., 2026)
-Dataset público, revisado por pares (Nature *Scientific Data*), colocado pelo usuário em
+Dataset público, revisado por pares (Nature *Scientific Data*), colocado em
 `dataset/Word-Wheel_Water_Meter_Dataset/` (não versionado no git — 2,8 GB, ver
 `.gitignore`). Referência: Zhao, S. et al. *A comprehensive dataset for word-wheel water
 meter reading under challenging conditions.* Scientific Data 13, 479 (2026).
@@ -155,17 +155,17 @@ dataset de treino por ~35x e foi o que mais melhorou a acurácia (ver números c
 > A validação agora é dividida **por foto** ([divisao_por_foto.py](divisao_por_foto.py)): antes ela sorteava recorte a
 > recorte, e recortes da mesma foto caíam no treino e na validação, o que inflava a acurácia.
 
-### 3. Fotos reais da própria ESP32CAM (conjunto de domínio / fine-tuning)
-Nem o Kaggle nem o Dryad foram fotografados com o sensor/lente/compressão da ESP32CAM alvo
+### 3. Fotos reais da própria ESP32-CAM (conjunto de domínio / fine-tuning)
+Nem o Kaggle nem o Dryad foram fotografados com o sensor/lente/compressão da ESP32-CAM alvo
 — há uma diferença real de domínio. [preparar_dataset_dominio_esp32.py](preparar_dataset_dominio_esp32.py)
-usa fotos reais tiradas pela ESP32CAM (pasta [Imagens/](Imagens) + uma pasta externa do
-usuário) com caixas de recorte calibradas manualmente por foto (`RECORTES_MANUAIS`, já que
+usa fotos reais tiradas pela ESP32-CAM (pasta [Imagens/](Imagens))
+com caixas de recorte calibradas manualmente por foto (`RECORTES_MANUAIS`, já que
 não há máscara de referência para essas fotos) e o mesmo fatiamento em largura igual.
 Rótulos ficam em [dominio_labels.csv](dominio_labels.csv), transcritos manualmente (poucas
 fotos, checagem visual viável).
 
-De ~39 fotos reais disponíveis, só 3 (2 medidores físicos diferentes) tiveram
-ângulo/recorte confiável o suficiente pra virar dado de treino sem arriscar rótulo errado —
+Das 34 fotos da ESP32-CAM em `Imagens/` (tiradas de um monitor), só 3 (2 medidores diferentes) tiveram
+ângulo/recorte confiável o suficiente para virar dado de treino sem arriscar rótulo errado —
 as demais tinham corte ou rotação ambígua demais. **24 recortes de dígito no total.**
 
 ## Arquitetura da CNN
@@ -183,9 +183,9 @@ Flatten → Dense(64) → Dropout(0.3) → Dense(10, softmax)
 Treino em duas fases, em [treinar_classificador_digitos.py](treinar_classificador_digitos.py):
 
 - **Fase A** — treino principal nos ~58.760 recortes combinados (Kaggle + Dryad), com
-  aumento de dados simulando a câmera do ESP32CAM (downsample+upsample pra imitar baixa
+  aumento de dados simulando a câmera do ESP32-CAM (downsample+upsample para imitar baixa
   resolução nativa, ruído gaussiano leve, rotação/translação leves, jitter de contraste) e
-  `class_weight` pra compensar o dígito `0` (superrepresentado por zero-padding).
+  `class_weight` para compensar o dígito `0` (superrepresentado por zero-padding).
 - **Fase B** — fine-tuning com as 24 fotos reais de domínio (fortemente aumentadas e
   repetidas) + uma fatia do treino principal, para não esquecer o que já sabia
   (*catastrophic forgetting*). Learning rate bem mais baixo que a Fase A.
@@ -203,7 +203,7 @@ Números oficiais em **[relatorios/RESULTADOS.md](relatorios/RESULTADOS.md)** �
 confusão e acurácia por dígito. É a fonte confiável, não os números soltos abaixo — ver a
 nota importante logo depois.
 
-Pra conferir visualmente, foto a foto, o que o modelo previu contra o valor real (em vez de
+Para conferir visualmente, foto a foto, o que o modelo previu contra o valor real (em vez de
 só a acurácia agregada), rode `verificar_predicoes_dominio.py` — gera uma imagem por foto de
 domínio em `dataset/predicoes_dominio/`, com a foto original, cada recorte de dígito e o
 par "real/previsto" (verde = acertou, vermelho = errou). Exemplo:
@@ -212,11 +212,11 @@ par "real/previsto" (verde = acertou, vermelho = errou). Exemplo:
 Também há um teste com imagens **completamente novas** (nunca usadas em nenhuma etapa do
 treino) em **[relatorios/TESTE_IMAGENS_NOVAS.md](relatorios/TESTE_IMAGENS_NOVAS.md)** — hidrômetros chineses de
 marca/fonte de dígito nunca vista (4 fotos limpas) + fotos reais tiradas pela própria
-ESP32CAM (2 fotos), gerado por `testar_imagens_novas.py`: 29/32 dígitos individuais
+ESP32-CAM (2 fotos), gerado por `testar_imagens_novas.py`: 29/32 dígitos individuais
 corretos (91%), 4 das 6 leituras completas (a `imagem_capturada_144` errou o segundo dígito, `1` lido como `0`).
 Com o classificador anterior eram 30/32; a diferença é de um dígito, dentro do ruído de uma amostra tão pequena.
 
-| Etapa | Acurácia geral (validação, 10 classes) | Acurácia nas fotos reais da ESP32CAM |
+| Etapa | Acurácia geral (validação, 10 classes) | Acurácia nas fotos reais da ESP32-CAM |
 |---|---|---|
 | **Fase A + Fase B (final, INT8)** | **95,4%** (validação por foto) | **100%** (24/24) |
 
@@ -235,27 +235,26 @@ Com o classificador anterior eram 30/32; a diferença é de um dígito, dentro d
 > se a lista de arquivos é embaralhada *antes* de cortar treino/validação, então as duas
 > chamadas geravam cortes não-complementares. Na prática, "validação" era só os últimos 15%
 > da lista ordenada por classe, que caíam inteiramente nos dígitos 7, 8 e 9 — todo número
-> de acurácia relatado antes disso (inclusive os "51,6%→97,6%→96,3%" que já foram
-> mencionados em conversa) media só esses 3 dígitos, nunca os outros 7. Corrigido em
+> de acurácia relatado antes disso media só esses 3 dígitos, nunca os outros 7. Corrigido em
 > `treinar_classificador_digitos.py` e `gerar_relatorio_resultados.py` (as duas chamadas
 > agora usam `shuffle=True` consistente) e o modelo foi re-treinado do zero. Os números
 > corrigidos ficaram parecidos com os antigos (96,9% vs 96,3%) — não porque o bug não
-> importasse, mas porque o modelo de fato generaliza bem pras 10 classes, o que só dá pra
+> importasse, mas porque o modelo de fato generaliza bem para as 10 classes, o que só dá para
 > afirmar agora que a validação está correta.
 
-## Firmware / ferramenta de calibração no ESP32CAM real
+## Firmware / ferramenta de calibração no ESP32-CAM real
 
 Os dois modelos deste repositório (`modelos/modelo_esp32.tflite` de segmentação +
-`modelos/modelo_digito.tflite` de classificação) **já rodam juntos numa ESP32CAM real**,
+`modelos/modelo_digito.tflite` de classificação) **já rodam juntos numa ESP32-CAM real**,
 via TFLite Micro, numa ferramenta de debug/calibração em
 [`test_images/debug_ocr_esp32cam/`](../test_images/debug_ocr_esp32cam/) (repositório
 `Codigo-do-TCC2`, pasta irmã de `ModeloEDataset/` — não faz parte deste dataset/pipeline,
-mas consome os artefatos dele diretamente: `modelo.h` e `modelo_digito.h` copiados pra lá).
+mas consome os artefatos dele diretamente: `modelo.h` e `modelo_digito.h` copiados para lá).
 
 **O que ela faz**, a cada 5 segundos: captura uma foto (160×120, cinza), roda a segmentação
-pra achar a janela de dígitos, fatia essa janela em `N_FATIAS` pedaços (ajustável por
+para achar a janela de dígitos, fatia essa janela em `N_FATIAS` pedaços (ajustável por
 medidor — ver abaixo), classifica cada fatia, desenha o retângulo + linhas-guia na imagem
-pra calibração visual, e manda tudo (imagem anotada + a leitura completa + métricas de
+para calibração visual, e manda tudo (imagem anotada + a leitura completa + métricas de
 RAM/PSRAM/tempo) pela Serial USB.
 
 **Testado em hardware real (AI-Thinker ESP32-CAM)** — não é só teoria:
@@ -264,15 +263,15 @@ RAM/PSRAM/tempo) pela Serial USB.
   de arena usada pelo classificador de dígito; `psram_free` = 1.289.292 bytes com as duas arenas
   alocadas). Dados em [`../medicoes/`](../medicoes/README.md).
 - `N_FATIAS` é só um parâmetro de pós-processamento (divide a caixa detectada em N partes
-  iguais) — **não precisa bater** com a convenção "5+3=8" usada pra montar o dataset de
-  treino do classificador, já que o classificador só lê um dígito por vez. Calibrado pra
+  iguais) — **não precisa bater** com a convenção "5+3=8" usada para montar o dataset de
+  treino do classificador, já que o classificador só lê um dígito por vez. Calibrado para
   **6** depois de conferir visualmente que o medidor de teste (marca Tianjin, leitura real
-  "046663") tem 6 rodinhas pretas e nenhuma vermelha — ajuste essa constante pro medidor-alvo
+  "046663") tem 6 rodinhas pretas e nenhuma vermelha — ajuste essa constante para o medidor-alvo
   real (é só contar as rodinhas na imagem de debug).
 - Achado real de performance: a inferência do modelo de **segmentação** demorou **~15,6s por
   frame** (mediana de 15.564 ms em 61 capturas) em hardware real (bem mais que os poucos milissegundos típicos de TFLite Micro em
   modelos pequenos) — provavelmente por rodar em kernels de referência puros em C, sem
-  otimização pra Xtensa, num input relativamente grande (192×192). Isso é aceitável pra essa
+  otimização para Xtensa, num input relativamente grande (192×192). Isso é aceitável para essa
   ferramenta de debug (roda a cada 5s de qualquer forma), mas é um ponto a otimizar antes de
   qualquer uso em produção (ver "Próximos passos").
 
@@ -285,14 +284,14 @@ precise ser recompilado ou portado.
 ## Como rodar
 
 ```bash
-# 1. Ambiente (Python 3.10 — TensorFlow não tem wheel estável pra 3.13 no Windows ainda)
+# 1. Ambiente (Python 3.10 — TensorFlow não tem wheel estável para 3.13 no Windows ainda)
 python -m venv .venv
 ./.venv/Scripts/pip install -r requirements.txt
 
 # 2. Prepara os datasets de dígito (nesta ordem, cada um soma ao mesmo dataset/digits/)
 ./.venv/Scripts/python preparar_dataset_digitos.py        # Kaggle
 ./.venv/Scripts/python preparar_dataset_dryad.py           # Dryad (requer a pasta local)
-./.venv/Scripts/python preparar_dataset_dominio_esp32.py   # fotos reais da ESP32CAM (use --cartaz PASTA para as fotos de cartaz do TCC I)
+./.venv/Scripts/python preparar_dataset_dominio_esp32.py   # fotos reais da ESP32-CAM (as 3 de dominio_labels.csv, em Imagens/)
 
 # 3. Treina, converte e valida
 ./.venv/Scripts/python treinar_classificador_digitos.py
@@ -318,12 +317,13 @@ Conferir sempre antes de confiar no dataset gerado:
 | [digitos_comum.py](digitos_comum.py) | Funções compartilhadas: retificação por máscara, segmentação por projeção/largura igual, leitura de imagem com path Unicode |
 | [preparar_dataset_digitos.py](preparar_dataset_digitos.py) | Extrai dígitos rotulados do Kaggle |
 | [preparar_dataset_dryad.py](preparar_dataset_dryad.py) | Extrai dígitos rotulados do Dryad |
-| [preparar_dataset_dominio_esp32.py](preparar_dataset_dominio_esp32.py) + [dominio_labels.csv](dominio_labels.csv) | Extrai dígitos das fotos reais da ESP32CAM |
+| [preparar_dataset_dominio_esp32.py](preparar_dataset_dominio_esp32.py) + [dominio_labels.csv](dominio_labels.csv) | Extrai dígitos das fotos reais da ESP32-CAM |
 | [treinar_classificador_digitos.py](treinar_classificador_digitos.py) | Constrói, treina (Fase A + B), converte INT8 e valida a CNN |
-| [gerar_header.py](gerar_header.py) | Converte qualquer `.tflite` em `.h` (usado tanto pro modelo de segmentação quanto pro de dígito) |
+| [gerar_header.py](gerar_header.py) | Converte qualquer `.tflite` em `.h` (usado tanto para o modelo de segmentação quanto para o de dígito) |
 | [gerar_relatorio_resultados.py](gerar_relatorio_resultados.py) | Reavalia o modelo já treinado e gera [relatorios/RESULTADOS.md](relatorios/RESULTADOS.md) + matriz de confusão (não re-treina) |
 | [verificar_predicoes_dominio.py](verificar_predicoes_dominio.py) | Gera uma imagem por foto de domínio comparando dígito real vs. previsto (verificação visual) |
 | [testar_imagens_novas.py](testar_imagens_novas.py) | Testa o modelo em imagens novas (`Imagens_2/`), nunca usadas no treino — gera [relatorios/TESTE_IMAGENS_NOVAS.md](relatorios/TESTE_IMAGENS_NOVAS.md) |
+| [ler_com_caixa_manual.py](ler_com_caixa_manual.py) + [calibracao_manual/](calibracao_manual/caixas_esp32_exemplo.json) | Lê fotos com a janela dos dígitos marcada à mão (caixa, rotação e `caixa_final` no JSON); reproduz a conferência com a calibração manual do autor citada em [`../ocr/README.md`](../ocr/README.md) (5/5 leituras) |
 | `modelos/modelo_digito.h5` / `.tflite` / `.h` | Artefatos finais do classificador de dígito |
 
 ## Limitações conhecidas
@@ -335,42 +335,42 @@ Conferir sempre antes de confiar no dataset gerado:
 - Rotulagem automática (Kaggle e Dryad) depende de suposições e heurísticas auditáveis via
   os `*_report.csv`, mas não é 100% livre de ruído (~1-4% estimado).
 - Dimensionamento exato de RAM/flash/latência em hardware real **já foi confirmado** — ver
-  a seção "Firmware / ferramenta de calibração no ESP32CAM real" abaixo. Inferência da
-  segmentação ficou bem mais lenta que o esperado (~15,6s por frame) — aceitável pra uma
+  a seção "Firmware / ferramenta de calibração no ESP32-CAM real" acima. Inferência da
+  segmentação ficou bem mais lenta que o esperado (~15,6s por frame) — aceitável para uma
   ferramenta de debug que roda a cada 5s, mas precisa de otimização antes de virar produção
   (ver "Firmware" para detalhes e hipóteses).
 
 ## Próximos passos recomendados
 
-1. **Coletar mais fotos reais da ESP32CAM** do(s) hidrômetro(s) que serão efetivamente
+1. **Coletar mais fotos reais da ESP32-CAM** do(s) hidrômetro(s) que serão efetivamente
    monitorados, na mesma posição/distância/ângulo da instalação real:
    - ~30-50 fotos, variando iluminação (dia/noite/luz artificial), pequenas variações de
      ângulo, reflexo/embaçado no vidro.
-   - Se o medidor estiver em uso, fotografar ao longo de dias/semanas pra cobrir dígitos
+   - Se o medidor estiver em uso, fotografar ao longo de dias/semanas para cobrir dígitos
      diferentes conforme o consumo gira as rodinhas.
-   - Separar uma fatia (ex.: 30%) como teste real, nunca usada no fine-tuning, pra medir a
+   - Separar uma fatia (ex.: 30%) como teste real, nunca usada no fine-tuning, para medir a
      acurácia de verdade.
    - Se houver mais de um medidor físico a monitorar, pelo menos 5-10 fotos de cada.
 2. **Otimizar a latência da inferência de segmentação** (~15,6s/frame medido em hardware
-   real — ver seção "Firmware" abaixo) antes de qualquer uso em produção: candidatos são
-   reduzir a entrada do modelo de segmentação (192×192 é grande pra TFLite Micro sem
+   real — ver seção "Firmware" acima) antes de qualquer uso em produção: candidatos são
+   reduzir a entrada do modelo de segmentação (192×192 é grande para TFLite Micro sem
    aceleração de hardware), usar uma resolução intermediária menor, ou investigar se a
-   biblioteca TFLite Micro instalada tem kernels otimizados pra Xtensa (vs. implementação de
+   biblioteca TFLite Micro instalada tem kernels otimizados para Xtensa (vs. implementação de
    referência pura em C).
-3. Migrar a lógica do firmware de debug (`test_images/debug_ocr_esp32cam/`) pra um firmware
-   de produção: remover o desenho de retângulo/linhas-guia (só serve pra debug visual),
+3. Migrar a lógica do firmware de debug (`test_images/debug_ocr_esp32cam/`) para um firmware
+   de produção: remover o desenho de retângulo/linhas-guia (só serve para debug visual),
    adicionar tratamento de erro mais robusto, e decidir como/onde a leitura final é entregue
    (LoRaWAN? MQTT? outro meio já usado no projeto).
 4. Opcional: se a acurácia de domínio (com teste real separado) ficar abaixo do esperado,
    reconsiderar usar também o conjunto de **detecção** do Dryad (46 mil imagens rotuladas)
-   pra melhorar o modelo de segmentação, hoje treinado só com as 1244 imagens do Kaggle.
+   para melhorar o modelo de segmentação, hoje treinado só com as 1244 imagens do Kaggle.
 
 ## Histórico de iterações (contexto do processo)
 
 Registrado aqui porque explica *por que* o pipeline ficou do jeito que está, não só o
 resultado final. **Os percentuais abaixo são os que foram medidos em cada etapa na época,
 com o bug de shuffle/split descrito em "Resultados" ainda presente** (validação enviesada
-pros dígitos 7/8/9) — servem pra entender a direção/magnitude relativa de cada mudança, não
+para os dígitos 7/8/9) — servem para entender a direção/magnitude relativa de cada mudança, não
 como valores absolutos confiáveis. Os únicos números corrigidos e confiáveis são os da
 versão final, em [relatorios/RESULTADOS.md](relatorios/RESULTADOS.md).
 
@@ -378,28 +378,28 @@ versão final, em [relatorios/RESULTADOS.md](relatorios/RESULTADOS.md).
    depois 53,5% de acurácia após um filtro de segmentação mais rigoroso — ainda baixo.
 2. Tentativa de fine-tuning de domínio nessa fase (poucos dados, modelo fraco) **piorou**
    a acurácia geral (53%→39%) sem ganho real — ficou desligado (`EXECUTAR_FASE_B = False`).
-3. Achado do dataset Dryad (PDF anexado pelo usuário) → adicionado como fonte principal.
+3. Achado do dataset Dryad → adicionado como fonte principal.
 4. CNN aumentada (16→32→64 filtros, ~72k parâmetros) porque com muito mais dado real dava
-   pra sustentar mais capacidade sem overfitar, e ainda sobra bastante orçamento de memória
-   no ESP32CAM.
+   para sustentar mais capacidade sem overfitar, e ainda sobra bastante orçamento de memória
+   no ESP32-CAM.
 5. Com o modelo bem mais forte, a Fase B foi testada de novo (3 intensidades) e desta vez
    ajudou bastante — reativada.
-6. Ao gerar um relatório verificável de resultados (pedido do usuário), a matriz de
-   confusão saiu quebrada (só 3 classes apareciam) — investigando isso, achei o bug real de
+6. Ao gerar um relatório verificável de resultados, a matriz de
+   confusão saiu quebrada (só 3 classes apareciam) — investigando isso, apareceu o bug real de
    `shuffle` no split treino/validação (ver "Resultados"). Corrigido e re-treinado do zero;
    os números finais corrigidos ficaram parecidos com os antigos, o que dá mais confiança de
    que o modelo generaliza bem — mas só porque agora isso foi de fato medido certo.
 7. Integração real em hardware (`test_images/debug_ocr_esp32cam/`): os dois modelos rodando
-   juntos numa ESP32CAM real via TFLite Micro, com dois bugs de memória reais (PSRAM)
+   juntos numa ESP32-CAM real via TFLite Micro, com dois bugs de memória reais (PSRAM)
    diagnosticados e corrigidos no processo (ver histórico de ajustes detalhado no README
    daquela pasta) — nenhum dos dois era o que a primeira hipótese sugeria, só apareceram
-   claramente com logs reais de hardware, não dava pra prever só lendo o código.
+   claramente com logs reais de hardware, não dava para prever só lendo o código.
 8. Depois de rodar contra um medidor real (marca Tianjin, 6 dígitos), a leitura saiu errada
    porque `N_FATIAS` estava fixo em 8 (herdado da convenção do dataset de treino) — corrigido
-   pra 6, ajustável por medidor-alvo (não é parâmetro do modelo, só de pós-processamento).
-9. Usuário reportou "o leitor não reconhece o 0?" — na real, o dígito `0` é a classe com
+   para 6, ajustável por medidor-alvo (não é parâmetro do modelo, só de pós-processamento).
+9. Parecia que o leitor não reconhecia o `0`, mas o dígito `0` é a classe com
    **melhor** acurácia (98,5%, ver `resultados_treino.json`). O problema era no script
-   receptor em Python: `parse_metricas()` convertia qualquer valor numérico pra `int`,
+   receptor em Python: `parse_metricas()` convertia qualquer valor numérico para `int`,
    inclusive o campo `leitura` (uma string de dígitos, não um número) — `int("046663")`
    virava `46663`, comendo o zero à esquerda. Corrigido: `leitura` agora fica sempre como
    string.
