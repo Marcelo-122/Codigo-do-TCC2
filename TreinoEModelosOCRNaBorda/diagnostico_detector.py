@@ -6,6 +6,8 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_model_optimization as tfmot
 from tensorflow.keras.utils import load_img, img_to_array
+from config_detector import (IMG_SIZE, NOME_MODELO, KERNEL_CLOSE, AREA_MIN,
+                             carregar_imagem, carregar_mascara)
 import tensorflow.keras.backend as K
 
 # ==========================================
@@ -34,16 +36,15 @@ DIR_DS_MASK = os.path.join(DIRETORIO_ATUAL, "dataset", "masks")
 DIR_IMG_REAIS = os.path.join(DIRETORIO_ATUAL, "dataset", "imagens_reais")
 DIR_DIAG = os.path.join(DIRETORIO_ATUAL, "resultados_visuais", "diagnostico_detector")
 
-UNET_SIZE = 384
-KERNEL_CLOSE = 15          # mesmo valor usado no simulador
-AREA_MIN = 80              # mesma área mínima do simulador
+UNET_SIZE = IMG_SIZE[0]    # vem do config_detector (treino, diagnóstico e simulador usam o mesmo)
+# KERNEL_CLOSE e AREA_MIN também vêm do config_detector, já escalados para a resolução
 LIMIARES = [0.5, 0.7, 0.9]
 
 os.makedirs(DIR_DIAG, exist_ok=True)
 
 custom_objects = {'dice_coef': dice_coef, 'dice_loss': dice_loss, 'bce_dice_loss': bce_dice_loss}
 with tfmot.quantization.keras.quantize_scope():
-    unet = tf.keras.models.load_model(os.path.join(DIR_MODELOS, "modelo_medidor.h5"),
+    unet = tf.keras.models.load_model(os.path.join(DIR_MODELOS, f"{NOME_MODELO}.h5"),
                                       custom_objects=custom_objects, compile=False)
 
 # ==========================================
@@ -51,8 +52,7 @@ with tfmot.quantization.keras.quantize_scope():
 # ==========================================
 def prever_prob(caminho):
     """Retorna (imagem cinza uint8 384x384, mapa de probabilidade 384x384)."""
-    img = img_to_array(load_img(caminho, color_mode="grayscale",
-                                target_size=(UNET_SIZE, UNET_SIZE))) / 255.0
+    img = carregar_imagem(caminho)          # mesmo resize (e interpolação) do treino
     prob = unet(np.expand_dims(img, axis=0), training=False).numpy()[0, ..., 0]
     return (img[..., 0] * 255).astype(np.uint8), prob
 
@@ -96,8 +96,10 @@ print("PARTE A — Validação no dataset (mesma divisão 80/20 do treino)")
 print("=" * 70)
 
 if os.path.isdir(DIR_DS_IMG) and os.path.isdir(DIR_DS_MASK):
+    # mesmo filtro do treino: só arquivos que têm máscara entram na lista antes do corte 80/20
     arquivos = sorted(f for f in os.listdir(DIR_DS_IMG)
-                      if f.lower().endswith(('.png', '.jpg', '.jpeg')))
+                      if f.lower().endswith(('.png', '.jpg', '.jpeg'))
+                      and os.path.exists(os.path.join(DIR_DS_MASK, f)))
     val = arquivos[int(len(arquivos) * 0.8):]
 
     resultados = []   # (arquivo, dice, iou_bbox, razao_area_bbox_pred_gt)
@@ -106,9 +108,7 @@ if os.path.isdir(DIR_DS_IMG) and os.path.isdir(DIR_DS_MASK):
         if not os.path.exists(caminho_mask):
             continue
         _, prob = prever_prob(os.path.join(DIR_DS_IMG, f))
-        gt = img_to_array(load_img(caminho_mask, color_mode="grayscale",
-                                   target_size=(UNET_SIZE, UNET_SIZE)))[..., 0] / 255.0
-        gt = (gt > 0.5).astype(np.float32)
+        gt = carregar_mascara(caminho_mask)[..., 0]
 
         dice = dice_np(prob > 0.5, gt)
         bbox_pred, _ = bbox_da_prob(prob, 0.5)
@@ -182,6 +182,9 @@ for arquivo in sorted(os.listdir(DIR_IMG_REAIS)):
     retangulo(overlay, bbox_estrito, (255, 0, 0), 1)       # azul (BGR)
     retangulo(overlay, bbox_sem_close, (0, 0, 255), 1)     # vermelho
     retangulo(overlay, bbox_atual, (0, 255, 0), 2)         # verde
-    cv2.imwrite(os.path.join(DIR_DIAG, f"diag_{arquivo}.png"), np.hstack([base, overlay]))
+    painel = np.hstack([base, overlay])
+    fator = max(1, 384 // UNET_SIZE)          # amplia para o painel ficar legível em resoluções baixas
+    painel = cv2.resize(painel, None, fx=fator, fy=fator, interpolation=cv2.INTER_NEAREST)
+    cv2.imwrite(os.path.join(DIR_DIAG, f"diag_{arquivo}.png"), painel)
 
 print(f"\n-> Painéis salvos em: {DIR_DIAG}")

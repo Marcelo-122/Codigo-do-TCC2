@@ -1,4 +1,5 @@
 import os
+import re
 import cv2
 import random
 import numpy as np
@@ -10,7 +11,13 @@ DIRETORIO_ATUAL = os.path.dirname(os.path.abspath(__file__))
 
 DIR_IMG = os.path.join(DIRETORIO_ATUAL, "dataset", "images")
 DIR_MASK = os.path.join(DIRETORIO_ATUAL, "dataset", "masks")
-DIR_SAIDA = os.path.join(DIRETORIO_ATUAL, "dataset", "visores_blackout")
+# Pasta NOVA (rótulos de 8 dígitos). Não reutilize "visores_blackout": as pastas antigas
+# têm rótulos de 7 dígitos e, se ficassem juntas, o treino leria os dois conjuntos.
+DIR_SAIDA = os.path.join(DIRETORIO_ATUAL, "dataset", "visores_blackout_8d")
+
+# Layout físico dos roletes: 5 inteiros + 3 decimais = 8 dígitos (confirmado na auditoria)
+N_INT = 5
+N_DEC = 3
 
 LIMITE_IMAGENS = 1244   # máximo disponível com máscara no dataset de origem
 SEED = 42
@@ -35,18 +42,31 @@ if not arquivos_validos:
     raise ValueError("Nenhuma imagem encontrada na pasta de origem.")
 
 amostras_com_rotulo = []
+fora_do_layout = []
 
 for arquivo in arquivos_validos:
     nome_sem_ext = os.path.splitext(arquivo)[0]
     nome_lower = nome_sem_ext.lower()
-    if "value" in nome_lower:
-        rotulo = nome_lower.split("value")[-1]
-        rotulo = rotulo.replace("_", "").replace("-", "").strip().upper().zfill(7)
-        if rotulo:
-            amostras_com_rotulo.append((rotulo, arquivo))
+    m = re.search(r"value_(\d+)(?:_(\d+))?", nome_lower)
+    if not m:
+        continue
+    parte_int, parte_dec = m.group(1), (m.group(2) or "")
+
+    # O nome do arquivo vem de um número (3.0 -> "3_0", 273.47 -> "273_47"), então a
+    # parte decimal perde os zeros à direita: completa à direita até N_DEC dígitos.
+    # A parte inteira é completada com zeros à esquerda até N_INT.
+    if len(parte_int) > N_INT or len(parte_dec) > N_DEC:
+        fora_do_layout.append(arquivo)      # não cabe nos roletes: descartado
+        continue
+    rotulo = parte_int.zfill(N_INT) + parte_dec.ljust(N_DEC, "0")
+    amostras_com_rotulo.append((rotulo, arquivo))
 
 if not amostras_com_rotulo:
     raise ValueError("Não foi possível localizar o padrão 'value' nos nomes dos ficheiros.")
+
+if fora_do_layout:
+    print(f"-> {len(fora_do_layout)} arquivo(s) descartado(s) por não caberem em {N_INT}+{N_DEC} roletes: "
+          f"{fora_do_layout[:5]}")
 
 # ==========================================
 # 3. SORTEIO DAS IMAGENS

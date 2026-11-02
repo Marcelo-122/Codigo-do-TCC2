@@ -1,0 +1,15 @@
+Arquivo,Status,Leitura_CTC,Conf_CTC
+image.jpg,OK,066,0.5164
+image1.jpg,OK,086,0.4142
+image10.jpg,OK,03534355,0.7355
+image11.jpg,OK,03534155,0.386
+image13.jpg,FALHA_LOCALIZACAO,,
+image14.jpg,FALHA_LOCALIZACAO,,
+image2.jpeg,OK,01,0.3034
+image3.jpg,OK,0838368,0.3178
+image4.jpg,OK,098,0.5812
+image5.jpg,OK,026,0.5
+image6.jpg,OK,000300714,0.4946
+image7.jpeg,OK,00053,0.433
+image8.jpg,OK,0122,0.3491
+image9.jpg,OK,0353455,0.6816

@@ -1,0 +1,5 @@
+Dataset de hidrometros feito por Kucev Roman
+link: https://www.kaggle.com/datasets/tapakah68/yandextoloka-water-meters-dataset
+
+Dataset de dígitos feito por Aquib iqbal
+link: https://www.kaggle.com/datasets/aquibiqbal/digits-09

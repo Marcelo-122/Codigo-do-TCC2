@@ -75,6 +75,71 @@ def decodificar_beam_search(logits_batch, tamanhos, beam_width=10):
     return saida
 
 
+def acertos_por_posicao(real, pred):
+    """Compara dígito a dígito pela POSIÇÃO, alinhando pela DIREITA (as casas decimais ficam
+    sempre alinhadas, mesmo que a previsão tenha perdido ou ganhado dígitos à esquerda).
+    Retorna uma lista de bool, um por dígito REAL, da esquerda para a direita.
+    Dígito que a previsão não chegou a emitir conta como erro. Dígitos a mais na previsão
+    (à esquerda) são ignorados aqui; quem pune isso é a acurácia completa."""
+    n = len(real)
+    pred_alinhado = [None] * max(0, n - len(pred)) + list(pred[-n:])
+    return [r == p for r, p in zip(real, pred_alinhado)]
+
+
+def acuracia_digito_posicao(resultados):
+    """(dígitos corretos, total de dígitos reais), comparando por posição."""
+    acertos = sum(sum(acertos_por_posicao(r, p)) for r, p in resultados)
+    total = sum(len(r) for r, _ in resultados)
+    return acertos, total
+
+
+def acuracia_digito_edicao(resultados):
+    """1 - (erros de edição / total de dígitos reais). Tolera um dígito a mais ou a menos
+    sem desalinhar todo o resto (é o 'character accuracy' usual em OCR)."""
+    total = sum(len(r) for r, _ in resultados)
+    erros = sum(distancia_edicao(r, p) for r, p in resultados)
+    return max(0.0, 1.0 - erros / total) if total else 0.0
+
+
+def acuracia_por_casa(resultados, max_digitos=8):
+    """Acerto por casa, alinhado pela direita. Índice 0 = último dígito (casa menos
+    significativa). Retorna (acertos, totais), listas de tamanho max_digitos."""
+    acertos, totais = [0] * max_digitos, [0] * max_digitos
+    for real, pred in resultados:
+        for k, ok in enumerate(reversed(acertos_por_posicao(real, pred))):
+            totais[k] += 1
+            acertos[k] += int(ok)
+    return acertos, totais
+
+
+def sem_zeros_esquerda(lista):
+    """Remove zeros à esquerda, mantendo ao menos um dígito. Lista vazia continua vazia
+    (uma previsão vazia nunca deve ser tratada como o valor zero)."""
+    i = 0
+    while i < len(lista) - 1 and lista[i] == 0:
+        i += 1
+    return lista[i:]
+
+
+def acuracia_valor(resultados):
+    """Acurácia do VALOR lido: ignora diferenças só na quantidade de zeros à esquerda
+    (00215993 e 0215993 são a mesma leitura)."""
+    return float(np.mean([sem_zeros_esquerda(r) == sem_zeros_esquerda(p) for r, p in resultados]))
+
+
+def acuracia_por_parte(resultados, n_dec=3):
+    """Separa o acerto da parte inteira (pretos) e da decimal (vermelhos, os que
+    costumam estar girando). Alinha pela DIREITA, então não depende dos zeros à esquerda."""
+    ok_int = ok_dec = 0
+    for real, pred in resultados:
+        ok_dec += int(real[-n_dec:] == pred[-n_dec:])
+        parte_real = sem_zeros_esquerda(real[:-n_dec]) or [0]
+        parte_pred = sem_zeros_esquerda(pred[:-n_dec]) or [0]
+        ok_int += int(parte_real == parte_pred)
+    n = len(resultados)
+    return ok_int / n, ok_dec / n
+
+
 def colapsar_repeticoes(lista):
     """Simula o que aconteceria se toda repetição consecutiva fosse fundida
     em uma só (o comportamento do CTC quando falta um blank entre elas)."""
@@ -83,7 +148,6 @@ def colapsar_repeticoes(lista):
         if not saida or saida[-1] != d:
             saida.append(d)
     return saida
-
 
 def diagnosticar_colapso(resultados):
     """resultados: lista de (real, previsto), cada um lista de dígitos.
@@ -110,9 +174,22 @@ def diagnosticar_colapso(resultados):
             mais_curto_que_colapso += 1
 
     print(f"   Sequência exata: {exatos}/{n} ({100 * exatos / n:.1f}%)")
+    print(f"   Valor correto (ignorando zeros à esquerda): {100 * acuracia_valor(resultados):.1f}%")
+    ac_int, ac_dec = acuracia_por_parte(resultados)
+    print(f"   Parte inteira correta: {100 * ac_int:.1f}% | parte decimal (3 últimos) correta: {100 * ac_dec:.1f}%")
     print(f"   Distância de edição média: {dist_total / n:.2f} dígitos")
     print(f"   Previsto == real SEM as repetições consecutivas "
           f"(indício de colapso do CTC): {bate_com_colapso_esperado}/{n} "
           f"({100 * bate_com_colapso_esperado / n:.1f}%)")
     print(f"   Previsto mais curto que o real até colapsado (perdendo dígitos "
           f"além da repetição): {mais_curto_que_colapso}/{n}")
+
+
+# Exemplo de uso, plugado na função `avaliar` que você já tem no script CTC:
+#
+#   resultados_qat = avaliar(qat_model, dataset_val)
+#   diagnosticar_colapso(resultados_qat)
+#
+# Se "Previsto == real SEM as repetições" vier alto (tipo > 50%), o problema
+# é o CTC não aprender o blank entre dígitos repetidos consecutivos — não é
+# falta de treino, é a rede não estar separando roletes fisicamente iguais.

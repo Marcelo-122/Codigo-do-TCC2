@@ -35,12 +35,10 @@ DIR_CSVS = os.path.join(DIRETORIO_ATUAL, "CSVs")
 DIR_SAIDA = os.path.join(DIRETORIO_ATUAL, "Modelos")
 DIR_BACKUPS = os.path.join(DIRETORIO_ATUAL, "Backups")
 
-FRACAO_SINTETICA = 0.4
-FRACAO_SINTETICA_QAT = 0.15     
-# "padrao": arquitetura que chegou a ~61% (referência, ~420 KiB de pico de ativações int8)
-# "leve":   stem com stride 2 e menos canais (~4x menos pico de ativações, ~2.5x menos MACs).
-PERFIL_MODELO = "padrao"  
-TAG_DATASET = "_8d"        
+FRACAO_SINTETICA = 0
+FRACAO_SINTETICA_QAT = 0     
+PERFIL_MODELO = "padrao"   
+TAG_DATASET = "_8d"    
 SUFIXO_SAIDA = ("_ctc_sint" if FRACAO_SINTETICA > 0.0 else "_ctc") + TAG_DATASET + ("" if PERFIL_MODELO == "padrao" else "_" + PERFIL_MODELO)
 
 IMG_HEIGHT = 48                 
@@ -97,6 +95,7 @@ if not mapa_sinteticos: print("   [AVISO] Nenhuma imagem sintética encontrada. 
 rotulos_reais = sorted(mapa_reais.keys())
 random.shuffle(rotulos_reais)
 
+# Separa apenas os DADOS REAIS para a validação (para termos uma métrica honesta do mundo real)
 corte = int(len(rotulos_reais) * 0.8)
 rotulos_treino_reais, rotulos_val_reais = rotulos_reais[:corte], rotulos_reais[corte:]
 
@@ -251,6 +250,10 @@ def construir_modelo(perfil):
         canais = 128
         x = bloco_conv(x, canais)
     elif perfil == "leve":
+        # O maior consumidor de RAM no perfil padrão é a saída da 1ª convolução
+        # (48x224x32 = 344 mil elementos). Aqui o stem reduz a resolução JÁ nas
+        # duas primeiras convoluções (stride 2), sem nunca materializar um mapa
+        # de alta resolução com muitos canais. O restante segue igual.
         x = bloco_conv(inputs, 24, strides=(2, 2))     # 24 x 112 x 24
         x = bloco_conv(x, 48, strides=(2, 2))          # 12 x 56 x 48
         x = bloco_conv(x, 64)
@@ -283,14 +286,14 @@ frac_float = FRACAO_SINTETICA if ds_sint_treino else 0.0
 dataset_treino_float, passos_float = montar_dataset_treino(frac_float)
 print(f"\n-> Fase 1: treino em ponto flutuante ({frac_float * 100:.0f}% sintético, {passos_float} passos/época)")
 
-base_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3, clipnorm=1.0), loss=ctc_loss)
+base_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=3e-4, clipnorm=1.0), loss=ctc_loss)
 
 history_float = base_model.fit(
     dataset_treino_float, validation_data=dataset_val, epochs=EPOCAS_FLOAT, steps_per_epoch=passos_float,
     callbacks=[
         AcuraciaSequenciaCallback(dataset_val),
-        tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=40, min_lr=1e-6, verbose=1),
-        tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=80, restore_best_weights=True)
+        tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=80, min_lr=1e-6, verbose=1),
+        # tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=200, restore_best_weights=True)
     ]
 )
 
@@ -321,7 +324,7 @@ history_qat = qat_model.fit(
     callbacks=[
         AcuraciaSequenciaCallback(dataset_val),
         tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=15, min_lr=1e-6, verbose=1),
-        tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=30, restore_best_weights=True)
+        # tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=30, restore_best_weights=True)
     ]
 )
 
