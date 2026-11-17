@@ -15,6 +15,7 @@ O trabalho une duas frentes que se complementam:
 
 ## Sumário
 
+- [Estado atual](#estado-atual)
 - [Decisão: pipeline de OCR na borda](#decisão-pipeline-de-ocr-na-borda)
 - [Origem das imagens e como o pipeline é avaliado](#origem-das-imagens-e-como-o-pipeline-é-avaliado)
 - [Hipóteses avaliadas](#hipóteses-avaliadas)
@@ -33,6 +34,27 @@ O trabalho une duas frentes que se complementam:
 - [Histórico de branches](#histórico-de-branches)
 - [Limitações conhecidas e próximos passos](#limitações-conhecidas-e-próximos-passos)
 - [Autores](#autores)
+
+---
+
+## Estado atual
+
+Fonte única do estado de cada parte (atualizada em 2026-11-16). Os outros documentos apontam para cá em vez de ter
+cada um a sua caixa de "Status"; os números detalhados ficam em [`medicoes/`](medicoes/README.md).
+
+| Parte | Estado | Evidência |
+|---|---|---|
+| Classificador de dígito (CNN 28×28, INT8) | Treinado e avaliado: 95,4 % dos dígitos na validação por foto; 97,7 % dos dígitos e 92,8 % das leituras nas pastas `test` do Dryad (fora do treino) | [`ModeloEDataset/relatorios/RESULTADOS.md`](ModeloEDataset/relatorios/RESULTADOS.md) |
+| Segmentação (U-Net 192×192, INT8) | Treinada, mas fraca (Dice 0,39, IoU 0,28); não acha a janela fora do enquadramento calibrado. **Decisão:** sair do fluxo e dar lugar à ROI calibrada | [`ModeloEDataset/README.md`](ModeloEDataset/README.md), [Decisão](#decisão-pipeline-de-ocr-na-borda) |
+| Leitura completa em hidrômetro físico (emulação em Python) | 21 fotos: com segmentação, 2/21 leituras e 31 % dos dígitos (borda) e 0/21 e 27 % (nuvem); com ROI marcada à mão, 2/21 e ≈ 37 %; invertendo os tons das fotos de fundo escuro, 3/21 e 56 % | [`medicoes/ocr_teste.csv`](medicoes/ocr_teste.csv), [`dados/teste/`](dados/teste/README.md) |
+| Firmware de debug (`test_images/debug_ocr_esp32cam/`) | Roda em placa: 61 capturas, ≈ 17,8 s por leitura, medidas com o `modelo.h` de segmentação **antigo** | [`medicoes/README.md`](medicoes/README.md) |
+| Transmissor do fluxo de imagem (`Rede/transmissor_esp32cam/`, FPort 1) | Em placa: consumo em 30 ciclos de `AUTO:30` (≈ 4,64 mAh por leitura); latência mediana de 189 s; 20/30 imagens completas (21/30 na corrida com `CAPTURE`). O `STOP` do modo autônomo não foi testado | [`medicoes/README.md`](medicoes/README.md) |
+| Transmissor do OCR na borda (`Rede/transmissor_ocr_esp32cam/`, FPort 2) | Compila (core 3.0.7) e roda em placa: consumo em 32 ciclos (0,824 mAh por leitura), latência mediana de 18,84 s, 27/34 uplinks recebidos. **Ainda roda a segmentação**; a acurácia na placa não foi medida (sem gabarito) | [`medicoes/README.md`](medicoes/README.md) |
+| ROI calibrada no firmware | O calibrador ([`Rede/calibrar_roi_esp32cam/`](Rede/calibrar_roi_esp32cam/README.md)) grava a ROI na NVS; o transmissor de OCR **ainda não a lê**. Latência e energia sem a segmentação são estimativas | — |
+| Servidor (`ocr/pipeline_nuvem.py`) | Implementado, com segmentação (padrão) ou ROI (`--roi`); ≈ 6,25 ms por leitura num Ryzen 5 5600GT | [`ocr/README.md`](ocr/README.md), [`medicoes/README.md`](medicoes/README.md) |
+| Scripts do enlace no PC (`Rede/*.py`) | Testados com nó e receptor simulados (59 verificações) e usados com as placas em 2026-10-27 (`transmissao.csv`, `latencia_ponta_a_ponta.csv`, `latencia_ocr.csv`). O `transmissao_ocr.csv` **nunca foi gerado** | [`medicoes/medir_transmissao.md`](medicoes/medir_transmissao.md), [`medicoes/medir_latencia.md`](medicoes/medir_latencia.md) |
+| Cenário do enlace | Só bancada, a ≈ 2 m (RSSI de −33,5 a −27 dBm). Receptor de canal único no lugar de um gateway, sem servidor de rede, MIC não verificado, sem downlink/ACK e sem retransmissão no modo autônomo | [`medicoes/README.md`](medicoes/README.md) |
+| Conjunto de teste físico (`dados/teste/`) | 21 fotos de medidores diferentes (meta: ≥ 30 de uma instalação fixa); ROI, inclinação e polaridade marcadas à mão, sem conferência independente | [`dados/teste/README.md`](dados/teste/README.md) |
 
 ---
 
@@ -154,14 +176,10 @@ flowchart TB
     OCR -. "imagem JPEG (ou leitura)<br/>em chunks de 175 bytes" .-> ENLACE
 ```
 
-Os dois estágios de OCR já foram **testados juntos em uma ESP32-CAM real**
-(ver [`test_images/`](test_images/debug_ocr_esp32cam/README.md)). O enlace LoRaWAN foi validado
-separadamente transmitindo a imagem em chunks (ver [`Rede/`](#1-rede-lorawan-rede)). A integração
-final (OCR no dispositivo → só a leitura trafega por LoRaWAN) tem firmware,
-[`Rede/transmissor_ocr_esp32cam/`](Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino), e
-leitura no PC (FPort 2). Ele foi compilado com o core 3.0.7 (arduino-cli) e rodou em placa: consumo medido em 32
-ciclos e latência ponta a ponta em 34 disparos (ver [`medicoes/`](medicoes/README.md)). O
-`medicoes/transmissao_ocr.csv` ainda não foi gerado.
+Os dois fluxos rodam em placa: o de imagem com [`Rede/transmissor_esp32cam/`](Rede/transmissor_esp32cam/transmissor_esp32cam.ino)
+e o de OCR na borda (só a leitura trafega, FPort 2) com
+[`Rede/transmissor_ocr_esp32cam/`](Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino). O que já foi medido em
+cada parte está em [Estado atual](#estado-atual).
 
 ---
 
@@ -169,25 +187,26 @@ ciclos e latência ponta a ponta em 34 disparos (ver [`medicoes/`](medicoes/READ
 
 ```
 Codigo-do-TCC2/
-├── Rede/                          Firmwares do enlace LoRaWAN (Arduino IDE)
+├── Rede/                          Enlace LoRaWAN: firmwares (Arduino IDE) e scripts do PC (rodar da raiz, ex.: python Rede/reconstrutor.py)
 │   ├── transmissor_esp32cam/      Transmissor do fluxo de IMAGEM (FPort 1): câmera (CAPTURE), reenvio (RESEND), envio vindo do PC (SEND), teste de enlace (SENDALL) e modo autônomo com deep sleep (AUTO/STOP/SLEEP; testado em placa, com consumo e latência ponta a ponta medidos em 30 ciclos). No modo autônomo desliga a câmera após a captura
 │   ├── transmissor_ocr_esp32cam/  Transmissor do fluxo de OCR NA BORDA (FPort 2): captura, lê os dígitos na ESP32-CAM (segmentação + classificador, TFLite Micro) e envia só a leitura (9 bytes) em um uplink; mesmo deep sleep e mesma linha [CICLO_FIM]. Contém cópias de `modelo.h`/`modelo_digito.h`. Compila com o core 3.0.7 (arduino-cli, 563 KB, 17% da flash) e roda em placa (consumo medido em 32 ciclos e latência ponta a ponta em 34 disparos)
 │   ├── receptor_lora32/           Firmware do receptor (Heltec/TTGO LoRa32)
+│   ├── enlace.py                  PC: parâmetros do enlace (bloco, cabeçalho), parser LoRaWAN e parser da leitura OCR (FPort 2) compartilhados
+│   ├── registro.py                PC: registro das medições (logs completos + medicoes/transmissao.csv e medicoes/transmissao_ocr.csv); usado pelos dois scripts abaixo
+│   ├── reconstrutor.py            PC: lê a serial do receptor, descriptografa, remonta o JPEG (FPort 1) ou lê a leitura OCR (FPort 2) e registra PDR, tempo de rádio e latência (`--tx` controla o nó; `--fluxo ocr` manda `LER` no lugar de `CAPTURE`)
+│   ├── decode_lorawan.py          PC: decodifica/descriptografa uplinks e mostra quais chunks faltam
+│   ├── orchestrator.py            PC: envia a imagem em chunks (SEND:), confere o recebimento, reenvia o que faltou e registra a medição
+│   ├── analise_tempo_no_ar.py     PC: calcula pacotes, tempo no ar e tempo total de envio (`--verificar` confere a fórmula)
 │   └── requirements.txt           Igual ao requirements.txt da raiz
 ├── legado/                        Fora do fluxo atual (ver legado/README.md): protótipo serial → ChirpStack e os pipelines de OCR arquivados (`ocr_cloud/` = C, `TreinoEModelosOCRNaBorda/` = A)
 ├── dados/teste/                   Conjunto de teste de hidrômetro FÍSICO (21 fotos rotuladas da ESP32-CAM; ver dados/teste/README.md)
 ├── ocr/                           Lado da nuvem (modelos de B no servidor), avaliação borda × nuvem e conjunto de teste comum (ver ocr/README.md)
 │   └── colab_poc/                 Teste de viabilidade de OCR genérico em imagem 160×120 (Tesseract/EasyOCR no Colab; não será usado no trabalho)
-├── enlace.py                      PC: parâmetros do enlace (bloco, cabeçalho), parser LoRaWAN e parser da leitura OCR (FPort 2) compartilhados
-├── registro.py                    PC: registro das medições (logs completos + medicoes/transmissao.csv e medicoes/transmissao_ocr.csv); usado pelos dois scripts abaixo
-├── reconstrutor.py                PC: lê a serial do receptor, descriptografa, remonta o JPEG (FPort 1) ou lê a leitura OCR (FPort 2) e registra PDR, tempo de rádio e latência (`--tx` controla o nó; `--fluxo ocr` manda `LER` no lugar de `CAPTURE`)
-├── decode_lorawan.py              PC: decodifica/descriptografa uplinks e mostra quais chunks faltam
-├── orchestrator.py                PC: envia a imagem em chunks (SEND:), confere o recebimento, reenvia o que faltou e registra a medição
-├── analise_tempo_no_ar.py         PC: calcula pacotes, tempo no ar e tempo total de envio (`--verificar` confere a fórmula)
 ├── medicoes/                      Medições em hardware: `transmissao.csv` (fluxo de imagem), `transmissao_ocr.csv` (fluxo OCR) + `logs/` + `imagens/` do enlace (ver medicoes/medir_transmissao.md) e as de OCR/energia/latência
 ├── config.py, .env.example        Leitura do .env e modelo das variáveis (chaves, rede, portas)
-├── requirements.txt               Dependências dos scripts da raiz (pyserial, pycryptodome)
+├── requirements.txt               Dependências dos scripts do enlace (pyserial, pycryptodome)
 ├── scripts/download_datasets.py   Baixa os datasets públicos (eles não ficam no Git)
+├── scripts/conferir_modelos.py    Confere se as cópias de modelo.h/modelo_digito.h nos firmwares são iguais às de ModeloEDataset/modelos/
 ├── poc_diminuicao_imagem/         PoC em C++/OpenCV: redução/binarização de imagem p/ caber no LoRa
 ├── ModeloEDataset/                **Pipeline B (OCR de borda escolhido)**: segmentação + classificador de dígitos (CNN) + datasets + relatórios
 ├── test_images/                   Fotos da ESP32-CAM + firmware de debug/calibração com OCR on-device (Pipeline B)
@@ -202,7 +221,7 @@ Codigo-do-TCC2/
 > [`Rede/transmissor_ocr_esp32cam/`](Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino) (FPort 2),
 > manda um payload de `3 + N` bytes (id, flags e os N dígitos em ASCII; ver [Fluxo OCR](#fluxo-ocr-na-borda-fport-2)).
 > Os scripts do PC (`reconstrutor.py`, `decode_lorawan.py`, `orchestrator.py`) usam os mesmos formatos e o mesmo
-> tamanho de bloco, definidos em [`enlace.py`](enlace.py). Se mudar o `CHUNK_DATA_SIZE` do firmware de imagem,
+> tamanho de bloco, definidos em [`enlace.py`](Rede/enlace.py). Se mudar o `CHUNK_DATA_SIZE` do firmware de imagem,
 > mude também o de `enlace.py`; se mudar o payload da FPort 2, mude `parse_leitura` e `montar_payload_leitura`.
 > O `decode_lorawan.py` e o `orchestrator.py` ainda tratam só o fluxo de imagem.
 
@@ -265,7 +284,7 @@ python scripts/download_datasets.py             # baixa os do Kaggle
 
 | Objetivo | Comandos |
 |---|---|
-| Receber e remontar a imagem (enlace) | `python -m venv .venv`, `.venv\Scripts\pip install -r requirements.txt`, `.venv\Scripts\python reconstrutor.py`; veja [seção 1](#1-rede-lorawan-rede) |
+| Receber e remontar a imagem (enlace) | `python -m venv .venv`, `.venv\Scripts\pip install -r requirements.txt`, `.venv\Scripts\python Rede\reconstrutor.py`; veja [seção 1](#1-rede-lorawan-rede) |
 | OCR no PC, só inferência | `cd legado\ocr_cloud`, venv + `pip install -r requirements.txt`, `python src\test_model_ocr_cloud_poc.py` ([seção 3](#3-ocr-em-pc-arquivado-legadoocr_cloud)) |
 | Treinar o OCR do `legado/ocr_cloud` | mesmo venv, depois do passo 2: `python src\train_model_ocr_cloud.py` |
 | Treinar detector e leitor CRNN+CTC | em WSL/Linux, `cd legado/TreinoEModelosOCRNaBorda`, depois do passo 2 ([seção 4](#4-pipeline-a-arquivado-legadotreinoemodelosocrnaborda)) |
@@ -304,7 +323,7 @@ Todos os componentes (Radioenge, transmissor, receptor, scripts do PC) usam este
 | **Tamanho do JPEG** | Medido: 3.323 a 4.568 B (19 a 27 chunks) nas 60 capturas de `transmissao.csv` e `latencia_ponta_a_ponta.csv`. **Referência de projeto: 4.300 B** | `analise_tempo_no_ar.py` |
 
 **Tempo no ar** (SF8 / 500 kHz, bloco de 175 B, imagem de referência de 4.300 B), calculado por
-[`analise_tempo_no_ar.py`](analise_tempo_no_ar.py) com a fórmula da Semtech (AN1200.13):
+[`analise_tempo_no_ar.py`](Rede/analise_tempo_no_ar.py) com a fórmula da Semtech (AN1200.13):
 
 | Grandeza | Valor |
 |---|---|
@@ -313,7 +332,7 @@ Todos os componentes (Radioenge, transmissor, receptor, scripts do PC) usam este
 | **Tempo total de rádio** | **3,35 s** |
 | Tempo total de envio (com intervalo de 7 s) | ≈ 168 s |
 
-Para outros tamanhos de imagem ou bloco: `python analise_tempo_no_ar.py --imagem 3000 --bloco 175`.
+Para outros tamanhos de imagem ou bloco: `python Rede/analise_tempo_no_ar.py --imagem 3000 --bloco 175`.
 `--verificar` confere a fórmula com um valor de referência externo.
 
 **Enquadramento na regulamentação (Ato Anatel nº 14.448/2017, item 10.3):** sistemas de modulação
@@ -366,8 +385,7 @@ No fluxo de OCR na borda o dispositivo lê o medidor e só a **leitura** trafega
 
 O transmissor de OCR repete o deep sleep e a linha `[CICLO_FIM]` do de imagem (com os tempos de cada etapa:
 `t_captura_ms`, `t_modelos_ms`, `t_seg_ms`, `t_digitos_ms`, `t_envio_ms`), para o consumo dos dois fluxos ser medido e
-comparado com os mesmos scripts. **Estado:** o firmware rodou em placa (consumo em 32 ciclos de `AUTO:30` e latência
-ponta a ponta em 34 disparos, ver [`medicoes/`](medicoes/README.md)); o `transmissao_ocr.csv` ainda não foi gerado.
+comparado com os mesmos scripts. Estado: ver [Estado atual](#estado-atual).
 
 ### Firmwares (Arduino IDE)
 
@@ -387,7 +405,7 @@ python -m venv .venv
 # Windows
 .venv\Scripts\pip install -r requirements.txt
 # Preencha o .env com as chaves e RX_SERIAL_PORT (ver "Configuração de segredos")
-.venv\Scripts\python reconstrutor.py
+.venv\Scripts\python Rede\reconstrutor.py
 # Em outro terminal serial (ou no Monitor Serial do transmissor) envie:  CAPTURE
 ```
 
@@ -395,7 +413,7 @@ Para **medir** (≥ 30 envios a cada distância fixa), deixe o PC controlar o n�
 feche o Monitor Serial e rode, por exemplo,
 
 ```bash
-.venv\Scripts\python reconstrutor.py --tx --envios 30 --distancia 50
+.venv\Scripts\python Rede\reconstrutor.py --tx --envios 30 --distancia 50
 ```
 
 Isso manda `CAPTURE` 30 vezes, lê o log do nó e do receptor com um único relógio e grava tudo em
@@ -406,7 +424,7 @@ Com o nó rodando o `transmissor_ocr_esp32cam`, use `--fluxo ocr`: o PC manda `L
 espera o uplink da FPort 2 (timeout de resposta do nó de 90 s). O resultado vai para `medicoes/transmissao_ocr.csv`:
 
 ```bash
-.venv\Scripts\python reconstrutor.py --tx --fluxo ocr --envios 30 --distancia 50
+.venv\Scripts\python Rede\reconstrutor.py --tx --fluxo ocr --envios 30 --distancia 50
 ```
 
 Sem `--tx`, o `reconstrutor.py` só escuta e aceita os dois fluxos (por exemplo, com o nó em `AUTO`).
@@ -415,7 +433,7 @@ Para enviar uma imagem do PC pelo transmissor de teste (`Rede/transmissor_esp32c
 preenchido (`TX_SERIAL_PORT`, `RX_SERIAL_PORT`, chaves e `IMAGE_PATH`); também registra a medição:
 
 ```bash
-.venv\Scripts\python orchestrator.py --distancia 50
+.venv\Scripts\python Rede\orchestrator.py --distancia 50
 ```
 
 ### Protótipo anterior ([`legado/`](legado/README.md))
@@ -676,10 +694,9 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
   acurácia de verdade, capturar frames 160×120 nativos com o firmware de debug, com a câmera fixa e a ROI calibrada.
 - Ajustar o texto do trabalho: o lado da nuvem usa os mesmos modelos de B no servidor (muda a pergunta de pesquisa
   para "onde rodar o OCR"), e o Tesseract foi só um teste de viabilidade.
-- **Organização do repositório (pendente):** o protótipo antigo já foi para `legado/`; falta mover
-  os scripts do enlace (`reconstrutor.py`, `registro.py`, `enlace.py`, `decode_lorawan.py`,
-  `orchestrator.py`, `analise_tempo_no_ar.py`) para uma subpasta de `Rede/`. Decidir também o que
-  fazer com as amostras na raiz (`image.jpg`, `imagem_recebida.jpg`, `imagem_parcial.jpg`).
+- **Organização do repositório:** o protótipo antigo já foi para `legado/` e os scripts do enlace para `Rede/`
+  (rodar da raiz: `python Rede/reconstrutor.py`; o `config.py` continua na raiz porque outros scripts também o usam).
+  Falta decidir o que fazer com as amostras na raiz (`image.jpg`, `imagem_recebida.jpg`, `imagem_parcial.jpg`).
 - Confirmar a versão exata do Python usada no treino de `legado/TreinoEModelosOCRNaBorda/` (hoje só a faixa 3.11–3.13
   está verificada). O download dos datasets do Kaggle já foi validado; o do Dryad continua manual.
 - O **histórico do Git** não foi reescrito (decisão do grupo); um clone novo baixa ~440 MB.

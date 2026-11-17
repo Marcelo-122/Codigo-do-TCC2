@@ -17,8 +17,10 @@ AT+APPSKEY=? no módulo).
 """
 
 import sys
+from pathlib import Path
 
-import config
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # config.py (leitura do .env) fica na raiz
+import config  # noqa: E402
 import enlace
 
 # ---------------------------------------------------------------------------

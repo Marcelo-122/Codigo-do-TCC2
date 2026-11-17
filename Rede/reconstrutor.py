@@ -27,9 +27,9 @@ Sem --tx, com o nó em AUTO, a latência fica vazia (não há disparo nem primei
 referência); o PDR do enlace vem da contagem de FCnt.
 
 Exemplos:
-    python reconstrutor.py                                   # só escuta
-    python reconstrutor.py --tx --envios 30 --distancia 50   # mede 30 envios a 50 m
-    python reconstrutor.py --tx --fluxo ocr --envios 30      # 30 leituras OCR (manda LER ao nó)
+    python Rede/reconstrutor.py                                   # só escuta
+    python Rede/reconstrutor.py --tx --envios 30 --distancia 50   # mede 30 envios a 50 m
+    python Rede/reconstrutor.py --tx --fluxo ocr --envios 30      # 30 leituras OCR (manda LER ao nó)
 
 Requisitos:  pip install pyserial pycryptodome   (portas e chaves no .env, veja .env.example)
 """
@@ -37,10 +37,12 @@ Requisitos:  pip install pyserial pycryptodome   (portas e chaves no .env, veja 
 import argparse
 import sys
 import time
+from pathlib import Path
 
 import serial
 
-import config
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # config.py (leitura do .env) fica na raiz
+import config  # noqa: E402
 import registro
 
 

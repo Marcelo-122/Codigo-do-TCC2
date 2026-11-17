@@ -1,15 +1,12 @@
 # Medição do enlace LoRa (PDR, tempo de rádio, latência)
 
-Scripts: [`reconstrutor.py`](../reconstrutor.py) (medição principal) e [`orchestrator.py`](../orchestrator.py),
-os dois usando [`registro.py`](../registro.py). Saída: `transmissao.csv` (uma linha por leitura, acumulada
+Scripts: [`reconstrutor.py`](../Rede/reconstrutor.py) (medição principal) e [`orchestrator.py`](../Rede/orchestrator.py),
+os dois usando [`registro.py`](../Rede/registro.py). Saída: `transmissao.csv` (uma linha por leitura, acumulada
 entre execuções), `logs/<execução>/` e `imagens/`. Para o fluxo de OCR na borda (FPort 2, um uplink por
 leitura) a saída é `transmissao_ocr.csv`; veja [Fluxo OCR](#fluxo-ocr-na-borda-fport-2) abaixo.
 
-> **Status:** a lógica (contagem de perdas, duplicatas, FCnt, PDR, latência, timeouts, reconexão da
-> serial, formato dos arquivos) foi testada com nó e receptor simulados (59 verificações) e depois
-> rodada com as placas no fluxo de imagem: 30 envios em 2026-10-27, 14:59 a 16:44 (`transmissao.csv`; resultados em
-> [`README.md`](README.md)). O fluxo de OCR (`--fluxo ocr`, `transmissao_ocr.csv`) ainda não foi medido com este
-> script. `recuperar_imagens.py` refaz as imagens de uma execução a partir do `serial_rx.txt` e confere cada uma pelo
+> **Estado:** ver [Estado atual](../README.md#estado-atual) no README da raiz; os resultados da corrida de `transmissao.csv` estão em
+> [`README.md`](README.md). `recuperar_imagens.py` refaz as imagens de uma execução a partir do `serial_rx.txt` e confere cada uma pelo
 > SHA-256 do CSV (precisa do `.env`); **não apague `logs/` nem `imagens/`**.
 
 ## Como rodar
@@ -19,14 +16,14 @@ em um programa). `.env` com `TX_SERIAL_PORT`, `RX_SERIAL_PORT`, `LORA_APP_SKEY` 
 
 ```bash
 # Medição: o PC dispara CAPTURE, lê nó e receptor e repete 30 vezes a 50 m
-python reconstrutor.py --tx --envios 30 --distancia 50 --rotulo "pátio, antena 2 dBi"
+python Rede/reconstrutor.py --tx --envios 30 --distancia 50 --rotulo "pátio, antena 2 dBi"
 
 # Só escutando (CAPTURE enviado por outro terminal); latência menos precisa, ver abaixo
-python reconstrutor.py --distancia 50
+python Rede/reconstrutor.py --distancia 50
 ```
 
 Fixe a distância, anote o ambiente no `--rotulo` e rode uma execução por distância. Com o intervalo de
-7 s entre chunks e ~25 chunks, cada envio leva cerca de 3 minutos (`python analise_tempo_no_ar.py`).
+7 s entre chunks e ~25 chunks, cada envio leva cerca de 3 minutos (`python Rede/analise_tempo_no_ar.py`).
 Trinta envios dão **cerca de 1h30 por distância**.
 
 `--tx` espera cada leitura terminar (imagem completa, ou o nó informar que acabou de enviar, mais 3 s
@@ -85,8 +82,7 @@ de chunks de imagem, o nó manda **um único uplink** na FPort 2 com `[id (2 B)]
 (9 B com N = 6; `flags` = bit 7 caixa achada | N; `?` = fatia não classificada, `-` = sem caixa). O parser é
 `enlace.parse_leitura()`. Não há blocos, JPEG nem PDR da leitura: uma leitura ou chegou ou não chegou.
 
-> **Status:** o firmware rodou em placa (consumo em 32 ciclos e latência em 34 disparos, ver
-> [`README.md`](README.md)), mas o `transmissao_ocr.csv` ainda não foi gerado. Antes de valer como dado do TCC, faça
+> **Estado:** ver [Estado atual](../README.md#estado-atual) (o `transmissao_ocr.csv` ainda não foi gerado). Antes de valer como dado do TCC, faça
 > uma execução curta (`--envios 1`) e confira a linha do CSV contra o log do nó.
 
 O mesmo `reconstrutor.py` recebe os dois fluxos: FPort 1 vira imagem em `transmissao.csv`, FPort 2 vira uma linha em
@@ -94,10 +90,10 @@ O mesmo `reconstrutor.py` recebe os dois fluxos: FPort 1 vira imagem em `transmi
 
 ```bash
 # O PC manda LER, espera o uplink e repete 30 vezes (timeout de resposta do nó: 90 s, --timeout-foto-s)
-python reconstrutor.py --tx --fluxo ocr --envios 30 --distancia 50 --rotulo "pátio, antena 2 dBi"
+python Rede/reconstrutor.py --tx --fluxo ocr --envios 30 --distancia 50 --rotulo "pátio, antena 2 dBi"
 
 # Só escutando (nó em AUTO ou LER mandado por outro terminal). Latência fica vazia: sem disparo não há referência
-python reconstrutor.py --distancia 50
+python Rede/reconstrutor.py --distancia 50
 ```
 
 Sem `--tx` o script não encerra sozinho se `--envios` for omitido: `Ctrl+C` fecha e mostra o resumo. Cada leitura

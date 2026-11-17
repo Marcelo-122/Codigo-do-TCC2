@@ -2,8 +2,7 @@
 
 Script: [`latencia_ponta_a_ponta.py`](latencia_ponta_a_ponta.py). Saída: `latencia_ponta_a_ponta.csv` (uma linha por leitura).
 
-> **Status:** usado em hardware em 2026-10-27: `latencia_ponta_a_ponta.csv` (fluxo de imagem, 31 disparos) e
-> `latencia_ocr.csv` (OCR na borda, 34 disparos).
+> **Estado:** ver [Estado atual](../README.md#estado-atual); os resultados estão em [`README.md`](README.md).
 
 ## O que é medido
 Um único relógio, o do PC, que lê as duas seriais ao mesmo tempo:
@@ -70,8 +69,7 @@ python medicoes/latencia_ponta_a_ponta.py auto --n 30 --fluxo ocr
   em `auto` que o PC começou a ouvir no meio), o script adota o id do primeiro uplink.
 - Chunks de imagem (FPort 1) numa medição `--fluxo ocr`, e uplinks de leitura (FPort 2) numa medição de imagem, são
   ignorados.
-- **Status:** testado em hardware com o nó em `AUTO:30` (34 disparos, 27 uplinks recebidos, mediana de 18,84 s; ver
-  [`README.md`](README.md)). Use `--debug` para ver as linhas das duas seriais e o motivo de cada uplink descartado
+- Use `--debug` para ver as linhas das duas seriais e o motivo de cada uplink descartado
   (uma tentativa anterior ficou 22 min sem receber nenhum uplink e não deixou pista sem ele). Cada tentativa deve usar
   um `--csv` próprio para não misturar execuções. O `reconstrutor.py --tx --fluxo ocr` mede a mesma coisa e grava em
   `transmissao_ocr.csv` ([`medir_transmissao.md`](medir_transmissao.md)); os dois abrem as mesmas portas e não rodam juntos.

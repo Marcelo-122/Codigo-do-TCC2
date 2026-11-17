@@ -4,10 +4,10 @@ Calcula número de pacotes, tempo no ar e tempo total de envio de uma imagem pel
 LoRa (AU915, DR6 = SF8 / BW 500 kHz, canal fixo), a partir do tamanho do JPEG.
 
 Uso:
-    python analise_tempo_no_ar.py                    # tabela padrão (referência + amostras)
-    python analise_tempo_no_ar.py --imagem 2574      # um tamanho específico (repetível)
-    python analise_tempo_no_ar.py --sf 8 --bw 500 --bloco 100 --intervalo 7
-    python analise_tempo_no_ar.py --verificar        # confere a fórmula com valores de referência
+    python Rede/analise_tempo_no_ar.py                    # tabela padrão (referência + amostras)
+    python Rede/analise_tempo_no_ar.py --imagem 2574      # um tamanho específico (repetível)
+    python Rede/analise_tempo_no_ar.py --sf 8 --bw 500 --bloco 100 --intervalo 7
+    python Rede/analise_tempo_no_ar.py --verificar        # confere a fórmula com valores de referência
 
 Fórmula: Semtech AN1200.13 (tempo no ar do LoRa), com cabeçalho explícito, CRC ligado,
 CR 4/5 e preâmbulo de 8 símbolos (uplink LoRaWAN).

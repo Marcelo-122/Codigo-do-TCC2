@@ -27,10 +27,12 @@ import argparse
 import random
 import sys
 import time
+from pathlib import Path
 
 import serial
 
-import config
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # config.py (leitura do .env) fica na raiz
+import config  # noqa: E402
 import enlace
 import registro
 

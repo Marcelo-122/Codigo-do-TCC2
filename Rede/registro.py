@@ -63,7 +63,7 @@ from pathlib import Path
 import analise_tempo_no_ar as ar
 import enlace
 
-RAIZ = Path(__file__).resolve().parent
+RAIZ = Path(__file__).resolve().parent.parent  # raiz do repositório (este arquivo fica em Rede/)
 PASTA_MEDICOES = RAIZ / "medicoes"
 
 # --- Linhas que o firmware do nó imprime (Rede/transmissor_esp32cam) -------------------

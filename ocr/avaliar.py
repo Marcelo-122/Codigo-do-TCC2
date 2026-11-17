@@ -38,7 +38,7 @@ from pipeline_nuvem import (LeitorB, alinhar, desenhar, girar_caixa, para_quadro
                             transmitir_como_jpeg)
 
 try:
-    sys.path.insert(0, os.path.dirname(AQUI))
+    sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "Rede"))
     from enlace import CHUNK_DATA_SIZE
 except Exception:  # enlace.py puxa configuração do .env; se faltar, usa o valor do firmware
     CHUNK_DATA_SIZE = 175

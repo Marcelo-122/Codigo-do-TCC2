@@ -299,7 +299,7 @@ dá para afirmar a autonomia real depois de medir o sleep sem o Radioenge e com 
 
 ## Enlace do fluxo de imagem: PDR, tempo de rádio e latência (`transmissao.csv`, 30 envios)
 
-`python reconstrutor.py --tx --envios 30 --distancia 2 --rotulo "bancada, imagem"` (2026-10-27, 14:59 a 16:44), com o nó
+`python Rede/reconstrutor.py --tx --envios 30 --distancia 2 --rotulo "bancada, imagem"` (2026-10-27, 14:59 a 16:44), com o nó
 `transmissor_esp32cam` sempre ligado e o PC mandando `CAPTURE`. Enlace AU915, canal 64, SF8/BW 500 kHz, 175 B por bloco, 7 s
 entre blocos, nó e receptor a ≈ 2 m. Comando de PDR e colunas em [`medir_transmissao.md`](medir_transmissao.md).
 

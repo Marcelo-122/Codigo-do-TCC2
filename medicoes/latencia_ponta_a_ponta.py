@@ -51,7 +51,8 @@ import time
 from datetime import datetime
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(AQUI, ".."))  # enlace.py e config.py ficam na raiz
+sys.path.insert(0, os.path.join(AQUI, ".."))  # config.py fica na raiz
+sys.path.insert(0, os.path.join(AQUI, "..", "Rede"))  # enlace.py fica em Rede/
 
 import enlace  # noqa: E402
 
