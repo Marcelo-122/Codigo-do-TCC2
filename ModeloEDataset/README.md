@@ -284,7 +284,7 @@ precise ser recompilado ou portado.
 ## Como rodar
 
 ```bash
-# 1. Ambiente (Python 3.10 — TensorFlow não tem wheel estável para 3.13 no Windows ainda)
+# 1. Ambiente (Python 3.10 — o TensorFlow 2.16.1 fixado no requirements só tem wheels até 3.12)
 python -m venv .venv
 ./.venv/Scripts/pip install -r requirements.txt
 
@@ -360,8 +360,8 @@ Conferir sempre antes de confiar no dataset gerado:
    referência pura em C).
 3. Migrar a lógica do firmware de debug (`test_images/debug_ocr_esp32cam/`) para um firmware
    de produção: remover o desenho de retângulo/linhas-guia (só serve para debug visual),
-   adicionar tratamento de erro mais robusto, e decidir como/onde a leitura final é entregue
-   (LoRaWAN? MQTT? outro meio já usado no projeto).
+   adicionar tratamento de erro mais robusto. (A entrega da leitura já existe: o
+   `Rede/transmissor_ocr_esp32cam/` envia a leitura por LoRaWAN na FPort 2.)
 4. Opcional: se a acurácia de domínio (com teste real separado) ficar abaixo do esperado,
    reconsiderar usar também o conjunto de **detecção** do Dryad (46 mil imagens rotuladas)
    para melhorar o modelo de segmentação, hoje treinado só com as 1244 imagens do Kaggle.

@@ -37,10 +37,9 @@ inventar uma leitura sem base nenhuma.
 
 ## Como usar
 
-1. **Arduino IDE**: instale uma biblioteca de TensorFlow Lite Micro para
-   ESP32 (`TensorFlowLite_ESP32` no Library Manager, ou o port mais novo
-   `Chirale_TensorFlowLite`/`tflite-micro` da Espressif — qualquer uma que
-   exponha os headers em `tensorflow/lite/micro/...`). Selecione a board
+1. **Arduino IDE**: use o core ESP32 **3.0.7**, que já traz o TensorFlow Lite
+   Micro embutido (`esp-tflite-micro` 1.3.1 com `esp-nn`); não é preciso
+   instalar biblioteca TFLite à parte (ver [`medicoes/README.md`](../../medicoes/README.md)). Selecione a board
    **"AI Thinker ESP32-CAM"** com **PSRAM: Enabled**.
 2. Abra `debug_ocr_esp32cam.ino` (nesta pasta) no Arduino IDE e grave na
    ESP32-CAM.
@@ -66,8 +65,8 @@ rodam juntos e a leitura sai pela serial. A evidência está em
 capturas de 2026-09-27, ver [`medicoes/README.md`](../../medicoes/README.md)):
 `arena_digito_bytes` = 28.556 e `leitura=046663` repetida no medidor de teste.
 Este firmware de debug **não** tem deep sleep nem foi medido em corrente. O consumo e o deep sleep do nó
-foram testados em `Rede/transmissor_esp32cam` (30 ciclos do fluxo de imagem); o consumo e a latência ponta a ponta
-do fluxo de OCR na borda seguem pendentes (ver [`medicoes/README.md`](../../medicoes/README.md)).
+foram testados em `Rede/transmissor_esp32cam` (30 ciclos do fluxo de imagem) e em `Rede/transmissor_ocr_esp32cam`
+(32 ciclos de consumo e 34 disparos de latência do fluxo de OCR na borda; ver [`medicoes/README.md`](../../medicoes/README.md)).
 
 Os pontos abaixo são os que mais costumam precisar de ajuste **ao recompilar
 com outra biblioteca/versão**:
@@ -176,6 +175,6 @@ lugar nenhum além do CSV/Serial). Depois de confirmar que a posição física
 da câmera está boa e a leitura sai consistente foto após foto, o próximo
 passo (fora do escopo deste arquivo) é migrar essa mesma lógica para um
 firmware de produção — sem a parte de desenhar retângulo/linhas-guia (só
-precisa disso para debug visual), com tratamento de erro mais robusto, e
-decidindo como/onde a leitura final deve ser entregue (LoRaWAN? MQTT?
-outro meio já usado no projeto).
+precisa disso para debug visual) e com tratamento de erro mais robusto. Isso
+já foi feito em [`Rede/transmissor_ocr_esp32cam/`](../../Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino),
+que envia a leitura por LoRaWAN na FPort 2.

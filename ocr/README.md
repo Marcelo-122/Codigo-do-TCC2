@@ -13,7 +13,7 @@ que trafega pelo enlace:
 | Fluxo | Na ESP32-CAM | No enlace LoRa | No servidor |
 |---|---|---|---|
 | borda | captura 160×120 cinza, roda os dois modelos | só a leitura (poucos bytes) | recebe a leitura |
-| nuvem | captura 160×120 cinza, codifica JPEG q90 | ~30 pacotes de 175 bytes (≈ 5,2 KB) | remonta o JPEG e roda os dois modelos |
+| nuvem | captura 160×120 cinza, codifica JPEG q90 | 19 a 27 pacotes de 175 bytes (3,3 a 4,6 KB medidos em placa) | remonta o JPEG e roda os dois modelos |
 
 Isso muda a pergunta de pesquisa de "OCR de borda contra OCR de nuvem" para "**onde** rodar o OCR" (bytes
 transmitidos, latência, energia), porque a acurácia dos dois lados vem do mesmo modelo. O Tesseract foi só um
@@ -35,7 +35,7 @@ python ocr/pipeline_nuvem.py foto.jpg --digitos 6 --modo nuvem
 python ocr/pipeline_nuvem.py foto.jpg --digitos 6 --modo borda --debug caixa.png
 python ocr/pipeline_nuvem.py foto.jpg --digitos 6 --alinhar      # endireita a inclinação (Hough) antes de ler
 python ocr/avaliar_pipeline.py --conjunto comum   # pipeline completo, sem caixa manual: medicoes/ocr_teste.csv (leitura exata, dígitos, CER, Dice/IoU)
-python ocr/avaliar_pipeline.py --conjunto fisico  # o mesmo em dados/teste/ (hidrômetro físico; ainda vazio)
+python ocr/avaliar_pipeline.py --conjunto fisico  # o mesmo em dados/teste/ (hidrômetro físico, 21 fotos)
 python ocr/avaliar_teste_publico.py               # pastas test do Dryad (precisa do dataset; o classificador versionado já foi re-treinado sem elas)
 python ocr/avaliar.py                         # roda o conjunto de teste e grava ocr/teste_comum/resultados/
 python ocr/avaliar_roi_fixa.py                # cenário de câmera parada (ROI fixa, sem segmentação) e curva de tolerância

@@ -19,7 +19,7 @@ Os fluxos `*_caixa_manual` são **diagnóstico**: pulam a segmentação e usam a
 
 ## Custo de transmissão
 
-Imagem JPEG q90 remontada no servidor: mediana 5224 bytes (3368–5749), 30 pacotes LoRa de 175 bytes. A borda enviaria só a leitura (poucos bytes, 1 pacote).
+Imagem JPEG q90 remontada no servidor: mediana 5224 bytes (3368–5749), 30 pacotes LoRa de 175 bytes (JPEG emulado no PC; o medido em placa foi 3.323 a 4.568 B, 19 a 27 pacotes). A borda enviaria só a leitura (poucos bytes, 1 pacote).
 
 ## Por medidor
 

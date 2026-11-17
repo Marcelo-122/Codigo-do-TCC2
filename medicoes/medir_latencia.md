@@ -2,8 +2,8 @@
 
 Script: [`latencia_ponta_a_ponta.py`](latencia_ponta_a_ponta.py). Saída: `latencia_ponta_a_ponta.csv` (uma linha por leitura).
 
-> **Status:** a lógica foi testada com chunks LoRaWAN sintéticos (marcos de tempo, duplicados,
-> leitura incompleta, modo auto). A parte de serial/threads **não foi testada em hardware**.
+> **Status:** usado em hardware em 2026-10-27: `latencia_ponta_a_ponta.csv` (fluxo de imagem, 31 disparos) e
+> `latencia_ocr.csv` (OCR na borda, 34 disparos).
 
 ## O que é medido
 Um único relógio, o do PC, que lê as duas seriais ao mesmo tempo:
@@ -30,8 +30,8 @@ Feche monitores seriais e `reconstrutor.py`: as portas não podem ser compartilh
 ```bash
 python medicoes/latencia_ponta_a_ponta.py capture --n 30
 ```
-O PC manda `CAPTURE` 30 vezes. Com ~15 chunks e 7 s entre chunks, cada leitura leva cerca de 2 minutos,
-então espere ~1 hora.
+O PC manda `CAPTURE` 30 vezes. Com 19 a 27 chunks e 7 s entre chunks, cada leitura leva cerca de 3 minutos
+(mediana medida de 189 s), então espere ~1h30.
 
 ```bash
 python medicoes/latencia_ponta_a_ponta.py auto --n 30
@@ -77,8 +77,8 @@ python medicoes/latencia_ponta_a_ponta.py auto --n 30 --fluxo ocr
   `transmissao_ocr.csv` ([`medir_transmissao.md`](medir_transmissao.md)); os dois abrem as mesmas portas e não rodam juntos.
 
 ## Limitações
-- Sem `--fluxo ocr`, só cobre o **fluxo de imagem**. O fluxo de OCR na borda tem firmware (ver acima), mas ainda sem
-  medições em placa.
+- Sem `--fluxo ocr`, só cobre o **fluxo de imagem**. O fluxo de OCR na borda foi medido com `--fluxo ocr` em
+  `latencia_ocr.csv` (34 disparos).
 - `--salvar-imagens PASTA` grava cada imagem e esse tempo entra em `t_ate_disponivel_ms`; deixe desligado
   para medir só a remontagem.
 - No modo `capture` o nó fica sempre ligado; o tempo de acordar do deep sleep só aparece no modo `auto`.

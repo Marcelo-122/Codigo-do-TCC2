@@ -250,3 +250,6 @@ Backups/
 
 # Headers gerados por gerar_headers.py do teste do pipeline A (~7,5 MB; rode o script antes de compilar o sketch)
 legado/TreinoEModelosOCRNaBorda/teste_esp32cam_pipeline_a/a_*.h
+
+# Credenciais Wi-Fi locais do calibrador de ROI (nunca versionar)
+Rede/calibrar_roi_esp32cam/wifi_local.h

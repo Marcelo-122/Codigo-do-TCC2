@@ -99,7 +99,7 @@ Cuidados que apareceram na prática:
 - **O `analisar` só funciona com o nó em `AUTO`.** Ele acha os ciclos pelos trechos de sleep e aborta com `Menos de 2 trechos de sleep` se o nó nunca dorme (modo `CAPTURE`, `reconstrutor.py --tx`). Por isso a corrente se mede com o nó em `AUTO` e a medição de PDR/latência com `--tx`, em corridas separadas.
 - **N ciclos completos pedem N + 1 trechos de sleep** (um ciclo vai de um despertar ao seguinte): 30 ciclos de ~172 s (142,8 s acordado + 30 s de sleep) são ~90 min de captura. O primeiro ciclo, parcial, não conta.
 - **Configuração do transmissor.** Os dois transmissores (`Rede/transmissor_esp32cam` e `Rede/transmissor_ocr_esp32cam`) estão hoje com `AUTO_AO_LIGAR 0`, `INTERVALO_PADRAO_S = 30` e `JANELA_STOP_MS = 0`: no power-on o nó fica no modo interativo e entra no modo autônomo com o comando `AUTO`; com a janela em 0 ele não aceita `STOP` (para parar, desplugue o USB da MB). Para o nó já ciclar sozinho ao receber energia, use `AUTO_AO_LIGAR 1`; para poder mandar `STOP`, ponha `JANELA_STOP_MS = 1500`. O `mAh por leitura` vale para o intervalo de sleep usado: para outro `T` em segundos, ≈ carga acordado + corrente de sleep × `T` / 3600.
-- **Câmera desligada após a captura.** No modo `AUTO` o transmissor de imagem chama `desligarCamera()` (`esp_camera_deinit()` + PWDN) logo depois de gerar o JPEG, porque a câmera ligada durante os ~140 s de envio custava ~80 mA. Essa alteração **ainda não foi medida em placa**; a medição de referência abaixo é de antes dela.
+- **Câmera desligada após a captura.** No modo `AUTO` o transmissor de imagem chama `desligarCamera()` (`esp_camera_deinit()` + PWDN) logo depois de gerar o JPEG, porque a câmera ligada durante os ~140 s de envio custava ~80 mA. Essa alteração foi medida em 30 ciclos (`corrente/auto30_imagem.csv`); o `corrente/teste_1.csv` é de antes dela.
 - Dê um nome diferente a cada captura (`teste.csv`, `teste_cam_off.csv`, `auto30_30ciclos.csv`...): o `capturar` sobrescreve o arquivo, e um arquivo só com o cabeçalho (20 bytes) quer dizer que a captura não gravou nada.
 
 Saída esperada: uma linha por ciclo com `periodo_s`, `ativo_s`, `mAh`, corrente média ativa e em sleep, pico e corrente média em cada estado (init+câmera, captura, envio), e no fim `mAh por leitura` com desvio, mais a autonomia para a bateria informada.
@@ -142,9 +142,9 @@ E por fluxo: nº de ciclos, mAh por leitura (média e desvio) e o arquivo CSV.
 ## Fluxo de OCR na borda
 
 O mesmo procedimento vale com o firmware [`Rede/transmissor_ocr_esp32cam`](../Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino)
-(OCR + envio só da leitura em um uplink na FPort 2), e dá para comparar os mAh por leitura dos dois fluxos. Ele **não foi
-compilado com a toolchain do ESP32 nem testado em placa**: faça primeiro `LER` e `AUTO:30` por 3 ciclos, como
-em [`teste_deep_sleep.md`](teste_deep_sleep.md), antes de gastar uma hora de captura.
+(OCR + envio só da leitura em um uplink na FPort 2), e dá para comparar os mAh por leitura dos dois fluxos. Ele já foi
+medido em placa (32 ciclos, `corrente/auto30_ocr.csv`). Numa placa nova, faça primeiro `LER` e `AUTO:30` por 3 ciclos,
+como em [`teste_deep_sleep.md`](teste_deep_sleep.md), antes de gastar uma hora de captura.
 
 Mesmo `AUTO`, mesmo deep sleep e mesma linha `[CICLO_FIM]`, mas com outros campos de tempo (os valores abaixo são
 ilustrativos, não medidos):
@@ -163,6 +163,6 @@ O `corrente.py` só conhece três estados (init+câmera, captura, envio); mapeie
 | `--envio-s` | `t_envio_ms` (um uplink, ~1 s) |
 
 A câmera é desligada logo depois da captura, antes da inferência, para não gastar a corrente dela durante os ~18 s de
-processamento. O fluxo de imagem desliga a câmera no modo `AUTO` da mesma forma (alteração ainda não medida em placa).
+processamento. O fluxo de imagem desliga a câmera no modo `AUTO` da mesma forma (medido em `corrente/auto30_imagem.csv`).
 Para ler o resultado no PC, use o `reconstrutor.py` ou o `latencia_ponta_a_ponta.py` com `--fluxo ocr`
 ([`medir_transmissao.md`](medir_transmissao.md), [`medir_latencia.md`](medir_latencia.md)).

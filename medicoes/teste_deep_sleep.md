@@ -3,8 +3,8 @@
 > O firmware **não foi compilado nem testado em placa** quando este roteiro foi escrito.
 > Depois disso, o `transmissor_esp32cam` foi gravado e rodou um `AUTO:30` de 3 ciclos (2026-10-27): deep sleep
 > confirmado pelo log (`DEEPSLEEP_RESET`, `causa=timer`, `ciclo` incrementando) e pela corrente (~159 mA acordado,
-> ~24 mA dormindo, medidos com INA219). O passo 4 (`STOP`) e a medição de ≥ 30 ciclos seguem pendentes. O
-> `transmissor_ocr_esp32cam` ainda não foi testado em placa.
+> ~24 mA dormindo, medidos com INA219). Depois, os dois transmissores foram medidos em `AUTO:30` (30 ciclos do de
+> imagem e 32 do `transmissor_ocr_esp32cam`, ver [`README.md`](README.md)). O passo 4 (`STOP`) segue sem teste.
 
 ## O que foi implementado
 

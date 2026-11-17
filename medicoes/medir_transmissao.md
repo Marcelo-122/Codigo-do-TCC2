@@ -85,9 +85,9 @@ de chunks de imagem, o nó manda **um único uplink** na FPort 2 com `[id (2 B)]
 (9 B com N = 6; `flags` = bit 7 caixa achada | N; `?` = fatia não classificada, `-` = sem caixa). O parser é
 `enlace.parse_leitura()`. Não há blocos, JPEG nem PDR da leitura: uma leitura ou chegou ou não chegou.
 
-> **Status:** o firmware só passou por checagem de sintaxe com stubs (não foi compilado com a toolchain do
-> ESP32 nem testado em placa) e o lado do PC foi testado com frames LoRaWAN sintéticos (50 verificações). Antes de
-> valer como dado do TCC, faça uma execução curta (`--envios 1`) e confira a linha do CSV contra o log do nó.
+> **Status:** o firmware rodou em placa (consumo em 32 ciclos e latência em 34 disparos, ver
+> [`README.md`](README.md)), mas o `transmissao_ocr.csv` ainda não foi gerado. Antes de valer como dado do TCC, faça
+> uma execução curta (`--envios 1`) e confira a linha do CSV contra o log do nó.
 
 O mesmo `reconstrutor.py` recebe os dois fluxos: FPort 1 vira imagem em `transmissao.csv`, FPort 2 vira uma linha em
 `transmissao_ocr.csv`. `--fluxo ocr` só muda o que o PC faz com o nó ligado.
@@ -152,4 +152,5 @@ Frames FPort 1 em uma execução `--fluxo ocr` (e payloads de FPort 2 malformado
   dois fluxos com a mesma definição de disparo, em `latencia_ponta_a_ponta.csv`. Os dois abrem as mesmas portas:
   **não rodem ao mesmo tempo**. Para o enlace, `transmissao.csv` tem PDR, tempo de rádio e
   latência; os números de latência dos dois devem bater.
-- O que **não** está aqui: política de perda (`RESEND` automático com limite) e envio real de ≥ 30 leituras.
+- O que **não** está aqui: política de perda (`RESEND` automático com limite). O envio real de 30 leituras do fluxo de
+  imagem já foi feito (`transmissao.csv`).

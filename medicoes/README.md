@@ -26,10 +26,11 @@ e gravados por [`grab_image_debug.py`](../test_images/debug_ocr_esp32cam/grab_im
 | `tempo_inferencia_nuvem.py` | servidor (`ocr/pipeline_nuvem.py`, LiteRT sem XNNPACK) | 21 imagens × 5 | tempo do OCR da nuvem sobre as imagens completas de `imagens/`, que a latência ponta a ponta não inclui; em 2026-11-01, Ryzen 5 5600GT (WSL): leitura completa 6,25 ms, segmentação 4,30 ms, ROI fixa 1,91 ms (medianas). Só imprime, não grava CSV |
 | `exportar_ciclo_corrente.py` | — | 1 ciclo por arquivo | exporta um ciclo de `corrente/*.csv` (mesma detecção de ciclos do `corrente.py analisar`) como envelope mín./máx. a cada 0,25 s, em `.dat` para o gráfico do TCC; o docstring tem os dois comandos usados (ciclo 8 da imagem, ciclo 4 do OCR) |
 
-Os dois últimos são gerados pelo `reconstrutor.py`. O `transmissao.csv` tem a corrida de 30 envios do fluxo de imagem; o
-`transmissao_ocr.csv` ainda não tem medições em placa.
+O `transmissao.csv` e o `transmissao_ocr.csv` são gerados pelo `reconstrutor.py`. O `transmissao.csv` tem a corrida de
+30 envios do fluxo de imagem; o `transmissao_ocr.csv` nunca foi gerado (a latência do OCR está em `latencia_ocr.csv`).
 
-Todas as capturas são de 2026-09-27 (17:54 a 19:02). Os arquivos `v1`/`teste2` foram
+As capturas do firmware de debug (`debug_metricas*.csv`) são de 2026-09-27 (17:54 a 19:02); as de corrente, latência
+e transmissão são de 2026-10-27. Os arquivos `v1`/`teste2` foram
 mantidos por serem medições reais, mas **não entram** nos resultados abaixo
 (firmware diferente).
 
