@@ -23,6 +23,8 @@ e gravados por [`grab_image_debug.py`](../test_images/debug_ocr_esp32cam/grab_im
 | `transmissao_execucoes_anteriores.csv` | mesmo firmware, 5 execuções interrompidas | 21 linhas | execuções das 13:41 a 14:55 que pegaram as janelas de silêncio do receptor (ver "Enlace do fluxo de imagem"); **fora das estatísticas**; os logs e as imagens delas foram apagados |
 | `logs/<execução>/` e `imagens/` | `reconstrutor.py` | 1 execução | `chunks.csv`, `eventos.jsonl`, `serial_rx.txt` (DevAddr mascarado), `serial_tx.txt` e `meta.json` da corrida de `transmissao.csv`; as 21 imagens completas dela (`..._L<id>.jpg`) |
 | `transmissao_ocr.csv` | `Rede/transmissor_ocr_esp32cam` (fluxo de OCR, FPort 2) | — | uma linha por leitura recebida: dígitos, FCnt, RSSI, tempo de rádio, latência ([`medir_transmissao.md`](medir_transmissao.md)) |
+| `tempo_inferencia_nuvem.py` | servidor (`ocr/pipeline_nuvem.py`, LiteRT sem XNNPACK) | 21 imagens × 5 | tempo do OCR da nuvem sobre as imagens completas de `imagens/`, que a latência ponta a ponta não inclui; em 2026-11-01, Ryzen 5 5600GT (WSL): leitura completa 6,25 ms, segmentação 4,30 ms, ROI fixa 1,91 ms (medianas). Só imprime, não grava CSV |
+| `exportar_ciclo_corrente.py` | — | 1 ciclo por arquivo | exporta um ciclo de `corrente/*.csv` (mesma detecção de ciclos do `corrente.py analisar`) como envelope mín./máx. a cada 0,25 s, em `.dat` para o gráfico do TCC; o docstring tem os dois comandos usados (ciclo 8 da imagem, ciclo 4 do OCR) |
 
 Os dois últimos são gerados pelo `reconstrutor.py`. O `transmissao.csv` tem a corrida de 30 envios do fluxo de imagem; o
 `transmissao_ocr.csv` ainda não tem medições em placa.
@@ -138,7 +140,7 @@ Ele foi **excluído**, o que deixa **30 ciclos completos**.
 | Grandeza | Valor (n = 30 ciclos) |
 |---|---|
 | `mAh por leitura` | **4,64** (mediana 4,65; desvio 0,24; de 4,26 a 5,24) |
-| Corrente média acordado | ≈ 84,5 mA (de 81 a 86 mA por ciclo); picos de TX de 206 a 220 mA |
+| Corrente média acordado | ≈ 84,5 mA (de 81 a 86 mA por ciclo); picos de TX de 207 a 220 mA |
 | Corrente em sleep | ≈ 23,7 mA, **incluindo o Radioenge** (ainda não separado) |
 | Tempo acordado | média 189,9 s (de 173 a 219 s) |
 | Período do ciclo | média 218,5 s (≈ 190 s acordado + ≈ 29 s de sleep) |

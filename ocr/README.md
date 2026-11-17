@@ -39,6 +39,7 @@ python ocr/avaliar_pipeline.py --conjunto fisico  # o mesmo em dados/teste/ (hid
 python ocr/avaliar_teste_publico.py               # pastas test do Dryad (precisa do dataset; o classificador versionado já foi re-treinado sem elas)
 python ocr/avaliar.py                         # roda o conjunto de teste e grava ocr/teste_comum/resultados/
 python ocr/avaliar_roi_fixa.py                # cenário de câmera parada (ROI fixa, sem segmentação) e curva de tolerância
+python ocr/avaliar_roi_manual.py              # conjunto físico com ROI, inclinação e polaridade marcadas à mão (dados/teste/roi_manual.csv)
 ```
 
 `--digitos` é o número de rodinhas do medidor (o `N_FATIAS` do firmware, calibrado por medidor). Fotos em

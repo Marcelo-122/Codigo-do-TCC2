@@ -1,0 +1,22 @@
+arquivo,angulo_graus,caixa,fundo,origem_angulo,observacao
+esp32_01.jpg,-42,"46,56,100,74",claro,manual,dígitos pequenos e inclinados pela perspectiva
+esp32_02.jpg,2.34,"46,41,126,54",escuro,hough,
+esp32_03.jpg,2.17,"21,52,138,74",escuro,hough,passo dos roletes diferente na parte preta e na vermelha
+esp32_04.jpg,12.45,"16,40,154,78",claro,hough,
+esp32_05.jpg,1.61,"40,40,128,54",escuro,hough,
+esp32_06.jpg,15.45,"10,40,155,86",escuro,hough,perspectiva forte: dígitos inclinados em relação às fatias
+esp32_07.jpg,3.5,"30,58,136,83",escuro,hough,
+esp32_08.jpg,12.03,"21,51,154,83",claro,hough,
+esp32_11.jpg,15.64,"8,30,149,71",escuro,hough,perspectiva forte: dígitos inclinados em relação às fatias
+esp32_12.jpg,0,"10,33,152,85",claro,hough,
+esp32_13.jpg,11.58,"14,48,144,73",escuro,hough,
+esp32_15.jpg,16.43,"13,41,158,80",escuro,hough,reflexo no vidro
+esp32_16.jpg,28,"4,49,154,69",escuro,manual,dígitos pequenos e de baixo contraste
+esp32_19.jpg,11.93,"10,35,159,84",claro,hough,último rolete encosta na borda do quadro
+esp32_20.jpg,0,"21,30,156,100",claro,hough,imagem desfocada
+esp32_21.jpg,-28,"12,24,159,72",escuro,manual,janela cortada pela borda direita do quadro; perspectiva forte
+esp32_22.jpg,-2.76,"15,31,152,81",claro,hough,
+esp32_23.jpg,22,"11,45,159,75",escuro,manual,último rolete cortado pela borda direita do quadro
+esp32_24.jpg,2.23,"10,31,158,76",escuro,hough,
+esp32_25.jpg,7.5,"6,36,157,80",claro,hough,
+esp32_26.jpg,55,"13,20,150,82",claro,manual,foto quase a 90 graus e perspectiva extrema: dígitos muito inclinados

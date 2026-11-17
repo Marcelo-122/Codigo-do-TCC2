@@ -26,7 +26,7 @@
 // Comandos pela Serial (115200):
 //   LER                              le o medidor e envia a leitura (um uplink)
 //   AUTO[:<s>]                       modo autonomo: acorda, le, envia a leitura e entra
-//                                    em deep sleep por <s> segundos (padrao 600).
+//                                    em deep sleep por <s> segundos (padrao 30, INTERVALO_PADRAO_S).
 //                                    Repete ate receber STOP.
 //   STOP                             sai do modo autonomo (so e lido na janela de
 //                                    JANELA_STOP_MS logo apos cada despertar)

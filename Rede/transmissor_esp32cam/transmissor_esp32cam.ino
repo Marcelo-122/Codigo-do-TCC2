@@ -19,7 +19,7 @@
 //                                    com payload fixo
 //   AUTO[:<s>]                       modo autonomo: acorda, captura, envia todos os
 //                                    chunks e entra em deep sleep por <s> segundos
-//                                    (padrao 600). Repete ate receber STOP.
+//                                    (padrao 30, INTERVALO_PADRAO_S). Repete ate receber STOP.
 //   STOP                             sai do modo autonomo (so e lido na janela de
 //                                    JANELA_STOP_MS logo apos cada despertar)
 //   SLEEP:<s>                        deep sleep unico de <s> segundos, sem captura

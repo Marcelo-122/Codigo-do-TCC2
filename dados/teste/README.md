@@ -35,6 +35,22 @@ repositório tinha até agora; ver "Origem das imagens" no [README principal](..
    [`medicoes/ocr_teste.csv`](../../medicoes/ocr_teste.csv) (leitura exata, acurácia por dígito, CER, Dice/IoU, borda e
    nuvem) e o detalhe por foto em `medicoes/ocr_teste_por_imagem_fisico.csv`.
 
+## ROI marcada à mão (`roi_manual.csv`)
+
+Para ler o conjunto sem o modelo de segmentação, como numa instalação com a câmera fixa, cada foto tem em
+`roi_manual.csv` a inclinação da fileira (`angulo_graus`, aplicada ao quadro 160×120 por `pipeline_nuvem.alinhar`), a
+janela dos dígitos no quadro já girado (`caixa`), a polaridade da janela (`fundo`: `claro` = dígitos escuros, `escuro` =
+dígitos claros) e de onde veio o ângulo (`hough` ou `manual`). As marcações foram feitas pela geometria (bordas da
+janela e centros dos roletes) antes de rodar a leitura, e ainda precisam ser conferidas por outra pessoa;
+`conferencia_roi_manual.png` desenha cada caixa com as fatias e o dígito lido.
+
+    python ocr/avaliar_roi_manual.py
+
+grava as linhas `fisico_roi_manual*` em `medicoes/ocr_teste.csv` e o detalhe por foto em
+`medicoes/ocr_teste_por_imagem_fisico_roi_manual.csv`. Resultado em 2026-11-08 (fluxo nuvem): 2/21 leituras e 37 % dos
+dígitos com a ROI; 3/21 e 56 % invertendo os tons das 12 fotos de fundo escuro, que o classificador quase não viu no
+treino.
+
 ## O que o conjunto não cobre
 
 - Os rótulos são lidos por uma pessoa; conferir as fotos mais borradas por uma segunda pessoa antes de congelar o

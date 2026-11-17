@@ -1,0 +1,11 @@
+{
+  "recortes": 7378,
+  "acertos_float": 7043,
+  "acuracia_float": 0.954595,
+  "acertos_int8": 7037,
+  "acuracia_int8": 0.953782,
+  "predicoes_iguais": 0.996205,
+  "so_float_acerta": 14,
+  "so_int8_acerta": 8,
+  "mcnemar_exato_p": 0.2863
+}
