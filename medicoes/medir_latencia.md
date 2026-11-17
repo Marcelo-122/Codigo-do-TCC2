@@ -16,7 +16,7 @@ a imagem remontada no PC.
 
 Definições adotadas:
 - **"Servidor"** = o PC que remonta a imagem a partir do receptor Heltec (é o que existe hoje no
-  repositório). Se o destino passar a ser o ChirpStack, o marco final muda para a chegada no MQTT.
+  repositório; não há servidor de rede LoRaWAN no fluxo atual).
 - **Disparo** no modo `capture` = instante em que o PC escreve `CAPTURE`. No modo `auto` = primeira
   linha do `setup()` após o despertar (`[boot] causa=timer`), cerca de 0,3 a 0,5 s depois do
   despertar real, porque o boot da ROM não aparece na serial.

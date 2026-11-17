@@ -5,10 +5,19 @@ teste com gabarito (`teste_comum/`) e o teste de viabilidade de OCR genérico (`
 
 ## Decisão: o que roda no servidor
 
-O servidor roda **os mesmos modelos do Pipeline B** (segmentação `modelo_esp32.tflite` + classificador
-`modelo_digito.tflite`, de `ModeloEDataset/modelos/`) com a mesma lógica do firmware
-(`test_images/debug_ocr_esp32cam/`). Assim, a única diferença entre os dois fluxos é onde a conta é feita e o
-que trafega pelo enlace:
+O servidor tem **os mesmos modelos do Pipeline B** (segmentação `modelo_esp32.tflite` + classificador
+`modelo_digito.tflite`, de `ModeloEDataset/modelos/`) e a mesma lógica do firmware
+(`test_images/debug_ocr_esp32cam/`). A janela dos dígitos pode vir de dois jeitos, e a comparação só é justa quando
+os dois fluxos usam o mesmo:
+
+- **Segmentação** (padrão do `pipeline_nuvem.py`, sem `--roi`): é o que o firmware (`Rede/transmissor_ocr_esp32cam/`)
+  faz **hoje**, e é o que o `avaliar_pipeline.py` usa nos dois fluxos.
+- **ROI calibrada** (`--roi`): é o fluxo **previsto** para a câmera fixa (ver a seção seguinte), usado nos dois fluxos
+  pelo `avaliar_roi_fixa.py` e pelo `avaliar_roi_manual.py`. O firmware ainda não tem essa opção, então em placa os
+  dois fluxos só voltam a rodar o mesmo pipeline depois que ela for implementada nele.
+
+Com o mesmo jeito de achar a janela, a única diferença entre os dois fluxos é onde a conta é feita e o que trafega
+pelo enlace:
 
 | Fluxo | Na ESP32-CAM | No enlace LoRa | No servidor |
 |---|---|---|---|
@@ -19,10 +28,10 @@ Isso muda a pergunta de pesquisa de "OCR de borda contra OCR de nuvem" para "**o
 transmitidos, latência, energia), porque a acurácia dos dois lados vem do mesmo modelo. O Tesseract foi só um
 teste de viabilidade (`colab_poc/`) e não faz parte dos pipelines avaliados.
 
-## Como o servidor acha a janela dos dígitos
+## Como o servidor acha a janela dos dígitos (fluxo previsto)
 
-Não usa o modelo de segmentação (que não funciona fora do enquadramento calibrado, ver os resultados abaixo). Com a
-câmera fixa, a janela dos dígitos cai sempre na mesma região do quadro: ela é calibrada **uma vez** na instalação (ROI
+No fluxo previsto, não usa o modelo de segmentação (que não funciona fora do enquadramento calibrado, ver os
+resultados abaixo). Com a câmera fixa, a janela dos dígitos cai sempre na mesma região do quadro: ela é calibrada **uma vez** na instalação (ROI
 em pixels do quadro 160×120) e o servidor endireita a inclinação (Hough) e lê as N fatias dessa ROI. O fluxo previsto é
 `--alinhar --roi x0,y0,x1,y1`, opcionalmente com `--votar`. A ROI precisa de precisão de cerca de ±1 a ±2 px (ver
 "Enquadramento físico fixo"). O firmware de debug (`test_images/debug_ocr_esp32cam/`) serve para posicionar a câmera.

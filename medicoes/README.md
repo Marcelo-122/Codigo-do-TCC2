@@ -2,9 +2,14 @@
 
 As hipóteses H2 e H3 estão definidas no [README da raiz](../README.md#hipóteses-avaliadas).
 
-Dados brutos capturados na ESP32-CAM pelo firmware
-[`debug_ocr_esp32cam`](../test_images/debug_ocr_esp32cam/debug_ocr_esp32cam.ino)
-e gravados por [`grab_image_debug.py`](../test_images/debug_ocr_esp32cam/grab_image_debug.py).
+Dados brutos de três firmwares:
+
+- [`debug_ocr_esp32cam`](../test_images/debug_ocr_esp32cam/debug_ocr_esp32cam.ino): tempos, memória e leitura do OCR
+  na placa (`debug_metricas*.csv`, gravados por
+  [`grab_image_debug.py`](../test_images/debug_ocr_esp32cam/grab_image_debug.py)), em 2026-09-27;
+- [`Rede/transmissor_esp32cam`](../Rede/transmissor_esp32cam/transmissor_esp32cam.ino) (fluxo de imagem) e
+  [`Rede/transmissor_ocr_esp32cam`](../Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino) (OCR na borda):
+  corrente (`corrente/`), latência ponta a ponta e transmissão, em 2026-10-27.
 
 ## Arquivos
 
@@ -106,8 +111,20 @@ pacotes entregues") compara fluxos, não etapas:
 **Resultado para a H2.** A latência está confirmada com folga (18,84 s contra 189 s). A taxa de entrega depende da
 métrica: por **leitura** entregue o fluxo local foi melhor (27 de 34, 79,4%, contra 20 de 30, 66,7%, na imagem), mas
 a diferença não é estatisticamente distinguível com essas amostras (Fisher exato, p = 0,27); por **pacote**, o fluxo
-de imagem foi melhor (699 de 713, 98,0%, contra 79,4%). Ver as seções de entrega abaixo. O `transmissao.csv` (imagem, 30
-envios, pelo `reconstrutor.py`) confirma o PDR por pacote do fluxo de imagem (98,7%); o `transmissao_ocr.csv` ainda não foi gerado.
+de imagem foi melhor (699 de 713, 98,0%, contra 79,4%). Ver as seções de entrega abaixo. O `transmissao_ocr.csv` ainda
+não foi gerado.
+
+**Duas corridas do fluxo de imagem.** Houve duas corridas de 30 imagens em 2026-10-27, com números diferentes:
+
+| Corrida | Disparo | Imagens completas | PDR por pacote | Latência (mediana) |
+|---|---|---|---|---|
+| `latencia_ponta_a_ponta.csv` (09:34 a 11:20) | `AUTO:30`: o nó acorda do deep sleep, captura e envia | 20 de 30 | 98,0% (699/713) | 189 s, a partir do boot |
+| `transmissao.csv` (14:59 a 16:44) | nó sempre ligado, o PC manda `CAPTURE` | 21 de 30 | 98,7% (749/759) | 197 s, a partir do comando |
+
+Os números da H2 vêm da primeira, porque ela usa o mesmo disparo (despertar do deep sleep) que a corrida do OCR
+(`latencia_ocr.csv`). A segunda não é uma repetição da mesma medição (o disparo e o marco inicial da latência são
+outros) e serve para conferir o PDR por pacote com o `reconstrutor.py`. A diferença de 8 s na latência e de 1 imagem
+completa não foi investigada.
 
 ## Consumo do fluxo de imagem (teste curto, câmera ligada durante o envio)
 

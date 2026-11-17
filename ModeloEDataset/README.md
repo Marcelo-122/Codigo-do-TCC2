@@ -140,7 +140,8 @@ troca entre dois dígitos — ambíguo).
    os recortes já vêm padronizados e retos — diferente do Kaggle).
 
 Resultado (versão antiga do script, que usava as pastas `train` **e** `test`): 11.079 imagens aceitas →
-**57.197 recortes de dígito** (ruído residual estimado em ~1-2%, bem mais limpo que o Kaggle). Isso multiplicou o
+**57.197 recortes de dígito** (ruído residual estimado em ~1-2%, bem mais limpo que o Kaggle; a versão atual, só com
+`train`, gera 47.478, ver a nota abaixo). Isso multiplicou o
 dataset de treino por ~35x e foi o que mais melhorou a acurácia (ver números corrigidos em
 [relatorios/RESULTADOS.md](relatorios/RESULTADOS.md)).
 
@@ -182,7 +183,7 @@ Flatten → Dense(64) → Dropout(0.3) → Dense(10, softmax)
 
 Treino em duas fases, em [treinar_classificador_digitos.py](treinar_classificador_digitos.py):
 
-- **Fase A** — treino principal nos ~58.760 recortes combinados (Kaggle + Dryad), com
+- **Fase A** — treino principal nos 49.038 recortes combinados (47.478 do Dryad `train` + 1.560 do Kaggle), com
   aumento de dados simulando a câmera do ESP32-CAM (downsample+upsample para imitar baixa
   resolução nativa, ruído gaussiano leve, rotação/translação leves, jitter de contraste) e
   `class_weight` para compensar o dígito `0` (superrepresentado por zero-padding).
@@ -238,9 +239,10 @@ Com o classificador anterior eram 30/32; a diferença é de um dígito, dentro d
 > de acurácia relatado antes disso media só esses 3 dígitos, nunca os outros 7. Corrigido em
 > `treinar_classificador_digitos.py` e `gerar_relatorio_resultados.py` (as duas chamadas
 > agora usam `shuffle=True` consistente) e o modelo foi re-treinado do zero. Os números
-> corrigidos ficaram parecidos com os antigos (96,9% vs 96,3%) — não porque o bug não
+> corrigidos ficaram parecidos com os antigos (96,9% vs 96,3%, números daquela época) — não porque o bug não
 > importasse, mas porque o modelo de fato generaliza bem para as 10 classes, o que só dá para
-> afirmar agora que a validação está correta.
+> afirmar agora que a validação está correta. O modelo atual, re-treinado sem as pastas `test` do Dryad e validado
+> **por foto**, tem 95,4% (INT8; ver [relatorios/RESULTADOS.md](relatorios/RESULTADOS.md)).
 
 ## Firmware / ferramenta de calibração no ESP32-CAM real
 
@@ -270,10 +272,10 @@ RAM/PSRAM/tempo) pela Serial USB.
   real (é só contar as rodinhas na imagem de debug).
 - Achado real de performance: a inferência do modelo de **segmentação** demorou **~15,6s por
   frame** (mediana de 15.564 ms em 61 capturas) em hardware real (bem mais que os poucos milissegundos típicos de TFLite Micro em
-  modelos pequenos) — provavelmente por rodar em kernels de referência puros em C, sem
-  otimização para Xtensa, num input relativamente grande (192×192). Isso é aceitável para essa
-  ferramenta de debug (roda a cada 5s de qualquer forma), mas é um ponto a otimizar antes de
-  qualquer uso em produção (ver "Próximos passos").
+  modelos pequenos), com um input relativamente grande (192×192). A causa não foi investigada
+  (o core 3.0.7 já traz o `esp-nn` 1.1.0, ver [`medicoes/README.md`](../medicoes/README.md)). Isso é
+  aceitável para essa ferramenta de debug (roda a cada 5s de qualquer forma); na leitura em campo a
+  decisão é tirar a segmentação e usar uma ROI calibrada na instalação (ver "Próximos passos").
 
 **Todo o histórico de debugging real está documentado** no
 [README daquela pasta](../test_images/debug_ocr_esp32cam/README.md) — inclui erros reais de
@@ -338,8 +340,8 @@ Conferir sempre antes de confiar no dataset gerado:
 - Dimensionamento exato de RAM/flash/latência em hardware real **já foi confirmado** — ver
   a seção "Firmware / ferramenta de calibração no ESP32-CAM real" acima. Inferência da
   segmentação ficou bem mais lenta que o esperado (~15,6s por frame) — aceitável para uma
-  ferramenta de debug que roda a cada 5s, mas precisa de otimização antes de virar produção
-  (ver "Firmware" para detalhes e hipóteses).
+  ferramenta de debug que roda a cada 5s; para a leitura em campo a segmentação sai e entra a ROI
+  calibrada (ver "Próximos passos").
 
 ## Próximos passos recomendados
 
@@ -352,12 +354,11 @@ Conferir sempre antes de confiar no dataset gerado:
    - Separar uma fatia (ex.: 30%) como teste real, nunca usada no fine-tuning, para medir a
      acurácia de verdade.
    - Se houver mais de um medidor físico a monitorar, pelo menos 5-10 fotos de cada.
-2. **Otimizar a latência da inferência de segmentação** (~15,6s/frame medido em hardware
-   real — ver seção "Firmware" acima) antes de qualquer uso em produção: candidatos são
-   reduzir a entrada do modelo de segmentação (192×192 é grande para TFLite Micro sem
-   aceleração de hardware), usar uma resolução intermediária menor, ou investigar se a
-   biblioteca TFLite Micro instalada tem kernels otimizados para Xtensa (vs. implementação de
-   referência pura em C).
+2. **Tirar a segmentação do firmware** (~15,6s/frame medido em hardware real — ver seção
+   "Firmware" acima): com a câmera fixa, a janela dos dígitos é uma ROI calibrada uma vez na
+   instalação, e o classificador lê as N fatias dela (ver a decisão no
+   [README da raiz](../README.md#decisão-pipeline-de-ocr-na-borda)). Falta implementar isso no
+   firmware e medir a latência e a energia sem a segmentação.
 3. Migrar a lógica do firmware de debug (`test_images/debug_ocr_esp32cam/`) para um firmware
    de produção: remover o desenho de retângulo/linhas-guia (só serve para debug visual),
    adicionar tratamento de erro mais robusto. (A entrega da leitura já existe: o

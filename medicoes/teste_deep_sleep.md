@@ -22,10 +22,11 @@ nível alto) e apaga o flash (GPIO4), segurando os dois com `rtc_gpio_hold`. O c
 modo autônomo ficam em memória RTC, que sobrevive ao deep sleep mas não a um power-on reset.
 Para o modo autônomo já ligar no power-on, use `#define AUTO_AO_LIGAR 1`.
 
-Cada ciclo termina com uma linha parseável, por exemplo:
+Cada ciclo termina com uma linha parseável, por exemplo (valores ilustrativos, na faixa dos medidos: JPEG de 3,3 a
+4,6 KB, 19 a 27 chunks, ~143 s acordado):
 
 ```
-[CICLO_FIM] ciclo=2 ok=1 chunks=15 falhas=0 jpeg_bytes=2640 t_ate_ciclo_ms=412 t_captura_ms=31 t_envio_ms=101800 t_ativo_ms=102300 sleep_s=60
+[CICLO_FIM] ciclo=2 ok=1 chunks=21 falhas=0 jpeg_bytes=3600 t_ate_ciclo_ms=412 t_captura_ms=31 t_envio_ms=141500 t_ativo_ms=142800 sleep_s=30
 ```
 
 ## Roteiro
@@ -53,7 +54,7 @@ Material: ESP32-CAM com o Radioenge ligado como hoje, monitor serial (Arduino ID
 - Esperado: `ok=1 falhas=0` e `chunks` igual ao do `CAPTURE` manual para o mesmo cenário.
 - Esperado no receptor: uma imagem por ciclo. O id da leitura muda a cada ciclo, então as imagens não se misturam.
 - Tempo: `t_envio_ms` ≈ `(chunks − 1) × 7000 ms` mais o tempo de resposta de cada comando AT.
-  Com ~15 chunks são ~100 s, e **esse envio domina o tempo acordado** (a captura leva dezenas de ms).
+  Com 19 a 27 chunks são ~130 a 180 s, e **esse envio domina o tempo acordado** (a captura leva dezenas de ms).
   Isso é consequência dos 7 s entre chunks, não do sleep.
 
 **4. Parar.** Quando aparecer `[auto] ciclo N em 1500 ms`, digite `STOP` e Enter.
