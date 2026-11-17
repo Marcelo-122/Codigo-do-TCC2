@@ -1,4 +1,4 @@
-"""Avalia o pipeline COMPLETO do Pipeline B (segmentação → fatias → dígitos), em INT8, sem caixa manual.
+"""Avalia o pipeline CNN Simples COMPLETO (segmentação → fatias → dígitos), em INT8, sem caixa manual.
 
 Diferente de `ocr/avaliar.py` (que também roda modos de diagnóstico com a caixa marcada à mão) e de
 `ModeloEDataset/testar_imagens_novas.py` (que recorta à mão), aqui a caixa vem SEMPRE do modelo de

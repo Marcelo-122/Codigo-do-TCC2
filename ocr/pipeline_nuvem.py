@@ -1,6 +1,6 @@
 """Leitura do hidrômetro no servidor: o lado "nuvem" da comparação borda × nuvem.
 
-Roda no PC os MESMOS modelos do Pipeline B (segmentação `modelo_esp32.tflite` e classificador
+Roda no PC os MESMOS modelos do pipeline CNN Simples (segmentação `modelo_esp32.tflite` e classificador
 `modelo_digito.tflite`, de `ModeloEDataset/modelos/`) com a MESMA lógica do firmware
 `test_images/debug_ocr_esp32cam/debug_ocr_esp32cam.ino`, para que a única diferença entre borda e
 nuvem seja onde a conta é feita e o que trafega pelo enlace:
@@ -146,7 +146,7 @@ def _para_int8(pixels):
 
 
 class LeitorB:
-    """Pipeline B (segmentação + classificador de dígito), no PC."""
+    """Pipeline CNN Simples (segmentação + classificador de dígito), no PC."""
 
     def __init__(self, modelo_segmentacao=MODELO_SEGMENTACAO, modelo_digito=MODELO_DIGITO):
         self.seg = Interpreter(model_path=modelo_segmentacao, **_SEM_DELEGATE)
@@ -157,7 +157,7 @@ class LeitorB:
         self._seg_out = self.seg.get_output_details()[0]
         self._dig_in = self.dig.get_input_details()[0]
         self._dig_out = self.dig.get_output_details()[0]
-        # A conta "pixel - 128" e o limiar "saída > 0" só valem com estas quantizações (as dos modelos de B).
+        # A conta "pixel - 128" e o limiar "saída > 0" só valem com estas quantizações (as dos modelos do pipeline CNN Simples).
         esperado_in = (1 / 255, -128)
         for nome, det in (("segmentação", self._seg_in), ("dígito", self._dig_in)):
             esc, zp = det["quantization"]

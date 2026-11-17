@@ -21,7 +21,7 @@ Na foto aparece o valor `3 5 3 4 8 5` (o último dígito fica cortado na borda d
 
 **Conclusão.** Um OCR genérico aplicado à linha inteira não leu esta imagem (experimentos 1 e 2). A leitura só
 funcionou quando a imagem foi segmentada em um recorte por dígito e cada recorte foi reconhecido sozinho
-(experimento 3). Isso é a mesma estrutura do Pipeline B (segmentar, depois classificar dígito a dígito).
+(experimento 3). Isso é a mesma estrutura do pipeline CNN Simples (segmentar, depois classificar dígito a dígito).
 
 **Limites.** É **uma única foto**, a mesma nos três experimentos, sem gabarito independente e sem medida de
 acurácia: serve como teste de viabilidade, não como resultado de avaliação.

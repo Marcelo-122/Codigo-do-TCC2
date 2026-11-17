@@ -175,6 +175,6 @@ lugar nenhum além do CSV/Serial). Depois de confirmar que a posição física
 da câmera está boa e a leitura sai consistente foto após foto, o próximo
 passo (fora do escopo deste arquivo) é migrar essa mesma lógica para um
 firmware de produção — sem a parte de desenhar retângulo/linhas-guia (só
-precisa disso para debug visual) e com tratamento de erro mais robusto. Isso
-já foi feito em [`Rede/transmissor_ocr_esp32cam/`](../../Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino),
-que envia a leitura por LoRaWAN na FPort 2.
+precisa disso para debug visual) e com tratamento de erro mais robusto. A versão que
+entrega a leitura já existe: [`Rede/transmissor_ocr_esp32cam/`](../../Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino)
+roda o mesmo OCR e envia a leitura por LoRaWAN na FPort 2.

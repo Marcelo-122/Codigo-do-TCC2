@@ -27,6 +27,8 @@ import enlace
 #   -> média 3231 B
 # Média das duas médias: 3435 B; +25% de margem, arredondado: 4300 B
 # (acima de toda amostra medida; a maior foi 4209 B).
+# Medido depois (2026-10-27, 60 imagens em medicoes/transmissao.csv e latencia_ponta_a_ponta.csv):
+# 3323 a 4568 B, então 4300 B fica perto do topo dessa faixa, não acima dela.
 # Com q80 (medido antes): reais 1940, 2574, 2578 B; PoC 2585, 2675 B.
 CAPTURAS_REAIS = (2460, 3705, 4209, 4184)
 POC_Q90 = (3151, 3310)

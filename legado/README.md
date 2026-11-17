@@ -22,18 +22,18 @@ O `mac_simulator.py` (simulador de gateway Semtech UDP) já havia sido removido 
 
 ## `ocr_cloud/` (OCR em PC, arquivado)
 
-Pipeline C da comparação de OCR: U-Net INT8 384×384 (a mesma de `TreinoEModelosOCRNaBorda/`, abaixo) e uma CNN de
+Pipeline U-NET + CNN da comparação de OCR: U-Net INT8 384×384 (a mesma de `TreinoEModelosOCRNaBorda/`, abaixo) e uma CNN de
 dígito 68×68 treinada em `num_dataset/` (dígitos de fontes impressas e manuscritas, não de hidrômetros).
 Foi arquivado por não ser pipeline de borda (roda só no PC).
 Detalhes e como rodar na [seção 3 do README da raiz](../README.md#3-ocr-em-pc-arquivado-legadoocr_cloud).
 
-## `TreinoEModelosOCRNaBorda/` (Pipeline A, arquivado)
+## `TreinoEModelosOCRNaBorda/` (pipeline U-NET + CRNN + CTC, arquivado)
 
 U-Net 384×384 (QAT/INT8) + leitor CRNN+CTC 48×224. Foi descartado como OCR de borda: o teste em hardware
 ([`medicoes/teste_pipeline_a_esp32cam.md`](../medicoes/teste_pipeline_a_esp32cam.md)) mostrou que o detector pede
 15,3 MB de arena (a PSRAM da ESP32-CAM tem 4 MB) e que os leitores CTC usam o operador `REDUCE_PROD`, que a TFLM do
 core 3.0.7 não tem. `teste_esp32cam_pipeline_a/` é o firmware desse teste. Detalhes e como treinar na
-[seção 4 do README da raiz](../README.md#4-pipeline-a-arquivado-legadotreinoemodelosocrnaborda).
+[seção 4 do README da raiz](../README.md#4-pipeline-u-net--crnn--ctc-arquivado-legadotreinoemodelosocrnaborda).
 
 `CSVs/gabarito.csv` (colunas `Arquivo,Leitura`, o que `simulador_extracao_dual.py` espera) foi montado a partir da
 coluna `Valor Real` de `CSVs/leituras_comparacao_tflite.csv`: 9 das 14 imagens de `dataset/imagens_reais/` têm valor

@@ -1,4 +1,4 @@
-"""Avalia o Pipeline B nos dois fluxos (borda emulada e nuvem) sobre o conjunto de teste comum.
+"""Avalia o pipeline CNN Simples nos dois fluxos (borda emulada e nuvem) sobre o conjunto de teste comum.
 
 Lê `ocr/teste_comum/gabarito.csv` (imagem, leitura real, número de rodinhas, altura da janela) e,
 para cada imagem de `ocr/teste_comum/imagens/` (fotos tiradas com a ESP32-CAM de um monitor mostrando o
@@ -122,7 +122,7 @@ def taxa(linhas, campo="exato"):
 
 def escrever_resumo(linhas):
     por_modo = {m: [l for l in linhas if l["modo"] == m] for m in MODOS}
-    out = ["# Resultados: Pipeline B, borda emulada × nuvem", "",
+    out = ["# Resultados: pipeline CNN Simples, borda emulada × nuvem", "",
            "Gerado por `ocr/avaliar.py`. Conjunto: `ocr/teste_comum/` (fotos da ESP32-CAM de um monitor).",
            "A borda é uma **emulação** em Python (ver o docstring de `ocr/avaliar.py`); os números",
            "comparam os dois fluxos entre si e **não** são a acurácia no hardware.", ""]

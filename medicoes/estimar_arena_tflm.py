@@ -7,14 +7,14 @@ no menor deslocamento que não colide com tensores vivos ao mesmo tempo. Os peso
 
 Também entra o buffer temporário que o kernel de referência de TRANSPOSE_CONV pede
 (acumuladores int32 do tamanho da saída), vivo só durante aquele nó. Sem ele a
-segmentação de B dá 0,42 MB contra 1,62 MB medidos no ESP32-CAM; com ele o erro cai
+segmentação do pipeline CNN Simples dá 0,42 MB contra 1,62 MB medidos no ESP32-CAM; com ele o erro cai
 para ~0,1%. Não modela a parte persistente (estruturas dos nós, dados dos operadores,
 alguns kilobytes) nem os buffers de kernels otimizados (ESP-NN), por isso o resultado
 pode ficar levemente abaixo do `arena_used_bytes()` real. Use --calibrar para ver o erro.
 
 Uso:
     python estimar_arena_tflm.py modelo1.tflite [modelo2.tflite ...]
-    python estimar_arena_tflm.py --calibrar   # compara com a arena medida da segmentação de B
+    python estimar_arena_tflm.py --calibrar   # compara com a arena medida da segmentação do pipeline CNN Simples
 
 Requer: pip install tflite numpy
 """
@@ -134,7 +134,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("modelos", nargs="*")
     ap.add_argument("--calibrar", action="store_true",
-                    help="roda o modelo de segmentação de B e compara com a arena medida no ESP32-CAM")
+                    help="roda o modelo de segmentação do pipeline CNN Simples e compara com a arena medida no ESP32-CAM")
     a = ap.parse_args()
 
     raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -1,4 +1,4 @@
-"""Gera os headers C do teste do pipeline A a partir dos .tflite de ../Modelos.
+"""Gera os headers C do teste do pipeline U-NET + CRNN + CTC a partir dos .tflite de ../Modelos.
 
 Uso (nesta pasta):  python gerar_headers.py
 

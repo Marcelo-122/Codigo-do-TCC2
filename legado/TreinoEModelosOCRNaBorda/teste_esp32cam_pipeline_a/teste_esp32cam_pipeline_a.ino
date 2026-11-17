@@ -1,7 +1,7 @@
 // ============================================================
 // teste_esp32cam_pipeline_a.ino
 //
-// Testa, numa ESP32-CAM real, se os modelos do Pipeline A (TreinoEModelosOCRNaBorda/)
+// Testa, numa ESP32-CAM real, se os modelos do pipeline U-NET + CRNN + CTC (TreinoEModelosOCRNaBorda/)
 // rodam no TFLite Micro: o detector (U-Net 384x384) e os dois leitores CRNN+CTC (48x224).
 // Não usa a câmera: o objetivo é só responder
 //   1) cabe na PSRAM?             (AllocateTensors passa? quantos bytes a arena usa?)

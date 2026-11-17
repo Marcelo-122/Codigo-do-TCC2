@@ -26,7 +26,7 @@ O trabalho une duas frentes que se complementam:
 - [1. Rede LoRaWAN (`Rede/`)](#1-rede-lorawan-rede)
 - [2. PoC de redução de imagem (`poc_diminuicao_imagem/`)](#2-poc-de-redução-de-imagem-poc_diminuicao_imagem)
 - [3. OCR em PC, arquivado (`legado/ocr_cloud/`)](#3-ocr-em-pc-arquivado-legadoocr_cloud)
-- [4. Pipeline A, arquivado (`legado/TreinoEModelosOCRNaBorda/`)](#4-pipeline-a-arquivado-legadotreinoemodelosocrnaborda)
+- [4. Pipeline U-NET + CRNN + CTC, arquivado (`legado/TreinoEModelosOCRNaBorda/`)](#4-pipeline-u-net--crnn--ctc-arquivado-legadotreinoemodelosocrnaborda)
 - [5. Classificador de dígitos + dataset (`ModeloEDataset/`)](#5-classificador-de-dígitos--dataset-modeloedataset)
 - [6. Firmware de debug/calibração (`test_images/`)](#6-firmware-de-debugcalibração-test_images)
 - [Configuração de segredos](#configuração-de-segredos)
@@ -47,7 +47,7 @@ cada um a sua caixa de "Status"; os números detalhados ficam em [`medicoes/`](m
 | Classificador de dígito (CNN 28×28, INT8) | Treinado e avaliado: 95,4 % dos dígitos na validação por foto; 97,7 % dos dígitos e 92,8 % das leituras nas pastas `test` do Dryad (fora do treino) | [`ModeloEDataset/relatorios/RESULTADOS.md`](ModeloEDataset/relatorios/RESULTADOS.md) |
 | Segmentação (U-Net 192×192, INT8) | Treinada, mas fraca (Dice 0,39, IoU 0,28); não acha a janela fora do enquadramento calibrado. **Decisão:** sair do fluxo e dar lugar à ROI calibrada | [`ModeloEDataset/README.md`](ModeloEDataset/README.md), [Decisão](#decisão-pipeline-de-ocr-na-borda) |
 | Leitura completa em hidrômetro físico (emulação em Python) | 21 fotos: com segmentação, 2/21 leituras e 31 % dos dígitos (borda) e 0/21 e 27 % (nuvem); com ROI marcada à mão, 2/21 e ≈ 37 %; invertendo os tons das fotos de fundo escuro, 3/21 e 56 % | [`medicoes/ocr_teste.csv`](medicoes/ocr_teste.csv), [`dados/teste/`](dados/teste/README.md) |
-| Firmware de debug (`test_images/debug_ocr_esp32cam/`) | Roda em placa: 61 capturas, ≈ 17,8 s por leitura, medidas com o `modelo.h` de segmentação **antigo** | [`medicoes/README.md`](medicoes/README.md) |
+| Firmware de debug (`test_images/debug_ocr_esp32cam/`) | Roda em placa: 61 capturas, ≈ 17,6 s de processamento por leitura, medidas com o `modelo.h` de segmentação **antigo** | [`medicoes/README.md`](medicoes/README.md) |
 | Transmissor do fluxo de imagem (`Rede/transmissor_esp32cam/`, FPort 1) | Em placa: consumo em 30 ciclos de `AUTO:30` (≈ 4,64 mAh por leitura); latência mediana de 189 s; 20/30 imagens completas (21/30 na corrida com `CAPTURE`). O `STOP` do modo autônomo não foi testado | [`medicoes/README.md`](medicoes/README.md) |
 | Transmissor do OCR na borda (`Rede/transmissor_ocr_esp32cam/`, FPort 2) | Compila (core 3.0.7) e roda em placa: consumo em 32 ciclos (0,824 mAh por leitura), latência mediana de 18,84 s, 27/34 uplinks recebidos. **Ainda roda a segmentação**; a acurácia na placa não foi medida (sem gabarito) | [`medicoes/README.md`](medicoes/README.md) |
 | ROI calibrada no firmware | O calibrador ([`Rede/calibrar_roi_esp32cam/`](Rede/calibrar_roi_esp32cam/README.md)) grava a ROI na NVS; o transmissor de OCR **ainda não a lê**. Latência e energia sem a segmentação são estimativas | — |
@@ -60,24 +60,24 @@ cada um a sua caixa de "Status"; os números detalhados ficam em [`medicoes/`](m
 
 ## Decisão: pipeline de OCR na borda
 
-**Escolhido: Pipeline B** — [`ModeloEDataset/`](ModeloEDataset/README.md) (segmentação U-Net 192×192 INT8 +
+**Escolhido: pipeline CNN Simples** — [`ModeloEDataset/`](ModeloEDataset/README.md) (segmentação U-Net 192×192 INT8 +
 classificador de dígito 28×28 INT8 sobre N fatias) com o firmware
 [`test_images/debug_ocr_esp32cam/`](test_images/debug_ocr_esp32cam/README.md). Existiam três pipelines em
-branches e pastas diferentes; os outros dois foram arquivados em [`legado/`](legado/README.md).
+branches e pastas diferentes; os outros dois (U-NET + CRNN + CTC e U-NET + CNN) foram arquivados em [`legado/`](legado/README.md).
 
-| Critério | B (`ModeloEDataset/`) | A (`legado/TreinoEModelosOCRNaBorda/`) | C (`legado/ocr_cloud/`) |
+| Critério | CNN Simples (`ModeloEDataset/`) | U-NET + CRNN + CTC (`legado/TreinoEModelosOCRNaBorda/`) | U-NET + CNN (`legado/ocr_cloud/`) |
 |---|---|---|---|
 | Cabe no ESP32-CAM | **Sim.** Arenas de 1,62 MB (segmentação) e 28,6 KB (dígito), medidas; sobram 1,29 MB de PSRAM | **Não.** O detector pede 15.335.424 bytes de arena; havia 4.053.940 (teste em placa) | Não se aplica (só PC) |
 | Roda em hardware | **Sim**, 61 capturas na ESP32-CAM | Não: a alocação falha; os leitores CTC também (operador `REDUCE_PROD` ausente na TFLM do core 3.0.7) | Não |
-| Latência | ≈ 17,8 s por leitura (15,6 s de segmentação + 2,0 s de dígitos). Arena e latência medidas nas 61 capturas com o `modelo.h` de segmentação **antigo** (11.128 B), não o atual (12.080 B) | Não se aplica | Não se aplica |
+| Latência | ≈ 17,6 s de processamento por leitura (15,6 s de segmentação + 2,0 s de dígitos). Arena e latência medidas nas 61 capturas com o `modelo.h` de segmentação **antigo** (11.128 B), não o atual (12.080 B) | Não se aplica | Não se aplica |
 | Acurácia | 95,4 % por dígito na validação por foto (INT8); 97,7 % dos dígitos (92,8 % das leituras) nas pastas `test` do Dryad; 91 % (29/32 dígitos) em imagens novas | Leitor CTC: 39 % a 64 % de acerto de sequência em recortes de máscara; no máximo 1 de 10 fotos de ponta a ponta | Treinado só com fontes de dígitos, não com hidrômetros |
 
-Evidências: [`medicoes/README.md`](medicoes/README.md) (B em hardware),
+Evidências: [`medicoes/README.md`](medicoes/README.md) (CNN Simples em hardware),
 [`medicoes/teste_pipeline_a_esp32cam.md`](medicoes/teste_pipeline_a_esp32cam.md) (A em hardware) e
-[`ModeloEDataset/relatorios/`](ModeloEDataset/relatorios/RESULTADOS.md) (acurácia de B). O descarte de A vale
+[`ModeloEDataset/relatorios/`](ModeloEDataset/relatorios/RESULTADOS.md) (acurácia do pipeline CNN Simples). O descarte de U-NET + CRNN + CTC vale
 **para o modelo como exportado, na TFLM do core 3.0.7**: não prova que a ideia de CTC não funciona.
 
-**Como B será usado: câmera fixa e janela calibrada na instalação.** O modelo de segmentação não localiza a
+**Como o pipeline CNN Simples será usado: câmera fixa e janela calibrada na instalação.** O modelo de segmentação não localiza a
 janela dos dígitos fora do enquadramento calibrado: no conjunto de teste comum (fotos do mostrador inteiro) ele
 errou a caixa nas 39 fotos e não leu nenhuma. Como a câmera fica parada diante do medidor, a janela cai sempre na
 mesma região do quadro; então, em vez de segmentar a cada leitura, a região (ROI) e a inclinação são **ajustadas
@@ -87,10 +87,10 @@ precisa de precisão de cerca de **±1 a ±2 px** no quadro 160×120 (com erro d
 para 20–26 %). Consequência **estimada, não medida** (o firmware ainda não foi alterado): sem a segmentação, a
 leitura dispensaria os ≈ 15,6 s dela e a arena de 1,6 MB, ficando nos ≈ 2 s do classificador.
 
-**Limitações de B assumidas:**
+**Limitações do pipeline CNN Simples assumidas:**
 - **Calibração da ROI**: a ROI e a inclinação precisam ser ajustadas na instalação com ±1 a ±2 px de precisão, e ainda
   não existe uma etapa ou ferramenta para isso (o firmware de debug serve para posicionar a câmera à mão).
-- **Fatiamento calibrado à mão**: `N_FATIAS` (número de rodinhas) é ajustado por medidor; B não lê sozinho um
+- **Fatiamento calibrado à mão**: `N_FATIAS` (número de rodinhas) é ajustado por medidor; o pipeline CNN Simples não lê sozinho um
   medidor desconhecido.
 - **Não lê o medidor físico**: nas 21 fotos físicas de `dados/teste/` (emulação em Python, não na placa) o pipeline com
   segmentação acertou 2/21 leituras e 31 % dos dígitos na borda e 0/21 e 27 % na nuvem; com a ROI marcada à mão, 2/21
@@ -106,12 +106,12 @@ O trabalho foi unificado na `main`; as branches `ocr` e `Treino-Testes-e-Modelos
 
 | Pasta | Papel | Situação | Branch de origem |
 |---|---|---|---|
-| `ModeloEDataset/` | Pipeline B: treino do classificador e da segmentação | **Escolhido** (borda) | `ocr` |
-| `test_images/debug_ocr_esp32cam/` | Firmware de B na ESP32-CAM | **Escolhido** (borda) | `ocr` |
-| `legado/TreinoEModelosOCRNaBorda/` | Pipeline A (U-Net 384×384 + CRNN/CTC) | Arquivado | `Treino-Testes-e-Modelos` |
-| `legado/ocr_cloud/` | Pipeline C (U-Net de A + CNN 68×68, no PC) | Arquivado | `main` |
+| `ModeloEDataset/` | Pipeline CNN Simples: treino do classificador e da segmentação | **Escolhido** (borda) | `ocr` |
+| `test_images/debug_ocr_esp32cam/` | Firmware do pipeline CNN Simples na ESP32-CAM | **Escolhido** (borda) | `ocr` |
+| `legado/TreinoEModelosOCRNaBorda/` | Pipeline U-NET + CRNN + CTC (U-Net 384×384 + CRNN/CTC) | Arquivado | `Treino-Testes-e-Modelos` |
+| `legado/ocr_cloud/` | Pipeline U-NET + CNN (a U-Net 384×384 do pipeline U-NET + CRNN + CTC e uma CNN 68×68, no PC) | Arquivado | `main` |
 | `ocr/colab_poc/` | Teste de viabilidade: um OCR genérico (Tesseract/EasyOCR) lê uma imagem 160×120. **Não será usado no trabalho** | Concluído (uma foto de entrada versionada) | `main` |
-| `ocr/pipeline_nuvem.py`, `ocr/avaliar.py` | Lado da nuvem: **os mesmos modelos de B** rodando no servidor sobre o JPEG remontado; avaliação borda × nuvem | Implementado ([`ocr/README.md`](ocr/README.md)) | — |
+| `ocr/pipeline_nuvem.py`, `ocr/avaliar.py` | Lado da nuvem: **os mesmos modelos do pipeline CNN Simples** rodando no servidor sobre o JPEG remontado; avaliação borda × nuvem | Implementado ([`ocr/README.md`](ocr/README.md)) | — |
 | `ocr/teste_comum/` | Conjunto de teste comum: 39 fotos, 19 leituras, com gabarito conferido | Primeira versão | — |
 
 ---
@@ -131,7 +131,7 @@ câmera, a lente e a compressão, mas **não** o reflexo, a iluminação e o ân
 | `dados/teste/imagens/` | 21 | ESP32-CAM, **hidrômetro físico** | pipeline completo, borda × nuvem (`ocr/avaliar_pipeline.py --conjunto fisico`, `ocr/avaliar_roi_manual.py`); ver [`dados/teste/`](dados/teste/README.md) |
 | `ocr/teste_comum/imagens/` | 39 | ESP32-CAM, **monitor** | pipeline completo, borda × nuvem (`ocr/avaliar.py`, `ocr/avaliar_pipeline.py --conjunto comum`) |
 | `test_images/debug_ocr_esp32cam/debug_frames/` | frames | ESP32-CAM, origem (monitor ou físico) **não registrada** | conferência do firmware de debug |
-| `legado/TreinoEModelosOCRNaBorda/dataset/imagens_reais/` | 14 | imagens avulsas, não da ESP32-CAM (nas que foram conferidas: `image1.jpg` é uma foto de catálogo e `image9.jpg`, uma figura explicativa) | pipeline A, arquivado |
+| `legado/TreinoEModelosOCRNaBorda/dataset/imagens_reais/` | 14 | imagens avulsas, não da ESP32-CAM (nas que foram conferidas: `image1.jpg` é uma foto de catálogo e `image9.jpg`, uma figura explicativa) | pipeline U-NET + CRNN + CTC, arquivado |
 | Kaggle (Yandex.Toloka) | 1.244 | fotos de medidores, não versionadas | treino da segmentação (`pipeline.py`) e 195 imagens para o classificador |
 | Dryad, pastas `train` | — | recortes 200×60, não versionados | treino do classificador |
 | Dryad, pastas `test` | — | idem | **fora do treino** (`preparar_dataset_dryad.py` não as usa mais); teste do classificador em `ocr/avaliar_teste_publico.py` |
@@ -198,9 +198,9 @@ Codigo-do-TCC2/
 │   ├── orchestrator.py            PC: envia a imagem em chunks (SEND:), confere o recebimento, reenvia o que faltou e registra a medição
 │   ├── analise_tempo_no_ar.py     PC: calcula pacotes, tempo no ar e tempo total de envio (`--verificar` confere a fórmula)
 │   └── requirements.txt           Igual ao requirements.txt da raiz
-├── legado/                        Fora do fluxo atual (ver legado/README.md): protótipo serial → ChirpStack e os pipelines de OCR arquivados (`ocr_cloud/` = C, `TreinoEModelosOCRNaBorda/` = A)
+├── legado/                        Fora do fluxo atual (ver legado/README.md): protótipo serial → ChirpStack e os pipelines de OCR arquivados (`ocr_cloud/` = U-NET + CNN, `TreinoEModelosOCRNaBorda/` = U-NET + CRNN + CTC)
 ├── dados/teste/                   Conjunto de teste de hidrômetro FÍSICO (21 fotos rotuladas da ESP32-CAM; ver dados/teste/README.md)
-├── ocr/                           Lado da nuvem (modelos de B no servidor), avaliação borda × nuvem e conjunto de teste comum (ver ocr/README.md)
+├── ocr/                           Lado da nuvem (modelos do pipeline CNN Simples no servidor), avaliação borda × nuvem e conjunto de teste comum (ver ocr/README.md)
 │   └── colab_poc/                 Teste de viabilidade de OCR genérico em imagem 160×120 (Tesseract/EasyOCR no Colab; não será usado no trabalho)
 ├── medicoes/                      Medições em hardware: `transmissao.csv` (fluxo de imagem), `transmissao_ocr.csv` (fluxo OCR) + `logs/` + `imagens/` do enlace (ver medicoes/medir_transmissao.md) e as de OCR/energia/latência
 ├── config.py, .env.example        Leitura do .env e modelo das variáveis (chaves, rede, portas)
@@ -208,8 +208,8 @@ Codigo-do-TCC2/
 ├── scripts/download_datasets.py   Baixa os datasets públicos (eles não ficam no Git)
 ├── scripts/conferir_modelos.py    Confere se as cópias de modelo.h/modelo_digito.h nos firmwares são iguais às de ModeloEDataset/modelos/
 ├── poc_diminuicao_imagem/         PoC em C++/OpenCV: redução/binarização de imagem p/ caber no LoRa
-├── ModeloEDataset/                **Pipeline B (OCR de borda escolhido)**: segmentação + classificador de dígitos (CNN) + datasets + relatórios
-├── test_images/                   Fotos da ESP32-CAM + firmware de debug/calibração com OCR on-device (Pipeline B)
+├── ModeloEDataset/                **Pipeline CNN Simples (OCR de borda escolhido)**: segmentação + classificador de dígitos (CNN) + datasets + relatórios
+├── test_images/                   Fotos da ESP32-CAM + firmware de debug/calibração com OCR on-device (pipeline CNN Simples)
 ├── image.jpg, imagem_recebida.jpg, imagem_parcial.jpg
 │                                  Imagem de teste do `orchestrator.py` e saídas de execuções antigas (hoje as imagens vão para `medicoes/imagens/`)
 └── README.md
@@ -232,8 +232,8 @@ Codigo-do-TCC2/
 | Pasta | Abordagem de leitura | Segmentação | Onde roda |
 |---|---|---|---|
 | `legado/ocr_cloud/` (arquivado) | CNN de 1 caractere (68×68) sobre 6 recortes iguais; há também teste com CRNN+CTC | U-Net INT8 384×384 | PC |
-| `legado/TreinoEModelosOCRNaBorda/` (arquivado, A) | **CRNN + CTC** (visor inteiro 48×224, classe *blank* = 10), float e QAT | U-Net com QAT, 384×384 | Só PC: não cabe na ESP32-CAM |
-| `ModeloEDataset/` (**escolhido**, B) | CNN de dígito (28×28, 72 mil parâmetros) sobre N fatias | U-Net INT8 192×192 (`modelo_esp32.tflite`) | Treino no PC → ESP32-CAM (testado em placa) |
+| `legado/TreinoEModelosOCRNaBorda/` (arquivado, U-NET + CRNN + CTC) | **CRNN + CTC** (visor inteiro 48×224, classe *blank* = 10), float e QAT | U-Net com QAT, 384×384 | Só PC: não cabe na ESP32-CAM |
+| `ModeloEDataset/` (**escolhido**, CNN Simples) | CNN de dígito (28×28, 72 mil parâmetros) sobre N fatias | U-Net INT8 192×192 (`modelo_esp32.tflite`) | Treino no PC → ESP32-CAM (testado em placa) |
 
 ---
 
@@ -287,7 +287,7 @@ python scripts/download_datasets.py             # baixa os do Kaggle
 | Receber e remontar a imagem (enlace) | `python -m venv .venv`, `.venv\Scripts\pip install -r requirements.txt`, `.venv\Scripts\python Rede\reconstrutor.py`; veja [seção 1](#1-rede-lorawan-rede) |
 | OCR no PC, só inferência | `cd legado\ocr_cloud`, venv + `pip install -r requirements.txt`, `python src\test_model_ocr_cloud_poc.py` ([seção 3](#3-ocr-em-pc-arquivado-legadoocr_cloud)) |
 | Treinar o OCR do `legado/ocr_cloud` | mesmo venv, depois do passo 2: `python src\train_model_ocr_cloud.py` |
-| Treinar detector e leitor CRNN+CTC | em WSL/Linux, `cd legado/TreinoEModelosOCRNaBorda`, depois do passo 2 ([seção 4](#4-pipeline-a-arquivado-legadotreinoemodelosocrnaborda)) |
+| Treinar detector e leitor CRNN+CTC | em WSL/Linux, `cd legado/TreinoEModelosOCRNaBorda`, depois do passo 2 ([seção 4](#4-pipeline-u-net--crnn--ctc-arquivado-legadotreinoemodelosocrnaborda)) |
 | Treinar o classificador de dígitos | `cd ModeloEDataset`, Python 3.10, depois do passo 2 ([seção 5](#5-classificador-de-dígitos--dataset-modeloedataset)) |
 
 ---
@@ -320,7 +320,7 @@ Todos os componentes (Radioenge, transmissor, receptor, scripts do PC) usam este
 | **Payload da leitura OCR (FPort 2)** | `uint16` id da leitura + `uint8` flags (bit 7 = caixa achada, bits 0–6 = nº de dígitos N) + N dígitos em ASCII (`0`–`9`, `?` = fatia não classificada, `-` = sem caixa). Com N = 6: **9 B** de payload, um uplink por leitura | `parse_leitura` / `montar_payload_leitura` em `enlace.py`; `enviarLeitura` no `.ino` |
 | **Intervalo entre pacotes** | 7 s | `SEND_INTERVAL_MS` no `.ino`; `orchestrator.py` |
 | **Captura** | QQVGA 160×120, escala de cinza, convertida em JPEG qualidade 90 (`fmt2jpg`, escala 1–100) | `JPEG_QUALITY` no `.ino` |
-| **Tamanho do JPEG** | Medido: 3.323 a 4.568 B (19 a 27 chunks) nas 60 capturas de `transmissao.csv` e `latencia_ponta_a_ponta.csv`. **Referência de projeto: 4.300 B** | `analise_tempo_no_ar.py` |
+| **Tamanho do JPEG** | Base da referência: 2.460 a 4.209 B (4 capturas) e 3.151 a 3.310 B (PoC), média 3.435 B + 25 % de margem. Medido depois, nas 60 capturas de 2026-10-27 (`transmissao.csv` e `latencia_ponta_a_ponta.csv`): 3.323 a 4.568 B (19 a 27 chunks). **Referência de projeto: 4.300 B** | `Rede/analise_tempo_no_ar.py`, `medicoes/` |
 
 **Tempo no ar** (SF8 / 500 kHz, bloco de 175 B, imagem de referência de 4.300 B), calculado por
 [`analise_tempo_no_ar.py`](Rede/analise_tempo_no_ar.py) com a fórmula da Semtech (AN1200.13):
@@ -497,7 +497,7 @@ python -m venv .venv && .venv\Scripts\pip install -r requirements.txt
 
 ---
 
-## 4. Pipeline A, arquivado (`legado/TreinoEModelosOCRNaBorda/`)
+## 4. Pipeline U-NET + CRNN + CTC, arquivado (`legado/TreinoEModelosOCRNaBorda/`)
 
 > **Arquivado.** Não é o OCR de borda do trabalho: o teste em placa
 > ([`medicoes/teste_pipeline_a_esp32cam.md`](medicoes/teste_pipeline_a_esp32cam.md)) mostrou que o detector
@@ -669,7 +669,7 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 | Branch de origem | Conteúdo |
 |---|---|
 | `main` | Rede LoRaWAN (firmwares, `reconstrutor.py`, `registro.py`), protótipo serial/ChirpStack e OCR em PC `ocr_cloud/` (ambos em `legado/`), PoC de redução de imagem |
-| `Treino-Testes-e-Modelos` | `TreinoEModelosOCRNaBorda/` (Pipeline A, hoje em `legado/`) |
+| `Treino-Testes-e-Modelos` | `TreinoEModelosOCRNaBorda/` (pipeline U-NET + CRNN + CTC, hoje em `legado/`) |
 | `ocr` | `ModeloEDataset/` (classificador de dígitos) e `test_images/` (firmware de debug com OCR on-device) |
 
 ---
@@ -677,7 +677,7 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 ## Limitações conhecidas e próximos passos
 
 - **Tirar a segmentação do firmware**: com câmera fixa, usar uma ROI calibrada (ver [Decisão](#decisão-pipeline-de-ocr-na-borda)),
-  implementar a calibração no firmware e **medir** a latência e a energia sem a segmentação (hoje ≈ 15,6 s de 17,8 s).
+  implementar a calibração no firmware e **medir** a latência e a energia sem a segmentação (hoje ≈ 15,6 s de 17,6 s).
 - **Só 21 fotos de medidor físico** (meta de ≥ 30) e poucas fotos reais da ESP32-CAM (dígitos 4, 5 e 6 ausentes no
   conjunto de domínio): completar as ≥ 30 fotos de `dados/teste/` (e mais para o fine-tuning, sem misturar com o teste) em
   condições variadas.
@@ -692,7 +692,7 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
   `orchestrator.py`; falta automatizar a captura com confirmação.
 - **Comparação borda × nuvem em hardware**: o conjunto comum (`ocr/teste_comum/`) só permite emulação. Para medir a
   acurácia de verdade, capturar frames 160×120 nativos com o firmware de debug, com a câmera fixa e a ROI calibrada.
-- Ajustar o texto do trabalho: o lado da nuvem usa os mesmos modelos de B no servidor (muda a pergunta de pesquisa
+- Ajustar o texto do trabalho: o lado da nuvem usa os mesmos modelos do pipeline CNN Simples no servidor (muda a pergunta de pesquisa
   para "onde rodar o OCR"), e o Tesseract foi só um teste de viabilidade.
 - **Organização do repositório:** o protótipo antigo já foi para `legado/` e os scripts do enlace para `Rede/`
   (rodar da raiz: `python Rede/reconstrutor.py`; o `config.py` continua na raiz porque outros scripts também o usam).

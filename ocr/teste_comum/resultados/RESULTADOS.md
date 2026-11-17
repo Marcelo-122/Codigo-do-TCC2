@@ -1,4 +1,4 @@
-# Resultados: Pipeline B, borda emulada × nuvem
+# Resultados: pipeline CNN Simples, borda emulada × nuvem
 
 Gerado por `ocr/avaliar.py`. Conjunto: `ocr/teste_comum/` (fotos da ESP32-CAM de um monitor).
 A borda é uma **emulação** em Python (ver o docstring de `ocr/avaliar.py`); os números

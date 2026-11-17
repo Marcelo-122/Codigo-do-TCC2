@@ -1,8 +1,8 @@
-# Teste do Pipeline A na ESP32-CAM (arena e operadores)
+# Teste do pipeline U-NET + CRNN + CTC na ESP32-CAM (arena e operadores)
 
-Teste em hardware do Pipeline A (U-Net 384×384 + leitor CRNN+CTC 48×224, hoje em
+Teste em hardware do pipeline U-NET + CRNN + CTC (U-Net 384×384 + leitor CRNN+CTC 48×224, hoje em
 [`legado/TreinoEModelosOCRNaBorda/`](../legado/TreinoEModelosOCRNaBorda/)). Serve de evidência para a
-escolha do Pipeline B como OCR de borda (ver o README da raiz).
+escolha do pipeline CNN Simples como OCR de borda (ver o README da raiz).
 
 - Firmware: [`teste_esp32cam_pipeline_a.ino`](../legado/TreinoEModelosOCRNaBorda/teste_esp32cam_pipeline_a/teste_esp32cam_pipeline_a.ino)
   (os headers dos modelos saem de `gerar_headers.py`, na mesma pasta).
@@ -30,7 +30,7 @@ modelo carregado), o detector pede **15.335.424 bytes** de arena, 3,8 vezes o qu
   tensor 3D (o `Tensordot` do Keras) e não existe no resolver da TFLM do core 3.0.7. Com o operador
   removido na exportação (por exemplo, `Conv1D` de kernel 1 no lugar do `Dense`), a memória estimada
   é de 0,2 a 0,4 MB, mas isso **não foi testado em hardware**.
-- Vale para o Pipeline A **como exportado**, na TFLM do core 3.0.7. Não prova nada sobre a ideia de CTC.
+- Vale para o pipeline U-NET + CRNN + CTC **como exportado**, na TFLM do core 3.0.7. Não prova nada sobre a ideia de CTC.
 
 ## Estimativa por software (validada contra a placa)
 
@@ -39,9 +39,9 @@ TFLM. Comparação com a arena medida:
 
 | Modelo | Estimado | Medido |
 |---|---:|---:|
-| Segmentação de B (192×192), `arena_used_bytes` no ESP32-CAM | 1.622.016 | 1.623.852 |
-| Classificador de dígito de B, `arena_used_bytes` no ESP32-CAM | 25.088 | 28.556 |
-| Detector de A, `Requested` do TFLM na placa | 15.335.424 | 15.335.424 |
+| Segmentação do pipeline CNN Simples (192×192), `arena_used_bytes` no ESP32-CAM | 1.622.016 | 1.623.852 |
+| Classificador de dígito do pipeline CNN Simples, `arena_used_bytes` no ESP32-CAM | 25.088 | 28.556 |
+| Detector do U-NET + CRNN + CTC, `Requested` do TFLM na placa | 15.335.424 | 15.335.424 |
 
 Estimativa dos leitores CTC (sem medição em hardware): 215.040 bytes (original) e 430.080 bytes (QAT).
 

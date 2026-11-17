@@ -5,7 +5,7 @@ teste com gabarito (`teste_comum/`) e o teste de viabilidade de OCR genérico (`
 
 ## Decisão: o que roda no servidor
 
-O servidor tem **os mesmos modelos do Pipeline B** (segmentação `modelo_esp32.tflite` + classificador
+O servidor tem **os mesmos modelos do pipeline CNN Simples** (segmentação `modelo_esp32.tflite` + classificador
 `modelo_digito.tflite`, de `ModeloEDataset/modelos/`) e a mesma lógica do firmware
 (`test_images/debug_ocr_esp32cam/`). A janela dos dígitos pode vir de dois jeitos, e a comparação só é justa quando
 os dois fluxos usam o mesmo:
@@ -60,7 +60,7 @@ altura da janela dos dígitos: o código recorta uma faixa 4:3 em vez de esticar
 39 fotos de `test_images/` (fotos tiradas com a ESP32-CAM de um monitor que exibe medidores), 19 leituras
 distintas, 2 modelos de medidor (`branco5`, 5 dígitos; `tianjin6`, 6 dígitos). Critérios de escolha: sem
 rotação de 90° ou 180° e **sem rodinha entre dois números** (por isso só 39 das 152 fotos). Nenhuma foto é
-idêntica às usadas no treino de B (conferido por hash; os nomes de arquivo se repetem, o conteúdo não).
+idêntica às usadas no treino do pipeline CNN Simples (conferido por hash; os nomes de arquivo se repetem, o conteúdo não).
 
 - `gabarito.csv`: leitura real, número de dígitos, medidor, confiança, `centro_y` (enquadramento) e
   `caixa_manual` (janela dos dígitos, só para o diagnóstico).
@@ -79,7 +79,7 @@ idêntica às usadas no treino de B (conferido por hash; os nomes de arquivo se 
 | nuvem, endireitada no servidor, segmentação do modelo | 0/39 | 41/222 (18 %) |
 | nuvem, endireitada no servidor, caixa manual (diagnóstico) | 32/39 (82 %) | 205/222 (92 %) |
 
-1. **Com a segmentação do modelo, B não leu nenhuma das 39 fotos.** A caixa que ela devolve cobre quase o
+1. **Com a segmentação do modelo, o pipeline CNN Simples não leu nenhuma das 39 fotos.** A caixa que ela devolve cobre quase o
    mostrador inteiro (mediana 125×85 em 160×120), não a janela dos dígitos (≈ 97×18).
 2. **Com a janela certa, fatiamento e classificador acertam 85 % dos dígitos e 46 % das leituras** (82 % e 92 % com o quadro endireitado). O gargalo é
    a segmentação, não o classificador.
@@ -150,7 +150,7 @@ precisa chegar a essa precisão.
 ([`ModeloEDataset/calibracao_manual/`](../ModeloEDataset/calibracao_manual/caixas_esp32_exemplo.json): as 5 fotos originais
 640×480 e o JSON com caixa, rotação e `caixa_final` por foto; script
 [`ModeloEDataset/ler_com_caixa_manual.py`](../ModeloEDataset/ler_com_caixa_manual.py)): nas 5 fotos, lidas com o `.tflite`
-INT8 de B, 5/5 saem certas em 640×480 (26/26 dígitos, conferido de novo com o classificador atual), 320×240 e 160×120, e
+INT8 do pipeline CNN Simples, 5/5 saem certas em 640×480 (26/26 dígitos, conferido de novo com o classificador atual), 320×240 e 160×120, e
 4/5 em 160×120 com JPEG q90. As três últimas resoluções vieram de um script de análise que não foi guardado; o resultado
 em 640×480 se reproduz com:
 

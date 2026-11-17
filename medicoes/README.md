@@ -67,7 +67,8 @@ mantidos por serem medições reais, mas **não entram** nos resultados abaixo
 | `t_inferencia_seg_ms` (segmentação) | 15.563 | **15.564** | 15.567 |
 | `t_digitos_ms` (classificador, 6 fatias, capturas com caixa) | 1.994 | 1.995 | 2.644 |
 | `t_encode_ms` (JPEG) | 9 | 11 | 14 |
-| `t_total_ms` (capturas com caixa) | 17.739 | 17.838 | 18.720 |
+| `t_total_ms` (capturas com caixa; inclui a compressão e o envio serial da imagem de debug) | 17.739 | 17.838 | 18.720 |
+| Processamento da leitura (`t_prep` + segmentação + `t_pos_seg` + dígitos, capturas com caixa) | 17.567 | **17.568** | 18.220 |
 | `heap_free` (bytes) | 293.744 | 293.744 | 294.008 |
 | `psram_free` (bytes) | 1.289.292 | 1.289.292 | 1.289.292 |
 | `arena_seg_bytes` | 1.623.852 | 1.623.852 | 1.623.852 |
@@ -86,7 +87,8 @@ mantidos por serem medições reais, mas **não entram** nos resultados abaixo
 ## Latência de inferência e decisão sobre o modelo (H2)
 
 **Medido.** A segmentação leva 15.564 ms por captura (mediana de 61 capturas; mínimo 15.563, máximo 15.567)
-e a leitura completa, 17.838 ms (segmentação mais classificador de dígitos, ~2,0 s). O valor confirma os
+e a leitura completa, 17.568 ms de processamento (segmentação mais classificador de dígitos, ~2,0 s; o `t_total_ms` de
+17.838 ms inclui ainda a compressão e o envio serial da imagem de debug). O valor confirma os
 ~15,5 s do `ModeloEDataset/README.md` e é determinístico (variação de 4 ms), não ruído de medição.
 
 **Relação com a H2.** A H2 ("o método de processamento local apresenta menor latência e maior valor de taxa de
@@ -95,7 +97,7 @@ pacotes entregues") compara fluxos, não etapas:
 | Fluxo | Composição | Latência (despertar até o dado no PC) |
 |---|---|---|
 | Nuvem (imagem) | captura em ~0,7 s, 1º chunk em ~2,0 s e envio de 22 a 27 chunks, um a cada ~7,9 s (JPEG de 3,7 a 4,6 KB) | **mediana de 189 s** (173 a 214 s), **medido** em 30 leituras de `AUTO:30` (20 imagens completas; ver "Latência ponta a ponta e entrega do fluxo de imagem"). No teste curto anterior, com JPEG de ~3,0 KB (18 chunks), foram ≈ 141 s. A inferência na nuvem não está incluída |
-| Local (OCR na borda) | inferência de ~17,8 s mais 1 uplink de ~9 bytes | **18,84 s** (mediana; de 18,836 a 18,840 s), **medido** em 34 disparos de `AUTO:30`, dos quais 27 uplinks chegaram ao PC (ver "Latência ponta a ponta e entrega do fluxo de OCR"). O tempo acordado do ciclo inteiro, medido pelo INA219, é 19,45 s |
+| Local (OCR na borda) | inferência de ~17,5 s mais 1 uplink de ~9 bytes | **18,84 s** (mediana; de 18,836 a 18,840 s), **medido** em 34 disparos de `AUTO:30`, dos quais 27 uplinks chegaram ao PC (ver "Latência ponta a ponta e entrega do fluxo de OCR"). O tempo acordado do ciclo inteiro, medido pelo INA219, é 19,45 s |
 
 **Decisão.**
 - *Reduzir o modelo* (entrada menor, menos filtros, kernels otimizados): descartado. Com câmera fixa a
@@ -104,7 +106,7 @@ pacotes entregues") compara fluxos, não etapas:
 - *Revisar a H2*: não é necessário pela latência. Mesmo com a segmentação a cada leitura, a latência medida do
   fluxo local (18,84 s) é cerca de 1/10 da do fluxo de imagem (mediana medida de 189 s). A outra metade da H2, a
   taxa de pacotes entregues, depende da métrica (ver a seção de entrega do fluxo de OCR).
-- **Adotada:** manter o Pipeline B e retirar a segmentação do firmware com uma ROI calibrada na instalação
+- **Adotada:** manter o pipeline CNN Simples e retirar a segmentação do firmware com uma ROI calibrada na instalação
   (ver a decisão no README da raiz). Efeito esperado: leitura em ≈ 2 s por leitura. É uma **estimativa**: o
   firmware ainda não foi alterado.
 
@@ -121,7 +123,7 @@ não foi gerado.
 | `latencia_ponta_a_ponta.csv` (09:34 a 11:20) | `AUTO:30`: o nó acorda do deep sleep, captura e envia | 20 de 30 | 98,0% (699/713) | 189 s, a partir do boot |
 | `transmissao.csv` (14:59 a 16:44) | nó sempre ligado, o PC manda `CAPTURE` | 21 de 30 | 98,7% (749/759) | 197 s, a partir do comando |
 
-Os números da H2 vêm da primeira, porque ela usa o mesmo disparo (despertar do deep sleep) que a corrida do OCR
+Os números de latência e entrega do fluxo de imagem vêm da primeira, porque ela usa o mesmo disparo (despertar do deep sleep) que a corrida do OCR
 (`latencia_ocr.csv`). A segunda não é uma repetição da mesma medição (o disparo e o marco inicial da latência são
 outros) e serve para conferir o PDR por pacote com o `reconstrutor.py`. A diferença de 8 s na latência e de 1 imagem
 completa não foi investigada.
