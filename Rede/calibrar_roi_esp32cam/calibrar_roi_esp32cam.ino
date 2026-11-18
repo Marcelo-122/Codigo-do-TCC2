@@ -31,6 +31,12 @@
 //   ROI       imprime a ROI salva
 //   APAGAR    apaga a ROI salva
 //   IP        imprime o endereco para abrir no navegador
+//   QUADRO    manda um quadro cru pela serial (usado pelo calibrar_roi_usb.py)
+//   SALVAR x0 y0 x1 y1 n [fa fb realce]   grava a ROI na NVS (fa/fb: face da roda em % da fatia;
+//             realce 0/1: equalizacao de histograma), usados pelo transmissor_ocr_esp32cam
+//   GIRO      imprime a orientacao (vflip, hmirror); GIRAR v h muda e grava (1 1 = 180 graus)
+//
+// Por padrao (USAR_WIFI 0) a calibracao e pelo cabo USB, com o calibrar_roi_usb.py.
 // ============================================================
 #include "esp_camera.h"
 #include "esp_http_server.h"
@@ -39,6 +45,11 @@
 #include <Preferences.h>
 
 #include "pagina.h"   // PAGINA_HTML (interface web)
+
+// 0 = so USB: o calibrar_roi_usb.py (nesta pasta) pede os quadros pela serial e grava a ROI
+//     com o comando SALVAR. Wi-Fi desligado (o Wi-Fi tambem atrapalha a camera).
+// 1 = pagina web pelo Wi-Fi (rede propria ou a de wifi_local.h). O PC precisa enxergar 2,4 GHz.
+#define USAR_WIFI 0
 
 #if __has_include("wifi_local.h")
 #include "wifi_local.h"
@@ -83,9 +94,13 @@ struct Roi {
   bool valida;
   int x0, y0, x1, y1;   // coordenadas no quadro 160x120 (x1/y1 exclusivos, como no lerDigitos)
   int n;                // numero de digitos (fatias)
+  // Pre-processamento de cada fatia, usado pelo transmissor_ocr_esp32cam (o calibrador so guarda;
+  // quem mostra o efeito e a leitura ao vivo e o calibrar_roi_usb.py):
+  int fa, fb;           // face da roda: parte da fatia, em % da largura, em que fica o numero
+  int realce;           // 0 = nenhum, 1 = equalizacao de histograma na face recortada
 };
 
-static Roi roi = {false, 20, 45, 140, 75, 6};   // padrao ate salvar a primeira
+static Roi roi = {false, 20, 45, 140, 75, 6, 0, 100, 0};   // padrao ate salvar a primeira
 static Preferences prefs;
 static httpd_handle_t servidor = nullptr;
 static bool flashLigado = false;
@@ -105,13 +120,15 @@ bool initCamera() {
   cfg.pin_pwdn  = PWDN_GPIO_NUM;  cfg.pin_reset = RESET_GPIO_NUM;
   cfg.xclk_freq_hz = 20000000;
 
-  // Mesmo formato/resolucao do transmissor_ocr_esp32cam (o que importa para a ROI).
-  // So o buffer muda: 2 quadros + GRAB_LATEST para o video ao vivo nao atrasar.
+  // Mesma configuracao do transmissor_ocr_esp32cam. Com 2 quadros + GRAB_LATEST a camera
+  // captura sem parar e, com o Wi-Fi ligado, perdia pedacos do quadro
+  // ("FB-SIZE: 15360 != 19200", "EV-VSYNC-OVF"). O hFrame descarta o quadro guardado
+  // para o video nao atrasar.
   cfg.pixel_format = PIXFORMAT_GRAYSCALE;
   cfg.frame_size   = FRAMESIZE_QQVGA;
-  cfg.fb_count     = 2;
+  cfg.fb_count     = 1;
   cfg.fb_location  = CAMERA_FB_IN_PSRAM;
-  cfg.grab_mode    = CAMERA_GRAB_LATEST;
+  cfg.grab_mode    = CAMERA_GRAB_WHEN_EMPTY;
 
   esp_err_t err = esp_camera_init(&cfg);
   if (err != ESP_OK) {
@@ -119,6 +136,47 @@ bool initCamera() {
     return false;
   }
   Serial.println("[camera] GRAYSCALE QQVGA 160x120 (igual ao firmware de OCR)");
+  bool v, h;
+  lerGiro(&v, &h);
+  aplicarGiro(v, h);
+  return true;
+}
+
+// ----------------------------------------------------------------
+// Orientacao do quadro (camera de cabeca para baixo ou espelhada): vflip e hmirror do sensor.
+// Fica na NVS ("roi", "vflip" e "hmirror") e os outros firmwares (captura_quadros, transmissores,
+// debug) aplicam a mesma ao ligar a camera, entao a ROI desenhada aqui vale para eles.
+void lerGiro(bool* v, bool* h) {
+  *v = *h = false;
+  if (prefs.begin(NVS_NS, true)) {
+    *v = prefs.getBool("vflip", false);
+    *h = prefs.getBool("hmirror", false);
+    prefs.end();
+  }
+}
+
+void aplicarGiro(bool v, bool h) {
+  sensor_t* s = esp_camera_sensor_get();
+  if (s) {
+    s->set_vflip(s, v ? 1 : 0);
+    s->set_hmirror(s, h ? 1 : 0);
+  }
+}
+
+void imprimirGiro() {
+  bool v, h;
+  lerGiro(&v, &h);
+  Serial.printf("[giro] vflip=%d hmirror=%d\n", v ? 1 : 0, h ? 1 : 0);
+}
+
+// GIRAR v h (0 ou 1 cada): aplica e grava. Uma ROI salva antes deixa de valer.
+bool definirGiro(bool v, bool h) {
+  if (!prefs.begin(NVS_NS, false)) return false;
+  prefs.putBool("vflip", v);
+  prefs.putBool("hmirror", h);
+  prefs.remove("rot180");   // chave da versao anterior
+  prefs.end();
+  aplicarGiro(v, h);
   return true;
 }
 
@@ -136,6 +194,9 @@ void carregarRoi() {
     roi.x1 = prefs.getInt("x1", roi.x1);
     roi.y1 = prefs.getInt("y1", roi.y1);
     roi.n  = prefs.getInt("n",  roi.n);
+    roi.fa = prefs.getInt("fa", 0);
+    roi.fb = prefs.getInt("fb", 100);
+    roi.realce = prefs.getInt("realce", 0);
   }
   prefs.end();
 }
@@ -147,6 +208,9 @@ bool salvarRoi(const Roi& r) {
   prefs.putInt("x1", r.x1);
   prefs.putInt("y1", r.y1);
   prefs.putInt("n",  r.n);
+  prefs.putInt("fa", r.fa);
+  prefs.putInt("fb", r.fb);
+  prefs.putInt("realce", r.realce);
   prefs.putBool("valida", true);   // por ultimo: so marca valida com tudo gravado
   prefs.end();
   roi = r;
@@ -155,8 +219,8 @@ bool salvarRoi(const Roi& r) {
 }
 
 void apagarRoi() {
-  if (prefs.begin(NVS_NS, false)) {
-    prefs.clear();
+  if (prefs.begin(NVS_NS, false)) {   // so a ROI: a orientacao continua
+    for (const char* k : {"valida", "x0", "y0", "x1", "y1", "n", "fa", "fb", "realce"}) prefs.remove(k);   // vflip/hmirror ficam
     prefs.end();
   }
   roi.valida = false;
@@ -166,7 +230,9 @@ bool roiOk(const Roi& r) {
   return r.x0 >= 0 && r.y0 >= 0 && r.x1 <= CAM_W && r.y1 <= CAM_H &&
          r.n >= 1 && r.n <= N_MAX &&
          (r.x1 - r.x0) >= r.n &&       // pelo menos 1 px por fatia
-         (r.y1 - r.y0) >= 2;
+         (r.y1 - r.y0) >= 2 &&
+         r.fa >= 0 && r.fb <= 100 && r.fa < r.fb &&
+         (r.realce == 0 || r.realce == 1);
 }
 
 void imprimirRoi() {
@@ -174,15 +240,16 @@ void imprimirRoi() {
     Serial.println("[roi] nenhuma ROI salva");
     return;
   }
-  Serial.printf("[roi] caixa=%d,%d,%d,%d n_digitos=%d (quadro %dx%d)\n",
-                roi.x0, roi.y0, roi.x1, roi.y1, roi.n, CAM_W, CAM_H);
+  Serial.printf("[roi] caixa=%d,%d,%d,%d n_digitos=%d face=%d-%d realce=%d (quadro %dx%d)\n",
+                roi.x0, roi.y0, roi.x1, roi.y1, roi.n, roi.fa, roi.fb, roi.realce, CAM_W, CAM_H);
 }
 
 int roiJson(char* buf, size_t len) {
   return snprintf(buf, len,
-                  "{\"valida\":%s,\"caixa\":[%d,%d,%d,%d],\"n_digitos\":%d,\"quadro\":[%d,%d]}",
+                  "{\"valida\":%s,\"caixa\":[%d,%d,%d,%d],\"n_digitos\":%d,\"face_pct\":[%d,%d],"
+                  "\"realce\":%d,\"quadro\":[%d,%d]}",
                   roi.valida ? "true" : "false",
-                  roi.x0, roi.y0, roi.x1, roi.y1, roi.n, CAM_W, CAM_H);
+                  roi.x0, roi.y0, roi.x1, roi.y1, roi.n, roi.fa, roi.fb, roi.realce, CAM_W, CAM_H);
 }
 
 // ----------------------------------------------------------------
@@ -202,8 +269,16 @@ static esp_err_t hIndex(httpd_req_t* req) {
 
 // Quadro cru: CAM_W*CAM_H bytes de cinza (0-255), linha a linha. O navegador desenha
 // esses pixels sem compressao, iguais aos que o OCR recebe.
-static esp_err_t hFrame(httpd_req_t* req) {
+// Com 1 buffer e GRAB_WHEN_EMPTY o quadro guardado foi capturado no pedido anterior:
+// descarta e pega um novo.
+camera_fb_t* pegarQuadro() {
   camera_fb_t* fb = esp_camera_fb_get();
+  if (fb) esp_camera_fb_return(fb);
+  return esp_camera_fb_get();
+}
+
+static esp_err_t hFrame(httpd_req_t* req) {
+  camera_fb_t* fb = pegarQuadro();
   if (!fb) {
     httpd_resp_send_500(req);
     return ESP_FAIL;
@@ -251,7 +326,7 @@ static esp_err_t hRoiPost(httpd_req_t* req) {
   }
   corpo[lido] = '\0';
 
-  Roi nova = {};
+  Roi nova = roi;   // face e realce: a pagina nao mexe neles, ficam os atuais
   bool ok = lerCampo(corpo, "x0", &nova.x0) && lerCampo(corpo, "y0", &nova.y0) &&
             lerCampo(corpo, "x1", &nova.x1) && lerCampo(corpo, "y1", &nova.y1) &&
             lerCampo(corpo, "n", &nova.n);
@@ -307,6 +382,7 @@ void iniciarServidor() {
 
 // ----------------------------------------------------------------
 String enderecoAtual() {
+  if (!USAR_WIFI) return "desligado (USAR_WIFI 0): use o calibrar_roi_usb.py";
   if (WiFi.getMode() == WIFI_AP) return "http://" + WiFi.softAPIP().toString();
   return "http://" + WiFi.localIP().toString() + "  (ou http://" MDNS_NOME ".local)";
 }
@@ -332,9 +408,14 @@ void iniciarWifi() {
   }
 
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(AP_SSID, AP_SENHA);
+  // Canal 6 fixo; sem o retorno conferido, a mensagem saia mesmo com o AP fora do ar.
+  if (!WiFi.softAP(AP_SSID, AP_SENHA, 6)) {
+    Serial.println("[wifi] ERRO: a rede propria nao subiu (confira a alimentacao da placa)");
+    return;
+  }
   WiFi.setSleep(false);
-  Serial.printf("[wifi] rede \"%s\" senha \"%s\"\n", AP_SSID, AP_SENHA);
+  Serial.printf("[wifi] rede \"%s\" senha \"%s\" no canal 6, IP %s\n",
+                AP_SSID, AP_SENHA, WiFi.softAPIP().toString().c_str());
 }
 
 // ----------------------------------------------------------------
@@ -354,9 +435,46 @@ void setup() {
   carregarRoi();
   imprimirRoi();
 
-  iniciarWifi();
-  iniciarServidor();
-  Serial.println("[web] abra no navegador: " + enderecoAtual());
+  if (USAR_WIFI) {
+    iniciarWifi();
+    iniciarServidor();
+    Serial.println("[web] abra no navegador: " + enderecoAtual());
+  } else {
+    Serial.println("[usb] pronto: rode o calibrar_roi_usb.py no PC");
+  }
+}
+
+// QUADRO: <FRAME_START> + CAM_W*CAM_H bytes de cinza + <FRAME_END> (mesmo formato do
+// captura_quadros.ino).
+void enviarQuadroSerial() {
+  camera_fb_t* fb = pegarQuadro();
+  if (!fb || fb->len != (size_t)(CAM_W * CAM_H)) {
+    Serial.println("[erro] falha ao capturar o quadro");
+    if (fb) esp_camera_fb_return(fb);
+    return;
+  }
+  Serial.print("<FRAME_START>");
+  Serial.write(fb->buf, fb->len);
+  Serial.print("<FRAME_END>");
+  Serial.println();
+  esp_camera_fb_return(fb);
+}
+
+// SALVAR x0 y0 x1 y1 n [fa fb realce]  (sem os 3 ultimos, ficam os atuais)
+void salvarSerial(const String& cmd) {
+  Roi nova = roi;
+  int lidos = sscanf(cmd.c_str() + 6, "%d %d %d %d %d %d %d %d", &nova.x0, &nova.y0, &nova.x1, &nova.y1,
+                     &nova.n, &nova.fa, &nova.fb, &nova.realce);
+  if ((lidos != 5 && lidos != 8) || !roiOk(nova)) {
+    Serial.println("[erro] uso: SALVAR x0 y0 x1 y1 n [fa fb realce] (dentro do quadro 160x120; 0 <= fa < fb <= 100)");
+    return;
+  }
+  if (!salvarRoi(nova)) {
+    Serial.println("[erro] falha ao gravar na NVS");
+    return;
+  }
+  Serial.print("[usb] ROI salva -> ");
+  imprimirRoi();
 }
 
 void loop() {
@@ -371,8 +489,23 @@ void loop() {
       Serial.println("[roi] apagada");
     } else if (cmd == "IP") {
       Serial.println("[web] " + enderecoAtual());
+    } else if (cmd == "GIRO") {
+      imprimirGiro();
+    } else if (cmd.startsWith("GIRAR ")) {
+      int v = -1, h = -1;
+      if (sscanf(cmd.c_str() + 6, "%d %d", &v, &h) != 2 || v < 0 || v > 1 || h < 0 || h > 1) {
+        Serial.println("[erro] uso: GIRAR v h (0 ou 1 cada; 1 1 = 180 graus)");
+      } else if (definirGiro(v == 1, h == 1)) {
+        imprimirGiro();
+      } else {
+        Serial.println("[erro] falha ao gravar o giro na NVS");
+      }
+    } else if (cmd == "QUADRO") {
+      enviarQuadroSerial();
+    } else if (cmd.startsWith("SALVAR ")) {
+      salvarSerial(cmd);
     } else if (cmd.length() > 0) {
-      Serial.println("[?] comandos: ROI | APAGAR | IP");
+      Serial.println("[?] comandos: ROI | APAGAR | IP | QUADRO | SALVAR x0 y0 x1 y1 n | GIRO | GIRAR v h");
     }
   }
   delay(20);

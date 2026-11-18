@@ -43,6 +43,7 @@
 // ------------------------------------------------------------------
 
 #include "esp_camera.h"
+#include <Preferences.h>
 #include "img_converters.h"  // fmt2jpg()
 
 #include "modelo.h"         // gerado por gerar_header.py; array modelo_tflite[]
@@ -252,6 +253,25 @@ bool iniciarModeloDigito() {
 // ================================================================
 // Câmera
 // ================================================================
+// Orientacao do quadro gravada pelo calibrar_roi_esp32cam (NVS "roi", chaves "vflip" e "hmirror"),
+// para camera montada de cabeca para baixo ou espelhada. Vai no sensor, entao o quadro ja sai de pe
+// e a ROI (em pixels) vale igual em todos os firmwares. Sem nada salvo, nao mexe.
+void aplicarGiroSalvo() {
+  Preferences p;
+  bool v = false, h = false;
+  if (p.begin("roi", true)) {
+    v = p.getBool("vflip", false);
+    h = p.getBool("hmirror", false);
+    p.end();
+  }
+  sensor_t* s = esp_camera_sensor_get();
+  if (s) {
+    s->set_vflip(s, v ? 1 : 0);
+    s->set_hmirror(s, h ? 1 : 0);
+  }
+  Serial.printf("[camera] orientacao: vflip=%d hmirror=%d\n", v ? 1 : 0, h ? 1 : 0);
+}
+
 bool iniciarCamera() {
   // Zerado explicitamente: campos nao setados abaixo (fb_location,
   // grab_mode, jpeg_quality etc) ficariam com lixo da pilha se so
@@ -304,6 +324,7 @@ bool iniciarCamera() {
   // resize buffer" na primeira tentativa - forcar um resize logo apos o
   // init faz o driver tentar manter o buffer antigo alocado enquanto tenta
   // alocar o novo, e a PSRAM (4 MB) nao tem folga pros dois ao mesmo tempo.
+  aplicarGiroSalvo();
   delay(300);
   return true;
 }

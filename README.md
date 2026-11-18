@@ -49,8 +49,8 @@ cada um a sua caixa de "Status"; os números detalhados ficam em [`medicoes/`](m
 | Leitura completa em hidrômetro físico (emulação em Python) | 21 fotos: com segmentação, 2/21 leituras e 31 % dos dígitos (borda) e 0/21 e 27 % (nuvem); com ROI marcada à mão, 2/21 e ≈ 37 %; invertendo os tons das fotos de fundo escuro, 3/21 e 56 % | [`medicoes/ocr_teste.csv`](medicoes/ocr_teste.csv), [`dados/teste/`](dados/teste/README.md) |
 | Firmware de debug (`test_images/debug_ocr_esp32cam/`) | Roda em placa: 61 capturas, ≈ 17,6 s de processamento por leitura, medidas com o `modelo.h` de segmentação **antigo** | [`medicoes/README.md`](medicoes/README.md) |
 | Transmissor do fluxo de imagem (`Rede/transmissor_esp32cam/`, FPort 1) | Em placa: consumo em 30 ciclos de `AUTO:30` (≈ 4,64 mAh por leitura); latência mediana de 189 s; 20/30 imagens completas (21/30 na corrida com `CAPTURE`). O `STOP` do modo autônomo não foi testado | [`medicoes/README.md`](medicoes/README.md) |
-| Transmissor do OCR na borda (`Rede/transmissor_ocr_esp32cam/`, FPort 2) | Compila (core 3.0.7) e roda em placa: consumo em 32 ciclos (0,824 mAh por leitura), latência mediana de 18,84 s, 27/34 uplinks recebidos. **Ainda roda a segmentação**; a acurácia na placa não foi medida (sem gabarito) | [`medicoes/README.md`](medicoes/README.md) |
-| ROI calibrada no firmware | O calibrador ([`Rede/calibrar_roi_esp32cam/`](Rede/calibrar_roi_esp32cam/README.md)) grava a ROI na NVS; o transmissor de OCR **ainda não a lê**. Latência e energia sem a segmentação são estimativas | — |
+| Transmissor do OCR na borda (`Rede/transmissor_ocr_esp32cam/`, FPort 2) | Compila (core 3.0.7) e roda em placa: consumo em 32 ciclos (0,824 mAh por leitura), latência mediana de 18,84 s, 27/34 uplinks recebidos, medidos **com a segmentação**. Desde 2026-11-18, com ROI na NVS ele pula a segmentação (modo `roi`); em teste de bancada a leitura saiu 2,3 a 2,9 s depois do `LER`, sem medição formal. A acurácia na placa não foi medida | [`medicoes/README.md`](medicoes/README.md) |
+| ROI calibrada no firmware | O calibrador ([`Rede/calibrar_roi_esp32cam/`](Rede/calibrar_roi_esp32cam/README.md)) grava na NVS a ROI, a orientação e o pré-processamento das fatias (face da roda e realce); o transmissor de OCR lê tudo e pula a segmentação. Latência e energia nesse modo ainda não foram medidas com os scripts de `medicoes/` | — |
 | Servidor (`ocr/pipeline_nuvem.py`) | Implementado, com segmentação (padrão) ou ROI (`--roi`); ≈ 6,25 ms por leitura num Ryzen 5 5600GT | [`ocr/README.md`](ocr/README.md), [`medicoes/README.md`](medicoes/README.md) |
 | Scripts do enlace no PC (`Rede/*.py`) | Testados com nó e receptor simulados (59 verificações) e usados com as placas em 2026-10-27 (`transmissao.csv`, `latencia_ponta_a_ponta.csv`, `latencia_ocr.csv`). O `transmissao_ocr.csv` **nunca foi gerado** | [`medicoes/medir_transmissao.md`](medicoes/medir_transmissao.md), [`medicoes/medir_latencia.md`](medicoes/medir_latencia.md) |
 | Cenário do enlace | Só bancada, a ≈ 2 m (RSSI de −33,5 a −27 dBm). Receptor de canal único no lugar de um gateway, sem servidor de rede, MIC não verificado, sem downlink/ACK e sem retransmissão no modo autônomo | [`medicoes/README.md`](medicoes/README.md) |
@@ -84,13 +84,21 @@ mesma região do quadro; então, em vez de segmentar a cada leitura, a região (
 uma vez na instalação** e o classificador lê as N fatias dessa ROI. O que se mediu ([`ocr/README.md`](ocr/README.md)):
 com a janela certa e o quadro endireitado, a leitura chega a 82–87 % das leituras e 92–95 % dos dígitos; a ROI
 precisa de precisão de cerca de **±1 a ±2 px** no quadro 160×120 (com erro de ±4 px caem para 40–50 %, e com ±6 px
-para 20–26 %). Consequência **estimada, não medida** (o firmware ainda não foi alterado): sem a segmentação, a
-leitura dispensaria os ≈ 15,6 s dela e a arena de 1,6 MB, ficando nos ≈ 2 s do classificador.
+para 20–26 %). O `transmissor_ocr_esp32cam` já usa a ROI gravada pelo calibrador e não carrega a segmentação; num
+teste de bancada a leitura saiu 2,3 a 2,9 s depois do `LER` (eram ≈ 18 s), mas latência e energia nesse modo ainda não
+foram medidas com os scripts de `medicoes/`.
 
 **Limitações do pipeline CNN Simples assumidas:**
-- **Calibração da ROI**: a ROI e a inclinação precisam ser ajustadas na instalação com ±1 a ±2 px de precisão, e ainda
-  não existe uma etapa ou ferramenta para isso (o firmware de debug serve para posicionar a câmera à mão).
-- **Fatiamento calibrado à mão**: `N_FATIAS` (número de rodinhas) é ajustado por medidor; o pipeline CNN Simples não lê sozinho um
+- **Calibração da ROI**: a ROI, a orientação do quadro e o número de rodinhas precisam ser ajustados na instalação,
+  com ±1 a ±2 px de precisão, no calibrador ([`Rede/calibrar_roi_esp32cam/`](Rede/calibrar_roi_esp32cam/README.md)). A
+  inclinação não é corrigida no firmware: a câmera tem de ficar com os dígitos na horizontal. Se a câmera se mexer, a
+  calibração tem de ser refeita (na bancada, um deslocamento de ≈ 30 px tirou a caixa de cima dos dígitos).
+- **Pré-processamento por medidor**: no hidrômetro físico o classificador só leu com a fatia recortada na face da roda
+  e com realce de contraste, calibrados por medidor (sem isso, `000000` em 7 de 7 quadros de `000024`; com eles, os 3
+  quadros com a iluminação final certos e os 4 com a luz anterior em `000006`). Isso foi visto em **uma leitura só** e
+  ainda precisa ser medido em várias leituras. Os mesmos valores pioraram a leitura nas 21 fotos de outros hidrômetros
+  de `dados/teste/` (36 % → 30 % dos dígitos): não é uma melhoria geral, e sim um ajuste por medidor e iluminação.
+- **Fatiamento calibrado à mão**: o número de rodinhas é ajustado por medidor; o pipeline CNN Simples não lê sozinho um
   medidor desconhecido.
 - **Não lê o medidor físico**: nas 21 fotos físicas de `dados/teste/` (emulação em Python, não na placa) o pipeline com
   segmentação acertou 2/21 leituras e 31 % dos dígitos na borda e 0/21 e 27 % na nuvem; com a ROI marcada à mão, 2/21
@@ -189,7 +197,7 @@ cada parte está em [Estado atual](#estado-atual).
 Codigo-do-TCC2/
 ├── Rede/                          Enlace LoRaWAN: firmwares (Arduino IDE) e scripts do PC (rodar da raiz, ex.: python Rede/reconstrutor.py)
 │   ├── transmissor_esp32cam/      Transmissor do fluxo de IMAGEM (FPort 1): câmera (CAPTURE), reenvio (RESEND), envio vindo do PC (SEND), teste de enlace (SENDALL) e modo autônomo com deep sleep (AUTO/STOP/SLEEP; testado em placa, com consumo e latência ponta a ponta medidos em 30 ciclos). No modo autônomo desliga a câmera após a captura
-│   ├── transmissor_ocr_esp32cam/  Transmissor do fluxo de OCR NA BORDA (FPort 2): captura, lê os dígitos na ESP32-CAM (segmentação + classificador, TFLite Micro) e envia só a leitura (9 bytes) em um uplink; mesmo deep sleep e mesma linha [CICLO_FIM]. Contém cópias de `modelo.h`/`modelo_digito.h`. Compila com o core 3.0.7 (arduino-cli, 563 KB, 17% da flash) e roda em placa (consumo medido em 32 ciclos e latência ponta a ponta em 34 disparos)
+│   ├── transmissor_ocr_esp32cam/  Transmissor do fluxo de OCR NA BORDA (FPort 2): captura, lê os dígitos na ESP32-CAM (classificador TFLite Micro sobre a ROI gravada pelo calibrador, ou segmentação + classificador se não houver ROI) e envia só a leitura (9 bytes) em um uplink; mesmo deep sleep e mesma linha [CICLO_FIM]. Contém cópias de `modelo.h`/`modelo_digito.h`. Compila com o core 3.0.7 (arduino-cli, 563 KB, 17% da flash) e roda em placa (consumo medido em 32 ciclos e latência ponta a ponta em 34 disparos)
 │   ├── receptor_lora32/           Firmware do receptor (Heltec/TTGO LoRa32)
 │   ├── enlace.py                  PC: parâmetros do enlace (bloco, cabeçalho), parser LoRaWAN e parser da leitura OCR (FPort 2) compartilhados
 │   ├── registro.py                PC: registro das medições (logs completos + medicoes/transmissao.csv e medicoes/transmissao_ocr.csv); usado pelos dois scripts abaixo
@@ -392,8 +400,8 @@ comparado com os mesmos scripts. Estado: ver [Estado atual](#estado-atual).
 | Sketch | Placa | Observações |
 |---|---|---|
 | `Rede/transmissor_esp32cam/` | AI Thinker ESP32-CAM | **Transmissor do fluxo de imagem (FPort 1).** Comandos pela serial: `CAPTURE` (captura e envia), `RESEND:2,7,15` (reenvia chunks da última captura), `SEND:<id>:<índice>:<total>:<hex>` (dados vindos do PC, usado pelo `orchestrator.py`), `SENDALL:<n>` (teste de enlace sem câmera, payload fixo), `AUTO[:<s>]`/`STOP`/`SLEEP:<s>` (modo autônomo com deep sleep) ou `AT...` (repassado ao Radioenge). Retentativas quando o módulo está ocupado. Intervalo entre chunks: `SEND_INTERVAL_MS` (7000 ms). |
-| `Rede/transmissor_ocr_esp32cam/` | AI Thinker ESP32-CAM, PSRAM habilitada | **Transmissor do fluxo de OCR na borda (FPort 2).** Comandos: `LER` (lê o medidor e envia a leitura), `AUTO[:<s>]`/`STOP`/`SLEEP:<s>` (mesmos do outro) e `AT...`. Precisa da biblioteca TensorFlow Lite Micro e dos modelos `modelo.h`/`modelo_digito.h`, que são **cópias** das de `test_images/debug_ocr_esp32cam/` (copie de novo se retreinar). Imprime `[ocr] leitura=...`, `[ocr] enviando leitura id N` e `[CICLO_FIM]`, que o PC lê. |
-| `Rede/calibrar_roi_esp32cam/` | AI Thinker ESP32-CAM, PSRAM habilitada | **Ferramenta de bancada para posicionar a ROI.** Sobe um servidor web com o quadro 160×120 cinza ao vivo (os mesmos pixels do OCR); a caixa é desenhada no navegador e salva na NVS (namespace `roi`), que o firmware de OCR pode ler. Também baixa JSON e foto PNG. Ver o [README da pasta](Rede/calibrar_roi_esp32cam/README.md). |
+| `Rede/transmissor_ocr_esp32cam/` | AI Thinker ESP32-CAM, PSRAM habilitada | **Transmissor do fluxo de OCR na borda (FPort 2).** Comandos: `LER` (lê o medidor e envia a leitura), `AUTO[:<s>]`/`STOP`/`SLEEP:<s>` (mesmos do outro) e `AT...`. Precisa da biblioteca TensorFlow Lite Micro e dos modelos `modelo.h`/`modelo_digito.h`, que são **cópias** das de `test_images/debug_ocr_esp32cam/` (copie de novo se retreinar). Imprime `[ocr] leitura=...`, `[ocr] enviando leitura id N` e `[CICLO_FIM]`, que o PC lê. Com ROI na NVS (do `calibrar_roi_esp32cam`) usa a caixa, o número de dígitos, a face da roda e o realce gravados e não roda a segmentação; o comando `ROI` mostra o modo. |
+| `Rede/calibrar_roi_esp32cam/` | AI Thinker ESP32-CAM, PSRAM habilitada | **Ferramenta de bancada para posicionar a ROI.** Manda o quadro 160×120 cinza ao vivo pelo cabo USB (os mesmos pixels do OCR) para o `calibrar_roi_usb.py`, em que a caixa é desenhada e gravada na NVS (namespace `roi`), que o firmware de OCR pode ler; também salva JSON e foto PNG. Grava também a orientação do quadro (`vflip`/`hmirror`, para câmera de cabeça para baixo), que os transmissores, o `captura_quadros` e o firmware de debug aplicam ao ligar a câmera. Com `USAR_WIFI 1`, faz o mesmo por uma página web (o PC precisa enxergar 2,4 GHz). Ver o [README da pasta](Rede/calibrar_roi_esp32cam/README.md). |
 | `Rede/receptor_lora32/` | TTGO/Heltec LoRa32 V2 | Biblioteca **LoRa** (Sandeep Mistry). Frequência fixa 915,9 MHz. Serve aos dois fluxos (repassa o frame, qualquer FPort). |
 
 ### Rodando o receptor no PC
@@ -676,8 +684,9 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 
 ## Limitações conhecidas e próximos passos
 
-- **Tirar a segmentação do firmware**: com câmera fixa, usar uma ROI calibrada (ver [Decisão](#decisão-pipeline-de-ocr-na-borda)),
-  implementar a calibração no firmware e **medir** a latência e a energia sem a segmentação (hoje ≈ 15,6 s de 17,6 s).
+- **Medir o modo ROI**: o `transmissor_ocr_esp32cam` já pula a segmentação quando há ROI na NVS (ver
+  [Decisão](#decisão-pipeline-de-ocr-na-borda)); falta **medir** latência e energia nesse modo (30 ciclos de `AUTO:30`
+  com o INA219 e `latencia_ponta_a_ponta.py --fluxo ocr`) e a acurácia na placa, com gabarito.
 - **Só 21 fotos de medidor físico** (meta de ≥ 30) e poucas fotos reais da ESP32-CAM (dígitos 4, 5 e 6 ausentes no
   conjunto de domínio): completar as ≥ 30 fotos de `dados/teste/` (e mais para o fine-tuning, sem misturar com o teste) em
   condições variadas.
@@ -686,8 +695,8 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
   e ROI calibrada na instalação, melhorar o modelo de segmentação não é necessário para a leitura, e só valeria como
   extensão (arquitetura com *skip connections*, mais épocas).
 - **Integração final**: o firmware (`Rede/transmissor_ocr_esp32cam/`: OCR do debug + envio da leitura na FPort 2,
-  ~9 bytes em vez da imagem inteira) já rodou em placa, com consumo e latência medidos, mas ainda roda a segmentação a
-  cada leitura (ver o item da ROI acima) e a acurácia dele na placa não foi medida.
+  ~9 bytes em vez da imagem inteira) já rodou em placa, com consumo e latência medidos no modo com segmentação; o modo
+  ROI ainda não foi medido (ver o item acima) e a acurácia dele na placa também não.
 - Perda de chunks no enlace: hoje o reenvio é manual (`RESEND`, com o `reconstrutor.py` aberto) ou pelo
   `orchestrator.py`; falta automatizar a captura com confirmação.
 - **Comparação borda × nuvem em hardware**: o conjunto comum (`ocr/teste_comum/`) só permite emulação. Para medir a

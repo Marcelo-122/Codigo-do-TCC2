@@ -145,6 +145,44 @@ def _para_int8(pixels):
     return (pixels.astype(np.int16) - 128).astype(np.int8)[np.newaxis, :, :, np.newaxis]
 
 
+# Pré-processamento da fatia, calibrado por medidor no calibrar_roi_esp32cam e igual ao firmware
+# (transmissor_ocr_esp32cam): todas as contas são inteiras, para dar os mesmos pixels nos dois lados.
+#   face = (a, b): parte da fatia, em % da largura, em que fica o número (a "face" da roda). Fora dela
+#          ficam a barra escura entre as rodas e os dois-pontos, que o classificador nunca viu no treino.
+#   realce = 0 (nenhum) ou 1 (equalização de histograma na região recortada, antes de reduzir para 28x28).
+FACE_PADRAO = (0, 100)
+REALCES = {0: "nenhum", 1: "equalização"}
+
+
+def janela_face(sx0, sx1, face=FACE_PADRAO):
+    """Colunas [fx0, fx1) da face da roda dentro da fatia [sx0, sx1)."""
+    largura = sx1 - sx0
+    fx0 = sx0 + (largura * face[0]) // 100
+    fx1 = sx0 + (largura * face[1]) // 100
+    return fx0, max(fx1, fx0 + 1)
+
+
+def equalizar(regiao):
+    """Equalização de histograma de uma região uint8 (mesma conta inteira do firmware)."""
+    hist = np.bincount(regiao.ravel(), minlength=256).astype(np.int64)
+    cdf = np.cumsum(hist)
+    n = int(regiao.size)
+    cmin = int(cdf[np.flatnonzero(hist)[0]])
+    if n == cmin:           # região de um tom só: nada a equalizar
+        return regiao.copy()
+    lut = np.clip(((cdf - cmin) * 255 + (n - cmin) // 2) // (n - cmin), 0, 255).astype(np.uint8)
+    return lut[regiao]
+
+
+def entrada_fatia(quadro, sx0, sy0, sx1, sy1, face=FACE_PADRAO, realce=0):
+    """Os 28x28 pixels que o classificador recebe para a fatia [sx0, sx1) x [sy0, sy1)."""
+    fx0, fx1 = janela_face(sx0, sx1, face)
+    regiao = np.ascontiguousarray(quadro[sy0:sy1, fx0:fx1])
+    if realce == 1:
+        regiao = equalizar(regiao)
+    return _vizinho_mais_proximo(regiao, 0, 0, fx1 - fx0, sy1 - sy0, DIGIT_W, DIGIT_H)
+
+
 class LeitorB:
     """Pipeline CNN Simples (segmentação + classificador de dígito), no PC."""
 
@@ -183,17 +221,20 @@ class LeitorB:
         return ((int(xs.min()) * CAM_W) // MODEL_W, (int(ys.min()) * CAM_H) // MODEL_H,
                 (int(xs.max()) * CAM_W) // MODEL_W, (int(ys.max()) * CAM_H) // MODEL_H)
 
-    def pontuacoes_fatia(self, quadro, sx0, sy0, sx1, sy1):
+    def pontuacoes_fatia(self, quadro, sx0, sy0, sx1, sy1, face=FACE_PADRAO, realce=0):
         """Saída do classificador (10 classes, int8 da softmax) para a região dada."""
-        fatia = _vizinho_mais_proximo(quadro, sx0, sy0, sx1 - sx0, sy1 - sy0, DIGIT_W, DIGIT_H)
-        self.dig.set_tensor(self._dig_in["index"], _para_int8(fatia))
+        return self.pontuacoes_entrada(entrada_fatia(quadro, sx0, sy0, sx1, sy1, face, realce))
+
+    def pontuacoes_entrada(self, entrada_28x28):
+        """Saída do classificador para uma entrada 28x28 uint8 já pronta."""
+        self.dig.set_tensor(self._dig_in["index"], _para_int8(entrada_28x28))
         self.dig.invoke()
         return self.dig.get_tensor(self._dig_out["index"])[0].astype(np.float32)
 
-    def classificar_fatia(self, quadro, sx0, sy0, sx1, sy1):
-        return int(np.argmax(self.pontuacoes_fatia(quadro, sx0, sy0, sx1, sy1)))
+    def classificar_fatia(self, quadro, sx0, sy0, sx1, sy1, face=FACE_PADRAO, realce=0):
+        return int(np.argmax(self.pontuacoes_fatia(quadro, sx0, sy0, sx1, sy1, face, realce)))
 
-    def ler(self, quadro, n_digitos, caixa=None, deslocamentos=((0, 0),)):
+    def ler(self, quadro, n_digitos, caixa=None, deslocamentos=((0, 0),), face=FACE_PADRAO, realce=0):
         """Lê o quadro. Devolve dict com 'leitura' (string; '-' * n se não achou a caixa), 'caixa', 'mascara'
         (192×192; None se a caixa foi dada) e tempos.
 
@@ -201,7 +242,9 @@ class LeitorB:
         classificador do erro da segmentação). Sem ela, a caixa vem do modelo, como no firmware.
 
         `deslocamentos` [(dx, dy), ...] soma as saídas do classificador sobre a caixa deslocada de cada par
-        (votação): tolera uma caixa imprecisa ao custo de rodar o classificador uma vez por deslocamento."""
+        (votação): tolera uma caixa imprecisa ao custo de rodar o classificador uma vez por deslocamento.
+
+        `face` e `realce`: pré-processamento da fatia (ver `entrada_fatia`); os padrões não mudam nada."""
         t0 = time.perf_counter()
         mascara = None
         if caixa is None:
@@ -215,14 +258,15 @@ class LeitorB:
         for i in range(n_digitos):
             soma = np.zeros(10, np.float32)
             for dx, dy in deslocamentos:
-                x0 = min(max(caixa[0] + dx, 0), CAM_W - 2)
-                x1 = min(max(caixa[2] + dx, x0 + 1), CAM_W - 1)
-                y0 = min(max(caixa[1] + dy, 0), CAM_H - 2)
-                y1 = min(max(caixa[3] + dy, y0 + 1), CAM_H - 1)
+                # x1/y1 são exclusivos (como no lerDigitos() do firmware): podem ir até 160/120
+                x0 = min(max(caixa[0] + dx, 0), CAM_W - 1)
+                x1 = min(max(caixa[2] + dx, x0 + 1), CAM_W)
+                y0 = min(max(caixa[1] + dy, 0), CAM_H - 1)
+                y1 = min(max(caixa[3] + dy, y0 + 1), CAM_H)
                 largura = x1 - x0
                 sx0 = x0 + (largura * i) // n_digitos
                 sx1 = x0 + (largura * (i + 1)) // n_digitos
-                soma += self.pontuacoes_fatia(quadro, sx0, y0, sx1, y1)
+                soma += self.pontuacoes_fatia(quadro, sx0, y0, sx1, y1, face, realce)
             digitos.append(str(int(np.argmax(soma))))
         t2 = time.perf_counter()
         return {"leitura": "".join(digitos), "caixa": caixa, "mascara": mascara,
@@ -254,6 +298,10 @@ def main():
     ap.add_argument("--alinhar", action="store_true", help="endireita a inclinação do quadro antes de ler (no servidor)")
     ap.add_argument("--roi", metavar="x0,y0,x1,y1", help="janela dos dígitos fixa no quadro 160x120 (câmera parada): pula a segmentação")
     ap.add_argument("--votar", action="store_true", help="com --roi, soma as saídas de 5 caixas deslocadas (±2 px em x, ±1 px em y)")
+    ap.add_argument("--face", metavar="A,B", default="0,100",
+                    help="parte de cada fatia, em %% da largura, em que fica o número (padrão 0,100 = fatia inteira)")
+    ap.add_argument("--realce", type=int, choices=[0, 1], default=0,
+                    help="1 = equalização de histograma na face recortada (como o firmware com realce=1)")
     ap.add_argument("--debug", metavar="ARQUIVO", help="grava a imagem com a caixa e as fatias desenhadas")
     a = ap.parse_args()
 
@@ -269,7 +317,8 @@ def main():
         print(f"inclinação corrigida: {angulo:+.1f} graus")
     roi = tuple(int(v) for v in a.roi.split(",")) if a.roi else None
     desl = ((0, 0), (-2, 0), (2, 0), (0, -1), (0, 1)) if a.votar else ((0, 0),)
-    r = LeitorB().ler(quadro, a.digitos, caixa=roi, deslocamentos=desl)
+    face = tuple(int(v) for v in a.face.split(","))
+    r = LeitorB().ler(quadro, a.digitos, caixa=roi, deslocamentos=desl, face=face, realce=a.realce)
     print(f"leitura: {r['leitura']}  caixa: {r['caixa']}  segmentação: {r['t_seg_ms']:.0f} ms  dígitos: {r['t_dig_ms']:.0f} ms")
     if tamanho_jpeg:
         print(f"JPEG transmitido: {tamanho_jpeg} bytes")

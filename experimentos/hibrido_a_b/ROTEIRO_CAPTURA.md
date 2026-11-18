@@ -7,13 +7,17 @@ todo ocupado pelos dígitos, como em `test_images/debug_ocr_esp32cam/debug_frame
 
 ## 1. Antes de começar (uma vez)
 
-1. Grave `captura_quadros/captura_quadros.ino` na ESP32-CAM: board "AI Thinker ESP32-CAM", PSRAM
-   Enabled. Não precisa da partição Huge APP nem de TensorFlow. Não foi compilado nesta máquina: se der
-   erro de compilação, cole a mensagem.
-2. Dependências do script (Python 3.10, o mesmo ambiente do teste): acrescente `pip install pyserial`
-   ao ambiente de `ModeloEDataset/requirements.txt`. A porta serial sai de `TX_SERIAL_PORT` do `.env`, ou
-   use `--porta COM5`.
-3. Feche o Monitor Serial do Arduino IDE (a porta só aceita um programa).
+1. Se a câmera estiver montada de cabeça para baixo, acerte antes a orientação do quadro no calibrador
+   (`Rede/calibrar_roi_esp32cam/`, tecla `r`). Ela fica gravada na placa e o `captura_quadros` a aplica ao
+   ligar a câmera (imprime `[camera] orientacao: ...`), então os quadros já saem de pé.
+2. Grave `captura_quadros/captura_quadros.ino` na ESP32-CAM: board "AI Thinker ESP32-CAM" (no core 3.0.7 a
+   PSRAM já vem ligada). Não precisa da partição Huge APP nem de TensorFlow. Compila com o core 3.0.7.
+3. Dependências do `capturar_quadros.py`: `opencv-python`, `numpy` e `pyserial`; o `.venv` desta pasta já tem
+   os três (`.venv/Scripts/python capturar_quadros.py ...`). O `teste_hibrido.py` continua no ambiente de
+   `ModeloEDataset/requirements.txt` (Python 3.10). A porta serial sai de `TX_SERIAL_PORT` do `.env`, ou
+   use `--porta COM5`. Ao abrir a porta, o script reinicia a placa (na ESP32-CAM-MB, abrir a porta sem esse
+   reset deixava a placa em modo de gravação).
+4. Feche o Monitor Serial do Arduino IDE (a porta só aceita um programa).
 
 Por que não usar o `debug_ocr_esp32cam`: ele desenha o retângulo e as linhas-guia sobre o quadro e o manda
 em JPEG qualidade 80. Cada imagem dele já vem alterada. Além disso, pelo código, ele **lê os dígitos

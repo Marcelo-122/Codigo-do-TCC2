@@ -51,7 +51,9 @@ python ocr/avaliar_roi_fixa.py                # cenário de câmera parada (ROI 
 python ocr/avaliar_roi_manual.py              # conjunto físico com ROI, inclinação e polaridade marcadas à mão (dados/teste/roi_manual.csv)
 ```
 
-`--digitos` é o número de rodinhas do medidor (o `N_FATIAS` do firmware, calibrado por medidor). Fotos em
+`--digitos` é o número de rodinhas do medidor (o `n` da ROI, calibrado por medidor). `--face A,B` e `--realce 1`
+reproduzem o pré-processamento das fatias gravado pelo calibrador (`Rede/calibrar_roi_esp32cam/`, seção "Face da roda
+e realce"), com as mesmas contas do `transmissor_ocr_esp32cam`; os padrões (`0,100` e `0`) não mudam nada. Fotos em
 retrato (as de `teste_comum/` chegam como 480×640 por causa da orientação EXIF) precisam de `--centro-y`, a
 altura da janela dos dígitos: o código recorta uma faixa 4:3 em vez de esticar a imagem.
 

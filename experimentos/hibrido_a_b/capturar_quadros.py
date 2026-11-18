@@ -42,14 +42,14 @@ def porta_padrao():
 
 
 def ler_ate(ser, marcador, limite_s):
-    """Lê da serial até aparecer `marcador`; devolve os bytes lidos antes dele."""
+    """Lê da serial até aparecer `marcador`; devolve os bytes que já vieram depois dele."""
     buf = b""
     fim = time.time() + limite_s
     while time.time() < fim:
         buf += ser.read(ser.in_waiting or 1)
         if marcador in buf:
-            antes, _ = buf.split(marcador, 1)
-            return antes
+            _, depois = buf.split(marcador, 1)
+            return depois
     raise TimeoutError(f"não apareceu {marcador!r} em {limite_s} s")
 
 
@@ -57,14 +57,14 @@ def ler_quadro(ser, limite_s=15):
     """Pede um quadro e o devolve como array HxW uint8. Lê exatamente W*H bytes depois do início."""
     ser.reset_input_buffer()
     ser.write(b"C")
-    ler_ate(ser, INICIO, limite_s)
-    dados = b""
+    # O read que achou o marcador já pode ter trazido o começo do quadro
+    dados = ler_ate(ser, INICIO, limite_s)
     fim = time.time() + limite_s
-    while len(dados) < NBYTES and time.time() < fim:
-        dados += ser.read(NBYTES - len(dados))
-    if len(dados) != NBYTES:
+    while len(dados) < NBYTES + len(FIM) and time.time() < fim:
+        dados += ser.read(NBYTES + len(FIM) - len(dados))
+    if len(dados) < NBYTES:
         raise IOError(f"quadro incompleto: {len(dados)} de {NBYTES} bytes")
-    resto = ser.read(len(FIM))
+    dados, resto = dados[:NBYTES], dados[NBYTES:NBYTES + len(FIM)]
     if resto != FIM:
         raise IOError(f"fim de quadro inesperado: {resto!r}")
     return np.frombuffer(dados, dtype=np.uint8).reshape(H, W)
@@ -106,11 +106,13 @@ def main():
     a = ap.parse_args()
 
     porta = a.porta or porta_padrao()
-    ser = serial.Serial()
-    ser.port, ser.baudrate, ser.timeout = porta, 115200, 1
-    ser.setDTR(False)
-    ser.setRTS(False)
-    ser.open()
+    ser = serial.Serial(porta, 115200, timeout=1)
+    # Na ESP32-CAM-MB, abrir a porta com DTR/RTS desligados deixa a placa em modo de gravação
+    # ("waiting for download"). Reset limpo: IO0 solto (DTR) e pulso no EN (RTS).
+    ser.dtr = False
+    ser.rts = True
+    time.sleep(0.2)
+    ser.rts = False
     print(f"Conectado em {porta}. Aperte RESET na placa se não aparecer [pronto].")
     try:
         ler_ate(ser, b"[pronto]", 8)

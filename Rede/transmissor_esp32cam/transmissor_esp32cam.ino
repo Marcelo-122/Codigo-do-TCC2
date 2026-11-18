@@ -33,6 +33,7 @@
 // Indice com base 0.
 // ============================================================
 #include "esp_camera.h"
+#include <Preferences.h>
 #include "img_converters.h"  // fmt2jpg()
 #include "driver/rtc_io.h"
 #include "esp_sleep.h"
@@ -112,6 +113,25 @@ static size_t   imgSize = 0;
 static uint16_t leituraId = 0;  // id da ultima captura (vai no cabecalho de cada chunk)
 
 // ----------------------------------------------------------------
+// Orientacao do quadro gravada pelo calibrar_roi_esp32cam (NVS "roi", chaves "vflip" e "hmirror"),
+// para camera montada de cabeca para baixo ou espelhada. Vai no sensor, entao o quadro ja sai de pe
+// e a ROI (em pixels) vale igual em todos os firmwares. Sem nada salvo, nao mexe.
+void aplicarGiroSalvo() {
+  Preferences p;
+  bool v = false, h = false;
+  if (p.begin("roi", true)) {
+    v = p.getBool("vflip", false);
+    h = p.getBool("hmirror", false);
+    p.end();
+  }
+  sensor_t* s = esp_camera_sensor_get();
+  if (s) {
+    s->set_vflip(s, v ? 1 : 0);
+    s->set_hmirror(s, h ? 1 : 0);
+  }
+  Serial.printf("[camera] orientacao: vflip=%d hmirror=%d\n", v ? 1 : 0, h ? 1 : 0);
+}
+
 bool initCamera() {
   // Zerado explicitamente: campos nao setados (fb_location, grab_mode...)
   // ficariam com lixo da pilha e o driver se comportaria de forma imprevisivel.
@@ -147,6 +167,7 @@ bool initCamera() {
   // para o buffer antigo e o novo ao mesmo tempo). O frame_size do config
   // ja vale. Mesmo padrao do debug_ocr_esp32cam.ino.
   Serial.println("[camera] sensor configurado: GRAYSCALE QQVGA 160x120");
+  aplicarGiroSalvo();
   delay(300); // aguarda o sensor estabilizar
   return true;
 }

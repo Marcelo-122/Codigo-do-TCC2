@@ -21,6 +21,7 @@
 // ============================================================
 
 #include "esp_camera.h"
+#include <Preferences.h>
 
 #define PWDN_GPIO_NUM     32
 #define RESET_GPIO_NUM    -1
@@ -44,6 +45,25 @@ static const int CAM_H = 120;
 // Quadros descartados antes do que será enviado: o primeiro quadro após um tempo parado pode ser
 // antigo ou mal exposto (a exposição automática se ajusta ao longo dos primeiros quadros).
 static const int QUADROS_DESCARTADOS = 3;
+
+// Orientacao do quadro gravada pelo calibrar_roi_esp32cam (NVS "roi", chaves "vflip" e "hmirror"),
+// para camera montada de cabeca para baixo ou espelhada. Vai no sensor, entao o quadro ja sai de pe
+// e a ROI (em pixels) vale igual em todos os firmwares. Sem nada salvo, nao mexe.
+void aplicarGiroSalvo() {
+  Preferences p;
+  bool v = false, h = false;
+  if (p.begin("roi", true)) {
+    v = p.getBool("vflip", false);
+    h = p.getBool("hmirror", false);
+    p.end();
+  }
+  sensor_t* s = esp_camera_sensor_get();
+  if (s) {
+    s->set_vflip(s, v ? 1 : 0);
+    s->set_hmirror(s, h ? 1 : 0);
+  }
+  Serial.printf("[camera] orientacao: vflip=%d hmirror=%d\n", v ? 1 : 0, h ? 1 : 0);
+}
 
 bool iniciarCamera() {
   camera_config_t config = {};
@@ -69,6 +89,7 @@ bool iniciarCamera() {
     Serial.printf("[camera] erro: 0x%x\n", err);
     return false;
   }
+  aplicarGiroSalvo();
   delay(300);
   return true;
 }

@@ -10,8 +10,12 @@
 // test_images/debug_ocr_esp32cam/debug_ocr_esp32cam.ino (mesmos modelos e mesma
 // logica); aqui nao ha desenho nem envio de imagem pela serial.
 //
-// Esta versao MANTEM a segmentacao a cada leitura (~15,6 s). Quando a ROI fixa for
-// implementada (ver README, "Tirar a segmentacao do firmware"), so executarOcr() muda.
+// ROI fixa: se o calibrar_roi_esp32cam gravou uma ROI na NVS (namespace "roi"), a leitura usa
+// essa caixa e PULA a segmentacao (nem carrega o modelo dela). Sem ROI salva, roda a
+// segmentacao a cada leitura, como antes (~15,6 s). Da NVS vem tambem o numero de digitos
+// (n), a face da roda (fa/fb, em % da fatia: so essa parte vai ao classificador) e o realce
+// (1 = equalizacao de histograma na face). O pipeline_nuvem.py (entrada_fatia) faz as mesmas
+// contas, entao PC e placa recebem os mesmos 28x28 pixels.
 //
 // Arquivos do sketch: modelo.h e modelo_digito.h sao COPIAS dos de
 // test_images/debug_ocr_esp32cam/ (o Arduino so enxerga arquivos desta pasta). Se os
@@ -31,6 +35,7 @@
 //   STOP                             sai do modo autonomo (so e lido na janela de
 //                                    JANELA_STOP_MS logo apos cada despertar)
 //   SLEEP:<s>                        deep sleep unico de <s> segundos, sem leitura
+//   ROI                              imprime a ROI/face/realce lidos da NVS e o modo (roi ou seg)
 //   AT...                            qualquer outra linha vai direto ao Radioenge
 //
 // Formato do payload (FPort 2, AT+SENDB=02:<hex>), bytes:
@@ -43,6 +48,7 @@
 // "[ocr] enviando leitura id N" e "[uplink tent N] ...".
 // ============================================================
 #include "esp_camera.h"
+#include <Preferences.h>
 #include "driver/rtc_io.h"
 #include "esp_sleep.h"
 #include "esp_heap_caps.h"
@@ -88,8 +94,22 @@ static const int MODEL_H = 192;
 static const int DIGIT_W = 28;    // entrada do classificador: 28x28x1 int8
 static const int DIGIT_H = 28;
 
-// Numero de rodinhas do medidor alvo (so afeta o fatiamento da caixa, nao o treino).
+// Numero de rodinhas do medidor alvo (so afeta o fatiamento da caixa, nao o treino). Vale quando
+// nao ha ROI na NVS; com ROI, usa o n gravado pelo calibrador.
 static const int N_FATIAS = 6;
+static const int N_MAX = 10;      // maior n aceito (o mesmo limite do calibrador)
+static const int QUADROS_DESCARTADOS = 3;   // antes do quadro lido (exposicao automatica se ajustando)
+
+// ROI e pre-processamento gravados pelo calibrar_roi_esp32cam (NVS "roi"). Sem ROI salva: caixa da
+// segmentacao, N_FATIAS, fatia inteira e sem realce (o comportamento anterior).
+struct ConfigRoi {
+  bool valida;
+  int x0, y0, x1, y1;   // quadro 160x120, x1/y1 exclusivos
+  int n;
+  int fa, fb;           // face da roda em % da largura da fatia
+  int realce;           // 0 = nenhum, 1 = equalizacao de histograma
+};
+static ConfigRoi cfg = {false, 0, 0, CAM_W, CAM_H, N_FATIAS, 0, 100, 0};
 
 // Arenas na PSRAM (a camera ja foi desligada quando os modelos sao alocados).
 static const int TENSOR_ARENA_SIZE = 2 * 1024 * 1024;  // segmentacao: usa ~1,62 MB
@@ -125,7 +145,8 @@ static bool digOk = false;     // classificador de digito inicializado neste boo
 struct ResultadoOcr {
   bool ok;       // captura, modelos e segmentacao rodaram (o envio faz sentido)
   bool achou;    // a segmentacao achou a caixa dos digitos
-  char leitura[N_FATIAS + 1];
+  int n;         // digitos lidos (cfg.n com ROI, N_FATIAS sem)
+  char leitura[N_MAX + 1];
   unsigned long t_captura, t_modelos, t_seg, t_digitos;  // ms
 };
 
@@ -227,6 +248,53 @@ bool iniciarModeloDigito() {
 }
 
 // ----------------------------------------------------------------
+// Orientacao do quadro gravada pelo calibrar_roi_esp32cam (NVS "roi", chaves "vflip" e "hmirror"),
+// para camera montada de cabeca para baixo ou espelhada. Vai no sensor, entao o quadro ja sai de pe
+// e a ROI (em pixels) vale igual em todos os firmwares. Sem nada salvo, nao mexe.
+void carregarConfigRoi() {
+  Preferences p;
+  if (p.begin("roi", true)) {
+    ConfigRoi c = cfg;
+    c.valida = p.getBool("valida", false);
+    c.x0 = p.getInt("x0", 0);  c.y0 = p.getInt("y0", 0);
+    c.x1 = p.getInt("x1", 0);  c.y1 = p.getInt("y1", 0);
+    c.n  = p.getInt("n", N_FATIAS);
+    c.fa = p.getInt("fa", 0);  c.fb = p.getInt("fb", 100);
+    c.realce = p.getInt("realce", 0);
+    p.end();
+    bool ok = c.valida && c.x0 >= 0 && c.y0 >= 0 && c.x1 <= CAM_W && c.y1 <= CAM_H &&
+              c.n >= 1 && c.n <= N_MAX && c.x1 - c.x0 >= c.n && c.y1 - c.y0 >= 2 &&
+              c.fa >= 0 && c.fb <= 100 && c.fa < c.fb && (c.realce == 0 || c.realce == 1);
+    if (ok) cfg = c;
+    else if (c.valida) Serial.println("[roi] ROI da NVS invalida: usando a segmentacao");
+  }
+  imprimirConfigRoi();
+}
+
+void imprimirConfigRoi() {
+  if (cfg.valida)
+    Serial.printf("[roi] modo=roi caixa=%d,%d,%d,%d n=%d face=%d-%d realce=%d\n",
+                  cfg.x0, cfg.y0, cfg.x1, cfg.y1, cfg.n, cfg.fa, cfg.fb, cfg.realce);
+  else
+    Serial.printf("[roi] modo=seg (sem ROI na NVS) n=%d\n", N_FATIAS);
+}
+
+void aplicarGiroSalvo() {
+  Preferences p;
+  bool v = false, h = false;
+  if (p.begin("roi", true)) {
+    v = p.getBool("vflip", false);
+    h = p.getBool("hmirror", false);
+    p.end();
+  }
+  sensor_t* s = esp_camera_sensor_get();
+  if (s) {
+    s->set_vflip(s, v ? 1 : 0);
+    s->set_hmirror(s, h ? 1 : 0);
+  }
+  Serial.printf("[camera] orientacao: vflip=%d hmirror=%d\n", v ? 1 : 0, h ? 1 : 0);
+}
+
 bool initCamera() {
   // Zerado explicitamente: campos nao setados ficariam com lixo da pilha.
   camera_config_t cfg = {};
@@ -257,6 +325,7 @@ bool initCamera() {
 
   // NAO chamar sensor->set_framesize() depois do init (causa "Failed to resize buffer").
   Serial.println("[camera] sensor configurado: GRAYSCALE QQVGA 160x120");
+  aplicarGiroSalvo();
   delay(300); // aguarda o sensor estabilizar
   return true;
 }
@@ -312,18 +381,46 @@ bool acharCaixaDigitos(int* bx0, int* by0, int* bx1, int* by1) {
   return true;
 }
 
-// Classifica UMA fatia (sx0..sx1, sy0..sy1 do quadro) como digito 0-9, ou -1 se falhar.
-int classificarFatia(const uint8_t* frame, int sx0, int sy0, int sx1, int sy1) {
-  int larguraFatia = sx1 - sx0;
+// Equalizacao de histograma da regiao [fx0,fx1) x [sy0,sy1) do quadro, na mesma conta inteira do
+// pipeline_nuvem.equalizar(): lut[v] = ((cdf[v] - cmin) * 255 + (n - cmin) / 2) / (n - cmin).
+void montarLutEqualizacao(const uint8_t* frame, int fx0, int sy0, int fx1, int sy1, uint8_t* lut) {
+  uint32_t hist[256] = {0};
+  for (int y = sy0; y < sy1; y++)
+    for (int x = fx0; x < fx1; x++) hist[frame[y * CAM_W + x]]++;
+  uint32_t n = (uint32_t)((fx1 - fx0) * (sy1 - sy0));
+  uint32_t cmin = 0;
+  for (int v = 0; v < 256; v++) {
+    if (hist[v]) { cmin = hist[v]; break; }
+  }
+  if (n == cmin) {   // um tom so: nada a equalizar
+    for (int v = 0; v < 256; v++) lut[v] = (uint8_t)v;
+    return;
+  }
+  uint32_t cdf = 0;
+  for (int v = 0; v < 256; v++) {
+    cdf += hist[v];
+    uint32_t val = (cdf < cmin) ? 0 : ((cdf - cmin) * 255 + (n - cmin) / 2) / (n - cmin);
+    lut[v] = (uint8_t)(val > 255 ? 255 : val);
+  }
+}
+
+// Classifica UMA regiao (fx0..fx1, sy0..sy1 do quadro: a face da roda) como digito 0-9, ou -1 se
+// falhar. realce = 1 equaliza o histograma da regiao antes de reduzir para 28x28.
+int classificarFatia(const uint8_t* frame, int fx0, int sy0, int fx1, int sy1, int realce) {
+  int larguraFatia = fx1 - fx0;
   int alturaFatia = sy1 - sy0;
   if (larguraFatia <= 0) larguraFatia = 1;
   if (alturaFatia <= 0) alturaFatia = 1;
 
+  uint8_t lut[256];
+  if (realce == 1) montarLutEqualizacao(frame, fx0, sy0, fx0 + larguraFatia, sy0 + alturaFatia, lut);
+  else for (int v = 0; v < 256; v++) lut[v] = (uint8_t)v;
+
   for (int y = 0; y < DIGIT_H; y++) {
     int ySrc = sy0 + (y * alturaFatia) / DIGIT_H;
     for (int x = 0; x < DIGIT_W; x++) {
-      int xSrc = sx0 + (x * larguraFatia) / DIGIT_W;
-      uint8_t pixel = frame[ySrc * CAM_W + xSrc];
+      int xSrc = fx0 + (x * larguraFatia) / DIGIT_W;
+      uint8_t pixel = lut[frame[ySrc * CAM_W + xSrc]];
       inputDigito->data.int8[y * DIGIT_W + x] = (int8_t)((int)pixel - 128);
     }
   }
@@ -342,31 +439,44 @@ int classificarFatia(const uint8_t* frame, int sx0, int sy0, int sx1, int sy1) {
   return melhorClasse;
 }
 
-// Fatia a caixa em N_FATIAS pedacos de largura igual e classifica cada um.
-// "saida" precisa ter N_FATIAS+1 chars.
-void lerDigitos(const uint8_t* frame, int x0, int y0, int x1, int y1, char* saida) {
+// Fatia a caixa em n pedacos de largura igual; de cada um, so a face da roda (fa..fb % da largura)
+// vai ao classificador. "saida" precisa ter n+1 chars. Mesmas contas do pipeline_nuvem.janela_face().
+void lerDigitos(const uint8_t* frame, int x0, int y0, int x1, int y1, int n, int fa, int fb,
+                int realce, char* saida) {
   int largura = x1 - x0;
-  for (int i = 0; i < N_FATIAS; i++) {
-    int sx0 = x0 + (largura * i) / N_FATIAS;
-    int sx1 = x0 + (largura * (i + 1)) / N_FATIAS;
-    int digito = classificarFatia(frame, sx0, y0, sx1, y1);
+  for (int i = 0; i < n; i++) {
+    int sx0 = x0 + (largura * i) / n;
+    int sx1 = x0 + (largura * (i + 1)) / n;
+    int w = sx1 - sx0;
+    int fx0 = sx0 + (w * fa) / 100;
+    int fx1 = sx0 + (w * fb) / 100;
+    if (fx1 <= fx0) fx1 = fx0 + 1;
+    int digito = classificarFatia(frame, fx0, y0, fx1, y1, realce);
     saida[i] = (digito >= 0 && digito <= 9) ? ('0' + digito) : '?';
   }
-  saida[N_FATIAS] = '\0';
+  saida[n] = '\0';
 }
 
 // ----------------------------------------------------------------
 // Captura, copia o quadro, desliga a camera, inicializa os modelos (uma vez por boot)
-// e le os digitos. Sem caixa, a leitura fica "------" e ok continua true.
+// e le os digitos. Com ROI na NVS, usa a caixa dela e nao roda a segmentacao. Sem caixa, a leitura
+// fica "------" e ok continua true.
 ResultadoOcr executarOcr() {
   ResultadoOcr r = {};
-  memset(r.leitura, '-', N_FATIAS);
-  r.leitura[N_FATIAS] = '\0';
+  r.n = cfg.valida ? cfg.n : N_FATIAS;
+  memset(r.leitura, '-', r.n);
+  r.leitura[r.n] = '\0';
 
   if (!camPronta) camPronta = initCamera();
   if (!camPronta) { Serial.println("[ocr] camera indisponivel"); return r; }
 
   unsigned long t0 = millis();
+  // Os primeiros quadros depois de ligar a camera saem com a exposicao automatica ainda se
+  // ajustando; descarta como o captura_quadros, de onde vem os quadros da calibracao.
+  for (int i = 0; i < QUADROS_DESCARTADOS; i++) {
+    camera_fb_t* d = esp_camera_fb_get();
+    if (d) esp_camera_fb_return(d);
+  }
   camera_fb_t* fb = esp_camera_fb_get();
   if (!fb) {
     Serial.println("[camera] falha ao capturar");
@@ -394,31 +504,37 @@ ResultadoOcr executarOcr() {
   desligarCamera();
 
   t0 = millis();
-  if (!segOk) segOk = iniciarModelo();
-  if (segOk && !digOk) digOk = iniciarModeloDigito();
+  if (!cfg.valida && !segOk) segOk = iniciarModelo();   // com ROI, a segmentacao nem e carregada
+  if (!digOk) digOk = iniciarModeloDigito();
   r.t_modelos = millis() - t0;
-  if (!segOk || !digOk) {
+  if ((!cfg.valida && !segOk) || !digOk) {
     Serial.println("[ocr] modelos indisponiveis");
     free(frame);
     return r;
   }
 
   t0 = millis();
-  prepararEntradaModelo(frame);
-  bool inferiu = (interpreter->Invoke() == kTfLiteOk);
+  bool inferiu = true;
   int bx0 = 0, by0 = 0, bx1 = 0, by1 = 0;
-  if (inferiu) r.achou = acharCaixaDigitos(&bx0, &by0, &bx1, &by1);
-  else Serial.println("[tflite] Invoke() (segmentacao) falhou");
+  if (cfg.valida) {
+    bx0 = cfg.x0; by0 = cfg.y0; bx1 = cfg.x1; by1 = cfg.y1;
+    r.achou = true;
+  } else {
+    prepararEntradaModelo(frame);
+    inferiu = (interpreter->Invoke() == kTfLiteOk);
+    if (inferiu) r.achou = acharCaixaDigitos(&bx0, &by0, &bx1, &by1);
+    else Serial.println("[tflite] Invoke() (segmentacao) falhou");
+  }
   r.t_seg = millis() - t0;
 
   t0 = millis();
-  if (r.achou) lerDigitos(frame, bx0, by0, bx1, by1, r.leitura);
+  if (r.achou) lerDigitos(frame, bx0, by0, bx1, by1, r.n, cfg.fa, cfg.fb, cfg.realce, r.leitura);
   r.t_digitos = millis() - t0;
   free(frame);
 
   r.ok = inferiu;
-  Serial.printf("[ocr] leitura=%s achou_caixa=%d bx0=%d by0=%d bx1=%d by1=%d\n",
-                r.leitura, r.achou ? 1 : 0, bx0, by0, bx1, by1);
+  Serial.printf("[ocr] leitura=%s achou_caixa=%d bx0=%d by0=%d bx1=%d by1=%d modo=%s\n",
+                r.leitura, r.achou ? 1 : 0, bx0, by0, bx1, by1, cfg.valida ? "roi" : "seg");
   return r;
 }
 
@@ -477,12 +593,12 @@ bool enviarUplink(const uint8_t* dados, int len) {
 // [id hi][id lo][flags][digitos ASCII...] (ver cabecalho do arquivo)
 bool enviarLeitura(uint16_t id, const ResultadoOcr& r) {
   Serial.printf("[ocr] enviando leitura id %u\n", (unsigned)id);  // o PC casa o uplink com o disparo
-  uint8_t payload[3 + N_FATIAS];
+  uint8_t payload[3 + N_MAX];
   payload[0] = (uint8_t)(id >> 8);
   payload[1] = (uint8_t)(id & 0xFF);
-  payload[2] = (uint8_t)((r.achou ? 0x80 : 0x00) | N_FATIAS);
-  memcpy(payload + 3, r.leitura, N_FATIAS);
-  return enviarUplink(payload, sizeof(payload));
+  payload[2] = (uint8_t)((r.achou ? 0x80 : 0x00) | r.n);
+  memcpy(payload + 3, r.leitura, r.n);
+  return enviarUplink(payload, 3 + r.n);
 }
 
 // Segura um pino em nivel fixo durante o deep sleep.
@@ -579,13 +695,14 @@ void setup() {
   if (!acordouDoSleep) delay(1000);  // so no power-on: espera o monitor serial abrir
 
   Serial.println("ESP32-CAM LoRa OCR Sender - TCC");
-  Serial.println("Comandos: LER | AUTO[:<s>] | STOP | SLEEP:<s> | AT<cmd>");
+  Serial.println("Comandos: LER | AUTO[:<s>] | STOP | SLEEP:<s> | ROI | AT<cmd>");
   Serial.printf("[boot] causa=%s ciclo=%u auto=%d intervalo=%u s\n",
                 acordouDoSleep ? "timer" : "power-on/reset", (unsigned)cicloN,
                 autoAtivo ? 1 : 0, (unsigned)autoIntervaloS);
 
   if (autoAtivo) janelaStop();
 
+  carregarConfigRoi();
   camPronta = initCamera();
   if (camPronta) Serial.println("[camera] pronta.");
   else Serial.println("[camera] falhou - so bridge AT e SLEEP disponiveis.");
@@ -613,6 +730,8 @@ void loop() {
     } else if (linha == "STOP") {
       autoAtivo = false;
       Serial.println("[auto] modo autonomo desligado");
+    } else if (linha == "ROI") {
+      imprimirConfigRoi();
     } else if (linha.startsWith("SLEEP:")) {
       long s = linha.substring(6).toInt();
       if (s > 0) dormir((uint32_t)s);
