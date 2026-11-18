@@ -346,7 +346,9 @@ Conferir sempre antes de confiar no dataset gerado:
 ## Próximos passos recomendados
 
 1. **Coletar mais fotos reais da ESP32-CAM** do(s) hidrômetro(s) que serão efetivamente
-   monitorados, na mesma posição/distância/ângulo da instalação real:
+   monitorados, na mesma posição/distância/ângulo da instalação real. Feito em parte em 2026-11-18: 30 fotos de um
+   hidrômetro com a câmera fixa, só para teste (`../dados/teste/`); faltam outros medidores, outras luzes e fotos
+   separadas para o fine-tuning:
    - ~30-50 fotos, variando iluminação (dia/noite/luz artificial), pequenas variações de
      ângulo, reflexo/embaçado no vidro.
    - Se o medidor estiver em uso, fotografar ao longo de dias/semanas para cobrir dígitos
@@ -357,12 +359,12 @@ Conferir sempre antes de confiar no dataset gerado:
 2. **Tirar a segmentação do firmware** (~15,6s/frame medido em hardware real — ver seção
    "Firmware" acima): com a câmera fixa, a janela dos dígitos é uma ROI calibrada uma vez na
    instalação, e o classificador lê as N fatias dela (ver a decisão no
-   [README da raiz](../README.md#decisão-pipeline-de-ocr-na-borda)). Falta implementar isso no
-   firmware e medir a latência e a energia sem a segmentação.
-3. Migrar a lógica do firmware de debug (`test_images/debug_ocr_esp32cam/`) para um firmware
-   de produção: remover o desenho de retângulo/linhas-guia (só serve para debug visual),
-   adicionar tratamento de erro mais robusto. (A entrega da leitura já existe: o
-   `Rede/transmissor_ocr_esp32cam/` envia a leitura por LoRaWAN na FPort 2.)
+   [README da raiz](../README.md#decisão-pipeline-de-ocr-na-borda)). Implementado em 2026-11-18 no
+   `Rede/transmissor_ocr_esp32cam/` (ROI gravada pelo `Rede/calibrar_roi_esp32cam/`); falta medir a latência ponta a
+   ponta e a energia nesse modo.
+3. Firmware de produção: feito no `Rede/transmissor_ocr_esp32cam/`, que veio do firmware de debug sem o desenho de
+   retângulo/linhas-guia e envia a leitura por LoRaWAN na FPort 2. Falta reenvio ou confirmação quando o uplink se
+   perde (hoje uma leitura perdida não é reenviada no modo autônomo).
 4. Opcional: se a acurácia de domínio (com teste real separado) ficar abaixo do esperado,
    reconsiderar usar também o conjunto de **detecção** do Dryad (46 mil imagens rotuladas)
    para melhorar o modelo de segmentação, hoje treinado só com as 1244 imagens do Kaggle.

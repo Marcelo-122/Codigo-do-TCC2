@@ -40,7 +40,7 @@ inventar uma leitura sem base nenhuma.
 1. **Arduino IDE**: use o core ESP32 **3.0.7**, que já traz o TensorFlow Lite
    Micro embutido (`esp-tflite-micro` 1.3.1 com `esp-nn`); não é preciso
    instalar biblioteca TFLite à parte (ver [`medicoes/README.md`](../../medicoes/README.md)). Selecione a board
-   **"AI Thinker ESP32-CAM"** com **PSRAM: Enabled**.
+   **"AI Thinker ESP32-CAM"** (no core 3.0.7 a PSRAM já vem ligada; não há opção no menu).
 2. Abra `debug_ocr_esp32cam.ino` (nesta pasta) no Arduino IDE e grave na
    ESP32-CAM.
 3. No PC, rode `grab_image_debug.py` (a porta vem de `TX_SERIAL_PORT` no
@@ -63,7 +63,9 @@ sketch compila, os dois modelos (segmentação + classificador de dígito)
 rodam juntos e a leitura sai pela serial. A evidência está em
 [`medicoes/debug_metricas.csv`](../../medicoes/debug_metricas.csv) (61
 capturas de 2026-09-27, ver [`medicoes/README.md`](../../medicoes/README.md)):
-`arena_digito_bytes` = 28.556 e `leitura=046663` repetida no medidor de teste.
+`arena_digito_bytes` = 28.556 e `leitura=046663` repetida no medidor de teste. Nessas capturas o firmware desenhava a
+caixa e as linhas-guia **antes** de ler os dígitos, no mesmo buffer, e o classificador recebia essas linhas dentro das
+fatias; a ordem foi corrigida em 2026-11-18 (agora lê e depois desenha), sem nova medição.
 Este firmware de debug **não** tem deep sleep nem foi medido em corrente. O consumo e o deep sleep do nó
 foram testados em `Rede/transmissor_esp32cam` (30 ciclos do fluxo de imagem) e em `Rede/transmissor_ocr_esp32cam`
 (32 ciclos de consumo e 34 disparos de latência do fluxo de OCR na borda; ver [`medicoes/README.md`](../../medicoes/README.md)).

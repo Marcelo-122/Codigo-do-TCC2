@@ -12,18 +12,18 @@ todo ocupado pelos dígitos, como em `test_images/debug_ocr_esp32cam/debug_frame
    ligar a câmera (imprime `[camera] orientacao: ...`), então os quadros já saem de pé.
 2. Grave `captura_quadros/captura_quadros.ino` na ESP32-CAM: board "AI Thinker ESP32-CAM" (no core 3.0.7 a
    PSRAM já vem ligada). Não precisa da partição Huge APP nem de TensorFlow. Compila com o core 3.0.7.
-3. Dependências do `capturar_quadros.py`: `opencv-python`, `numpy` e `pyserial`; o `.venv` desta pasta já tem
-   os três (`.venv/Scripts/python capturar_quadros.py ...`). O `teste_hibrido.py` continua no ambiente de
+3. Dependências do `capturar_quadros.py`: as de `requirements.txt` desta pasta (`opencv-python` com janelas,
+   `numpy`, `pyserial` e `ai-edge-litert`, este só para mostrar a leitura na janela); o `.venv` desta pasta já tem
+   tudo (`.venv/Scripts/python capturar_quadros.py ...`). O `teste_hibrido.py` continua no ambiente de
    `ModeloEDataset/requirements.txt` (Python 3.10). A porta serial sai de `TX_SERIAL_PORT` do `.env`, ou
    use `--porta COM5`. Ao abrir a porta, o script reinicia a placa (na ESP32-CAM-MB, abrir a porta sem esse
    reset deixava a placa em modo de gravação).
 4. Feche o Monitor Serial do Arduino IDE (a porta só aceita um programa).
 
 Por que não usar o `debug_ocr_esp32cam`: ele desenha o retângulo e as linhas-guia sobre o quadro e o manda
-em JPEG qualidade 80. Cada imagem dele já vem alterada. Além disso, pelo código, ele **lê os dígitos
-depois de desenhar** as guias no mesmo buffer, então o classificador recebe as linhas brancas da borda e as
-cinzas entre as fatias (efeito não medido). Vale corrigir, mas a medição das 61 capturas em
-`medicoes/` foi feita assim.
+em JPEG qualidade 80. Cada imagem dele já vem alterada. Até 2026-11-18 ele também **lia os dígitos depois de
+desenhar** as guias no mesmo buffer, então o classificador recebia as linhas brancas da borda e as cinzas entre as
+fatias (efeito não medido); a ordem foi corrigida, mas as 61 capturas de `medicoes/` foram feitas com o erro.
 
 ## 2. Como capturar
 

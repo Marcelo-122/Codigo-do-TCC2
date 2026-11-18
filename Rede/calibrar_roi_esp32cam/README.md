@@ -16,8 +16,8 @@ O quadro aparece **ao vivo** no PC, no mesmo formato que o firmware de OCR captu
    ```
    A porta vem de `TX_SERIAL_PORT` do `.env` (ou `--porta COM5`). O script precisa de `opencv-python` (a versão
    com janelas: a `opencv-python-headless` do `ocr/requirements.txt` dá "The function is not implemented" no
-   `namedWindow`), `numpy` e `pyserial`; o `.venv` de `experimentos/hibrido_a_b` já tem os três. Para montar outro:
-   `pip install opencv-python numpy pyserial`.
+   `namedWindow`), `numpy`, `pyserial` e `ai-edge-litert` (para a leitura ao vivo), todos em
+   `experimentos/hibrido_a_b/requirements.txt`; o `.venv` daquela pasta já tem tudo.
 3. Na janela:
    - arraste para desenhar a caixa; arraste dentro dela para mover;
    - setas movem 1 px; `a`/`d` e `j`/`l` mexem nas bordas direita e esquerda, `w`/`s` e `i`/`k` nas de baixo e

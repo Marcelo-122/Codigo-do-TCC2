@@ -1,0 +1,13 @@
+# Ambiente da bancada (Python 3.13; testado com 3.13.9): captura e calibração pela USB e as avaliações no PC.
+#   experimentos/hibrido_a_b/capturar_quadros.py, avaliar_roi_fixa_fisico.py, comparar_placa_pc.py
+#   Rede/calibrar_roi_esp32cam/calibrar_roi_usb.py
+#   ocr/avaliar_roi_calibrada.py, ocr/avaliar_float_int8_fisico.py (e os demais de ocr/)
+# Criar na raiz do repositório:
+#   py -3.13 -m venv experimentos/hibrido_a_b/.venv
+#   experimentos/hibrido_a_b/.venv/Scripts/pip install -r experimentos/hibrido_a_b/requirements.txt
+# O teste_hibrido.py NÃO roda aqui: ele usa TensorFlow 2.16.1 (ambiente de ModeloEDataset/requirements.txt).
+ai-edge-litert==2.3.0
+numpy==2.5.4
+opencv-python==5.0.0.93   # com janelas; a -headless do ocr/requirements.txt não abre as janelas da captura e do calibrador
+pyserial==3.5
+h5py==3.16.0

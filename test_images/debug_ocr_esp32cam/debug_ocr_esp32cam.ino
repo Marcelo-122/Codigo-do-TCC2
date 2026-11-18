@@ -527,7 +527,6 @@ void loop() {
   bool achou = false;
   if (status == kTfLiteOk) {
     achou = acharCaixaDigitos(&bx0, &by0, &bx1, &by1);
-    if (achou) desenharCaixaEFatias(frame, bx0, by0, bx1, by1);
   } else {
     Serial.println("[tflite] Invoke() (segmentacao) falhou");
   }
@@ -544,6 +543,11 @@ void loop() {
     leitura[N_FATIAS] = '\0';
   }
   unsigned long t_digitos = millis();
+
+  // Desenha a caixa e as fatias so DEPOIS de ler: antes (ate 2026-11-18) o desenho vinha logo apos a
+  // segmentacao, e o classificador recebia as linhas brancas e cinzas dentro das fatias (vale para as
+  // 61 capturas de medicoes/debug_metricas.csv).
+  if (achou) desenharCaixaEFatias(frame, bx0, by0, bx1, by1);
 
   Serial.printf("Leitura: %s\n", leitura);
 

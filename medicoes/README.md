@@ -81,7 +81,9 @@ mantidos por serem medições reais, mas **não entram** nos resultados abaixo
   (`leitura=--------`, `t_total_ms` = 15.746).
 - No medidor de teste (leitura real `046663`), as 12 últimas capturas leem `046663` (14 no
   total); antes, durante a calibração da posição, a leitura varia (por exemplo `026663`).
-  Isto mostra consistência com a câmera parada, **não** acurácia: não há rótulo por captura.
+  Isto mostra consistência com a câmera parada, **não** acurácia: não há rótulo por captura. O firmware dessas
+  capturas desenhava as linhas-guia no quadro antes de ler os dígitos (corrigido em 2026-11-18; ver
+  `test_images/debug_ocr_esp32cam/README.md`), então as leituras foram feitas com essas linhas dentro das fatias.
 - A temperatura do chip passou de 72 °C durante toda a sessão.
 
 ## Latência de inferência e decisão sobre o modelo (H2)

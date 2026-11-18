@@ -69,9 +69,9 @@ branches e pastas diferentes; os outros dois (U-NET + CRNN + CTC e U-NET + CNN) 
 | Critério | CNN Simples (`ModeloEDataset/`) | U-NET + CRNN + CTC (`legado/TreinoEModelosOCRNaBorda/`) | U-NET + CNN (`legado/ocr_cloud/`) |
 |---|---|---|---|
 | Cabe no ESP32-CAM | **Sim.** Arenas de 1,62 MB (segmentação) e 28,6 KB (dígito), medidas; sobram 1,29 MB de PSRAM | **Não.** O detector pede 15.335.424 bytes de arena; havia 4.053.940 (teste em placa) | Não se aplica (só PC) |
-| Roda em hardware | **Sim**, 61 capturas na ESP32-CAM | Não: a alocação falha; os leitores CTC também (operador `REDUCE_PROD` ausente na TFLM do core 3.0.7) | Não |
-| Latência | ≈ 17,6 s de processamento por leitura (15,6 s de segmentação + 2,0 s de dígitos). Arena e latência medidas nas 61 capturas com o `modelo.h` de segmentação **antigo** (11.128 B), não o atual (12.080 B) | Não se aplica | Não se aplica |
-| Acurácia | 95,4 % por dígito na validação por foto (INT8); 97,7 % dos dígitos (92,8 % das leituras) nas pastas `test` do Dryad; 91 % (29/32 dígitos) em imagens novas | Leitor CTC: 39 % a 64 % de acerto de sequência em recortes de máscara; no máximo 1 de 10 fotos de ponta a ponta | Treinado só com fontes de dígitos, não com hidrômetros |
+| Roda em hardware | **Sim**: 61 capturas com o firmware de debug; em 2026-11-18, o `transmissor_ocr_esp32cam` em modo ROI leu as mesmas 33 imagens que o PC com o mesmo resultado (33/33) | Não: a alocação falha; os leitores CTC também (operador `REDUCE_PROD` ausente na TFLM do core 3.0.7) | Não |
+| Latência | Com a segmentação: ≈ 17,6 s de processamento por leitura (15,6 s de segmentação + 2,0 s de dígitos), medidos nas 61 capturas com o `modelo.h` de segmentação **antigo** (11.128 B). No modo adotado (ROI, sem segmentação): 1,92 s do classificador para 6 fatias na placa; a latência ponta a ponta e a energia nesse modo ainda não foram medidas | Não se aplica | Não se aplica |
+| Acurácia | 95,4 % por dígito na validação por foto (INT8); 97,7 % dos dígitos (92,8 % das leituras) nas pastas `test` do Dryad; 91 % (29/32 dígitos) em imagens novas; **25/30 leituras (97,2 % dos dígitos) no hidrômetro físico** com a ROI calibrada | Leitor CTC: 39 % a 64 % de acerto de sequência em recortes de máscara; no máximo 1 de 10 fotos de ponta a ponta | Treinado só com fontes de dígitos, não com hidrômetros |
 
 Evidências: [`medicoes/README.md`](medicoes/README.md) (CNN Simples em hardware),
 [`medicoes/teste_pipeline_a_esp32cam.md`](medicoes/teste_pipeline_a_esp32cam.md) (A em hardware) e
@@ -149,11 +149,16 @@ câmera, a lente e a compressão, mas **não** o reflexo, a iluminação e o ân
 | Dryad, pastas `train` | — | recortes 200×60, não versionados | treino do classificador |
 | Dryad, pastas `test` | — | idem | **fora do treino** (`preparar_dataset_dryad.py` não as usa mais); teste do classificador em `ocr/avaliar_teste_publico.py` |
 
-**Como o pipeline é avaliado agora.** [`ocr/avaliar_pipeline.py`](ocr/avaliar_pipeline.py) roda o pipeline completo em
-INT8 (caixa prevista pelo **modelo de segmentação** → fatias iguais → classificador de dígito, sem caixa manual) nos
-dois fluxos, borda (quadro 160×120 direto) e nuvem (o mesmo quadro depois do JPEG q90), e grava em
-[`medicoes/ocr_teste.csv`](medicoes/ocr_teste.csv): taxa de leitura exata, acurácia por dígito, CER, Dice/IoU da
-máscara e IoU da caixa (só nas fotos com caixa real).
+**Como o pipeline é avaliado.** Três scripts leem o conjunto físico (`dados/teste/`) nos dois fluxos, borda (quadro
+160×120 direto) e nuvem (o mesmo quadro depois do JPEG q90), e gravam em [`medicoes/ocr_teste.csv`](medicoes/ocr_teste.csv)
+a taxa de leitura exata, a acurácia por dígito e o CER:
+[`ocr/avaliar_roi_calibrada.py`](ocr/avaliar_roi_calibrada.py), o **pipeline adotado** (ROI calibrada uma vez por posição
+de câmera, recorte da face da roda, sem segmentação; com e sem votação);
+[`ocr/avaliar_pipeline.py`](ocr/avaliar_pipeline.py) `--conjunto fisico`, com a caixa prevista pelo **modelo de
+segmentação** (descartado; grava também Dice/IoU da máscara e IoU da caixa nas fotos com caixa real); e
+[`ocr/avaliar_roi_manual.py`](ocr/avaliar_roi_manual.py), com a ROI marcada à mão foto a foto.
+[`ocr/avaliar_float_int8_fisico.py`](ocr/avaliar_float_int8_fisico.py) repete o adotado com o classificador em ponto
+flutuante (H1).
 
 ---
 
@@ -267,6 +272,8 @@ Os comandos abaixo usam a sintaxe do Windows (`.venv\Scripts\...`); no Linux/WSL
 | `legado/ocr_cloud/` | **3.13** | `legado/ocr_cloud/requirements.txt` (TensorFlow 2.21.0, Keras 3.15.1) | Instalado em venv limpo (3.13.9) e `modelo_ocr.keras` carregado com sucesso |
 | `legado/TreinoEModelosOCRNaBorda/` | **Linux / WSL2** (GPU opcional) | `requirements.txt` da pasta: é um `pip freeze` com pacotes NVIDIA/CUDA que não têm wheel para Windows (TensorFlow 2.21.0, Keras 3.15.1, tf_keras 2.21.0) | Python **3.11 a 3.13**: a resolução dos wheels Linux x86_64 foi conferida nas três versões; o treino em si não foi reexecutado |
 | `ModeloEDataset/` | **3.10** (TensorFlow 2.16.1 só tem wheels até 3.12) | `ModeloEDataset/requirements.txt` | Instalado em venv limpo com Python 3.10.11 (versões fixadas, `pip check` sem erros); modelo `.h5` e `.tflite` carregados |
+| `ocr/` | 3.13 | `ocr/requirements.txt` (ai-edge-litert, numpy, opencv-python-headless; h5py só para o `avaliar_float_int8_fisico.py`) | Rodado com 3.13.9 |
+| Bancada: captura, calibrador (`Rede/calibrar_roi_esp32cam/calibrar_roi_usb.py`) e avaliações do conjunto físico | 3.13 | `experimentos/hibrido_a_b/requirements.txt` (o de `ocr/` mais pyserial e o `opencv-python` com janelas) | Venv `experimentos/hibrido_a_b/.venv` com 3.13.9, usado com a placa em 2026-11-17 e 18. O `teste_hibrido.py` fica no ambiente de `ModeloEDataset/` |
 | `poc_diminuicao_imagem/` | — | g++, OpenCV 4 e Qt6 em `/usr/include` (Linux/WSL, ver `makefile`) | — |
 | Firmwares `.ino` | — | Arduino IDE + core ESP32; biblioteca **LoRa** (Sandeep Mistry); TensorFlow Lite Micro já embutida no core 3.0.7 (`esp-tflite-micro` 1.3.1) | Gravados e testados em placa com o core 3.0.7; o `transmissor_ocr_esp32cam` também compilado com arduino-cli |
 
@@ -387,11 +394,12 @@ salto de frequência e o limite de ocupação por canal do item 10.2. A largura 
 No fluxo de OCR na borda o dispositivo lê o medidor e só a **leitura** trafega, em um único uplink:
 
 1. A ESP32-CAM (firmware em [`Rede/transmissor_ocr_esp32cam/`](Rede/transmissor_ocr_esp32cam/transmissor_ocr_esp32cam.ino))
-   captura o quadro 160×120, copia-o, **desliga a câmera**, roda a segmentação e o classificador de dígito
-   (os mesmos modelos do `debug_ocr_esp32cam`; a segmentação ainda roda a cada leitura, ~15,6 s) e monta o payload.
+   captura o quadro 160×120, copia-o, **desliga a câmera**, lê os dígitos e monta o payload. Com a ROI gravada pelo
+   calibrador na NVS (modo `roi`), roda só o classificador nas fatias da ROI (1,92 s); sem ROI (modo `seg`), roda antes
+   a segmentação (~15,6 s), como nas medições de 27/10.
 2. O payload vai ao Radioenge com `AT+SENDB=02:<hex>` (**FPort 2**): `uint16` id + `uint8` flags + N dígitos em ASCII
    (9 bytes com N = 6). Não há blocos nem JPEG: um uplink por leitura, e a latência ponta a ponta medida cai de 189 s
-   (fluxo de imagem, 19 a 27 chunks a 7 s) para 18,84 s (medianas).
+   (fluxo de imagem, 19 a 27 chunks a 7 s) para 18,84 s (medianas; o OCR medido no modo com segmentação).
 3. O `reconstrutor.py` descriptografa como sempre e, ao ver FPort 2, decodifica a leitura com
    `enlace.parse_leitura()`. Cada leitura vira uma linha em **`medicoes/transmissao_ocr.csv`**, separada do
    `transmissao.csv` de imagem (as duas coexistem na mesma execução).
