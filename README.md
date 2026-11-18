@@ -160,10 +160,12 @@ máscara e IoU da caixa (só nas fotos com caixa real).
 ## Hipóteses avaliadas
 
 As medições em [`medicoes/`](medicoes/README.md) comparam os dois fluxos, **imagem** (o JPEG vai pelo enlace e o OCR
-roda no servidor) e **OCR na borda** (só a leitura vai pelo enlace), segundo duas hipóteses do trabalho:
+roda no servidor) e **OCR na borda** (só a leitura vai pelo enlace), segundo duas hipóteses do trabalho. A H1 trata
+do modelo: o efeito da quantização INT8, que o classificador precisa para caber na ESP32-CAM.
 
 | Hipótese | Enunciado | Métricas | Resultado medido |
 |---|---|---|---|
+| **H1** (quantização) | Acurácia do classificador INT8 contra o mesmo modelo em ponto flutuante | Acurácia por dígito e por leitura, pareada (McNemar exato) | Sem diferença: na validação do classificador, 95,5 % (float) contra 95,4 % (INT8), p = 0,29; no hidrômetro físico (30 fotos, ROI calibrada), **25/30 leituras e CER 0,028 nos dois**, dígitos iguais em 179/180 (borda) e 180/180 (nuvem), p = 1,0 |
 | **H2** (latência e entrega) | "O método de processamento local apresenta menor latência e maior valor de taxa de pacotes entregues" | Latência ponta a ponta; taxa de entrega por leitura e por pacote | Latência confirmada (mediana de 18,84 s contra 189 s). Entrega por leitura: 79,4 % contra 66,7 %, diferença sem significância estatística (Fisher, p = 0,27). Por pacote o fluxo de imagem foi melhor (98,0 % contra 79,4 %) |
 | **H3** (energia) | Consumo de energia dos dois fluxos | mAh por leitura; autonomia estimada | O OCR na borda gasta 5,6 a 7,2 vezes menos por leitura. O efeito na autonomia vai de 1,1× a 6× conforme a corrente de sleep, que ainda inclui o Radioenge |
 

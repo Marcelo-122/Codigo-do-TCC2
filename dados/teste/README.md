@@ -21,6 +21,7 @@ ROIs manuais, e uma coluna `tipo`. Elas não entram nas avaliações.
 | `python ocr/avaliar_roi_calibrada.py` | **adotado**: ROI calibrada uma vez, sem segmentação, com e sem votação | `fisico_roi_calibrada`, `fisico_roi_calibrada_votacao` | 25/30 leituras, 97,2 % dos dígitos, CER 0,028, na borda e na nuvem; o mesmo com votação |
 | `python ocr/avaliar_pipeline.py --conjunto fisico` | segmentação do modelo (descartada) | `fisico` | 2/39 (borda), 0/39 (nuvem) |
 | `python ocr/avaliar_roi_manual.py` | ROI marcada à mão, fatia inteira | `fisico_roi_manual*` | 4/39 (6/39 com votação) |
+| `python ocr/avaliar_float_int8_fisico.py` | o adotado, com o classificador em ponto flutuante (`.h5`) no lugar do INT8 (H1) | `fisico_roi_calibrada_float` | 25/30, CER 0,028, igual ao INT8 (dígitos iguais em 179/180 na borda e 180/180 na nuvem; McNemar p = 1,0); detalhe em `ModeloEDataset/relatorios/comparacao_float_int8_fisico.json` |
 
 A "borda" é emulada em Python com as mesmas contas do firmware; a equivalência com a placa foi medida à parte nas 30
 fotos da bancada (`experimentos/hibrido_a_b/resultados/PLACA_X_PC.md`: 33/33 leituras iguais).

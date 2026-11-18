@@ -1,0 +1,41 @@
+{
+  "fotos": 30,
+  "data": "2026-11-18",
+  "modelo_float": "modelo_digito.h5",
+  "fluxos": {
+    "borda": {
+      "leituras_exatas_float": 25,
+      "leituras_exatas_int8": 25,
+      "leituras": 30,
+      "digitos_certos_float": 175,
+      "digitos_certos_int8": 175,
+      "digitos": 180,
+      "cer_float": 0.0278,
+      "cer_int8": 0.0278,
+      "digitos_iguais_float_int8": 179,
+      "digitos_so_float_acerta": 0,
+      "digitos_so_int8_acerta": 0,
+      "mcnemar_exato_p_digitos": 1.0,
+      "leituras_so_float_acerta": 0,
+      "leituras_so_int8_acerta": 0,
+      "mcnemar_exato_p_leituras": 1.0
+    },
+    "nuvem": {
+      "leituras_exatas_float": 25,
+      "leituras_exatas_int8": 25,
+      "leituras": 30,
+      "digitos_certos_float": 175,
+      "digitos_certos_int8": 175,
+      "digitos": 180,
+      "cer_float": 0.0278,
+      "cer_int8": 0.0278,
+      "digitos_iguais_float_int8": 180,
+      "digitos_so_float_acerta": 0,
+      "digitos_so_int8_acerta": 0,
+      "mcnemar_exato_p_digitos": 1.0,
+      "leituras_so_float_acerta": 0,
+      "leituras_so_int8_acerta": 0,
+      "mcnemar_exato_p_leituras": 1.0
+    }
+  }
+}
