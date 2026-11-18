@@ -18,6 +18,36 @@ python teste_hibrido.py --gerar-manifesto ../../../test_images fotos_para_rotula
 python teste_hibrido.py --manifesto fotos_para_rotular.csv
 ```
 
+## ROI fixa no hidrômetro físico (2026-11-18)
+
+Os quadros de `quadros_160x120/` (capturados com `capturar_quadros.py`, câmera parada diante do hidrômetro
+`fisico_1`) também servem para medir o pipeline B no modo da instalação: ROI calibrada, sem segmentação.
+`avaliar_roi_fixa_fisico.py` lê cada quadro com a ROI da posição da câmera (`posicoes_camera.csv`: a câmera se mexeu
+uma vez e foi recalibrada, então há duas ROIs) e gera `resultados/ROI_FIXA_FISICO.md`:
+
+| Pré-processamento (fluxo borda) | Leituras exatas (30 quadros) |
+|---|---|
+| sem pré-processamento | 2/30 (7 %) |
+| **só a face da roda (configuração final, gravada na placa)** | **25/30 (83 %; IC 95 % 66–93 %)** |
+| face + realce (como foi calibrado) | 24/30 (80 %; IC 95 % 63–90 %) |
+
+O que decide é recortar a face da roda; o realce não acrescentou nada neste conjunto e foi desligado
+(`realce 0` na placa e nos dois JSONs da ROI, que guardam o valor da calibração em `realce_na_calibracao`). Os erros estão todos na roda
+das unidades (`7`, `9` e `1` lidos como `0` ou `3`). Um medidor e uma luz: não mede a generalização para outro
+hidrômetro.
+
+```bash
+.venv/Scripts/python avaliar_roi_fixa_fisico.py      # na raiz: experimentos/hibrido_a_b/.venv/Scripts/python experimentos/hibrido_a_b/avaliar_roi_fixa_fisico.py
+```
+
+**Na placa, com as mesmas imagens.** `comparar_placa_pc.py` manda cada quadro pela serial ao
+`transmissor_ocr_esp32cam` (comando `LERQ x0 y0 x1 y1 n fa fb realce`, com a ROI da posição do quadro), que lê com o
+mesmo `lerDigitos()` do OCR real, e compara com o PC (`resultados/PLACA_X_PC.md`). Em 2026-11-18, com a
+configuração final (só a face): **33/33 leituras iguais** e 25/30 certas nos dois; as saídas int8 do classificador
+diferiram até 18 (kernels esp-nn na placa × de referência no PC), sem mudar nenhum dígito. Com o realce ligado, a
+mesma comparação tinha dado 33/33 iguais e 24/30 certas. O classificador levou 1,92 s
+para as 6 fatias na placa. O teste não inclui a câmera ao vivo (exposição, variação entre quadros).
+
 ## Resultados (execução de 25/10/2026)
 
 Leitura exata = número igual ao gabarito, ignorando zeros à esquerda. Entre parênteses, o IC de 95%.

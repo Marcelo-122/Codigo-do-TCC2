@@ -1,0 +1,52 @@
+{
+ "caixa": [
+  22,
+  81,
+  152,
+  111
+ ],
+ "n_digitos": 6,
+ "quadro": [
+  160,
+  120
+ ],
+ "formato": "GRAYSCALE QQVGA",
+ "fatias": [
+  [
+   22,
+   43
+  ],
+  [
+   43,
+   65
+  ],
+  [
+   65,
+   87
+  ],
+  [
+   87,
+   108
+  ],
+  [
+   108,
+   130
+  ],
+  [
+   130,
+   152
+  ]
+ ],
+ "face_pct": [
+  14,
+  74
+ ],
+ "realce": 0,
+ "vflip": 1,
+ "hmirror": 0,
+ "leitura_no_pc": "000025",
+ "salva_no_esp32": true,
+ "gerado_em": "2026-11-18T19:07:06-03:00",
+ "observacao": "Reconstruído: a recalibração das 19:23 sobrescreveu o roi_fisico_1.json desta posição. Valores conferidos na placa (comando ROI) e no JSON antes da recalibração; a foto PNG da calibração se perdeu. Realce desligado em 2026-11-18, depois da avaliação dos 30 quadros (só a face: 25/30; face + realce: 24/30). A calibração foi feita com realce 1 (campo realce_na_calibracao).",
+ "realce_na_calibracao": 1
+}

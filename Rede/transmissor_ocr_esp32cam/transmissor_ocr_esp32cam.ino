@@ -36,6 +36,11 @@
 //                                    JANELA_STOP_MS logo apos cada despertar)
 //   SLEEP:<s>                        deep sleep unico de <s> segundos, sem leitura
 //   ROI                              imprime a ROI/face/realce lidos da NVS e o modo (roi ou seg)
+//   LERQ x0 y0 x1 y1 n fa fb realce  le um quadro 160x120 cru MANDADO PELO PC (19200 bytes depois de
+//                                    "[lerq] mande o quadro"), com a ROI dada, pelo mesmo lerDigitos(); sem
+//                                    camera e sem uplink. Imprime as saidas int8 de cada fatia e a leitura,
+//                                    para comparar a placa com o pipeline_nuvem.py nas mesmas imagens
+//                                    (experimentos/hibrido_a_b/comparar_placa_pc.py).
 //   AT...                            qualquer outra linha vai direto ao Radioenge
 //
 // Formato do payload (FPort 2, AT+SENDB=02:<hex>), bytes:
@@ -441,6 +446,8 @@ int classificarFatia(const uint8_t* frame, int fx0, int sy0, int fx1, int sy1, i
 
 // Fatia a caixa em n pedacos de largura igual; de cada um, so a face da roda (fa..fb % da largura)
 // vai ao classificador. "saida" precisa ter n+1 chars. Mesmas contas do pipeline_nuvem.janela_face().
+static int8_t ultimasSaidas[N_MAX][10];   // saida do classificador em cada fatia da ultima leitura
+
 void lerDigitos(const uint8_t* frame, int x0, int y0, int x1, int y1, int n, int fa, int fb,
                 int realce, char* saida) {
   int largura = x1 - x0;
@@ -452,6 +459,7 @@ void lerDigitos(const uint8_t* frame, int x0, int y0, int x1, int y1, int n, int
     int fx1 = sx0 + (w * fb) / 100;
     if (fx1 <= fx0) fx1 = fx0 + 1;
     int digito = classificarFatia(frame, fx0, y0, fx1, y1, realce);
+    if (digito >= 0) memcpy(ultimasSaidas[i], outputDigito->data.int8, 10);   // para o LERQ
     saida[i] = (digito >= 0 && digito <= 9) ? ('0' + digito) : '?';
   }
   saida[n] = '\0';
@@ -683,6 +691,43 @@ void janelaStop() {
   }
 }
 
+// LERQ x0 y0 x1 y1 n fa fb realce: le um quadro mandado pelo PC com a ROI dada (ver o cabecalho).
+void lerQuadroDoPc(const String& linha) {
+  int x0, y0, x1, y1, n, fa, fb, realce;
+  if (sscanf(linha.c_str() + 5, "%d %d %d %d %d %d %d %d", &x0, &y0, &x1, &y1, &n, &fa, &fb, &realce) != 8 ||
+      x0 < 0 || y0 < 0 || x1 > CAM_W || y1 > CAM_H || n < 1 || n > N_MAX || x1 - x0 < n || y1 - y0 < 2 ||
+      fa < 0 || fb > 100 || fa >= fb || (realce != 0 && realce != 1)) {
+    Serial.println("[lerq] erro: use LERQ x0 y0 x1 y1 n fa fb realce");
+    return;
+  }
+  if (!digOk) digOk = iniciarModeloDigito();
+  uint8_t* frame = digOk ? (uint8_t*)malloc(CAM_W * CAM_H) : nullptr;
+  if (!frame) {
+    Serial.println("[lerq] erro: modelo ou memoria indisponivel");
+    return;
+  }
+  Serial.println("[lerq] mande o quadro");
+  Serial.setTimeout(5000);
+  size_t lidos = Serial.readBytes(frame, CAM_W * CAM_H);
+  Serial.setTimeout(1000);
+  if (lidos != (size_t)(CAM_W * CAM_H)) {
+    Serial.printf("[lerq] erro: recebi %u de %u bytes\n", (unsigned)lidos, (unsigned)(CAM_W * CAM_H));
+    free(frame);
+    return;
+  }
+  char leitura[N_MAX + 1];
+  unsigned long t0 = millis();
+  lerDigitos(frame, x0, y0, x1, y1, n, fa, fb, realce, leitura);
+  unsigned long t = millis() - t0;
+  free(frame);
+  Serial.print("[lerq] saidas=");
+  for (int i = 0; i < n; i++) {
+    for (int c = 0; c < 10; c++) Serial.printf(c ? ",%d" : "%d", (int)ultimasSaidas[i][c]);
+    if (i < n - 1) Serial.print(";");
+  }
+  Serial.printf("\n[lerq] leitura=%s t_digitos_ms=%lu\n", leitura, t);
+}
+
 // ================================================================
 void setup() {
   bool acordouDoSleep = (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER);
@@ -690,6 +735,7 @@ void setup() {
   pinoLiberar((gpio_num_t)PWDN_GPIO_NUM);
   pinoLiberar(FLASH_LED_GPIO);
 
+  Serial.setRxBufferSize(4096);   // o LERQ recebe 19200 bytes de uma vez
   Serial.begin(115200);
   LoRaSerial.begin(9600, SERIAL_8N1, LORA_RX_PIN, LORA_TX_PIN);
   if (!acordouDoSleep) delay(1000);  // so no power-on: espera o monitor serial abrir
@@ -730,6 +776,8 @@ void loop() {
     } else if (linha == "STOP") {
       autoAtivo = false;
       Serial.println("[auto] modo autonomo desligado");
+    } else if (linha.startsWith("LERQ ")) {
+      lerQuadroDoPc(linha);
     } else if (linha == "ROI") {
       imprimirConfigRoi();
     } else if (linha.startsWith("SLEEP:")) {

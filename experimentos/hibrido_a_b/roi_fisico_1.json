@@ -1,9 +1,9 @@
 {
  "caixa": [
-  4,
-  27,
-  160,
-  54
+  21,
+  69,
+  151,
+  95
  ],
  "n_digitos": 6,
  "quadro": [
@@ -13,32 +13,40 @@
  "formato": "GRAYSCALE QQVGA",
  "fatias": [
   [
-   4,
-   30
+   21,
+   42
   ],
   [
-   30,
-   56
+   42,
+   64
   ],
   [
-   56,
-   82
+   64,
+   86
   ],
   [
-   82,
-   108
+   86,
+   107
   ],
   [
-   108,
-   134
+   107,
+   129
   ],
   [
-   134,
-   160
+   129,
+   151
   ]
  ],
+ "face_pct": [
+  14,
+  74
+ ],
+ "realce": 0,
  "vflip": 1,
  "hmirror": 0,
+ "leitura_no_pc": "000032",
  "salva_no_esp32": true,
- "gerado_em": "2026-11-17T23:34:52-03:00"
+ "gerado_em": "2026-11-18T19:23:53-03:00",
+ "realce_na_calibracao": 1,
+ "observacao": "Realce desligado em 2026-11-18, depois da avaliação dos 30 quadros (só a face: 25/30; face + realce: 24/30). A calibração foi feita com realce 1 (campo realce_na_calibracao)."
 }

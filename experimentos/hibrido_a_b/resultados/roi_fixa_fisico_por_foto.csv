@@ -1,0 +1,265 @@
+arquivo,rotulo,luz,roi,independente,fluxo,variante,na_placa,lido,exato
+quadros_160x120/q_0001.png,000025,dia,roi_fisico_1_posicao_a.json,0,borda,sem pré-processamento,0,000035,0
+quadros_160x120/q_0001.png,000025,dia,roi_fisico_1_posicao_a.json,0,borda,só a face,1,000025,1
+quadros_160x120/q_0001.png,000025,dia,roi_fisico_1_posicao_a.json,0,borda,só o realce,0,000005,0
+quadros_160x120/q_0001.png,000025,dia,roi_fisico_1_posicao_a.json,0,borda,face + realce,0,000025,1
+quadros_160x120/q_0001.png,000025,dia,roi_fisico_1_posicao_a.json,0,nuvem,sem pré-processamento,0,000035,0
+quadros_160x120/q_0001.png,000025,dia,roi_fisico_1_posicao_a.json,0,nuvem,só a face,1,000025,1
+quadros_160x120/q_0001.png,000025,dia,roi_fisico_1_posicao_a.json,0,nuvem,só o realce,0,000005,0
+quadros_160x120/q_0001.png,000025,dia,roi_fisico_1_posicao_a.json,0,nuvem,face + realce,0,000025,1
+quadros_160x120/q_0002.png,000026,dia,roi_fisico_1_posicao_a.json,1,borda,sem pré-processamento,0,000036,0
+quadros_160x120/q_0002.png,000026,dia,roi_fisico_1_posicao_a.json,1,borda,só a face,1,000026,1
+quadros_160x120/q_0002.png,000026,dia,roi_fisico_1_posicao_a.json,1,borda,só o realce,0,000036,0
+quadros_160x120/q_0002.png,000026,dia,roi_fisico_1_posicao_a.json,1,borda,face + realce,0,000026,1
+quadros_160x120/q_0002.png,000026,dia,roi_fisico_1_posicao_a.json,1,nuvem,sem pré-processamento,0,000036,0
+quadros_160x120/q_0002.png,000026,dia,roi_fisico_1_posicao_a.json,1,nuvem,só a face,1,000026,1
+quadros_160x120/q_0002.png,000026,dia,roi_fisico_1_posicao_a.json,1,nuvem,só o realce,0,000036,0
+quadros_160x120/q_0002.png,000026,dia,roi_fisico_1_posicao_a.json,1,nuvem,face + realce,0,000026,1
+quadros_160x120/q_0003.png,000027,dia,roi_fisico_1_posicao_a.json,1,borda,sem pré-processamento,0,000030,0
+quadros_160x120/q_0003.png,000027,dia,roi_fisico_1_posicao_a.json,1,borda,só a face,1,000020,0
+quadros_160x120/q_0003.png,000027,dia,roi_fisico_1_posicao_a.json,1,borda,só o realce,0,000030,0
+quadros_160x120/q_0003.png,000027,dia,roi_fisico_1_posicao_a.json,1,borda,face + realce,0,000020,0
+quadros_160x120/q_0003.png,000027,dia,roi_fisico_1_posicao_a.json,1,nuvem,sem pré-processamento,0,000030,0
+quadros_160x120/q_0003.png,000027,dia,roi_fisico_1_posicao_a.json,1,nuvem,só a face,1,000020,0
+quadros_160x120/q_0003.png,000027,dia,roi_fisico_1_posicao_a.json,1,nuvem,só o realce,0,000030,0
+quadros_160x120/q_0003.png,000027,dia,roi_fisico_1_posicao_a.json,1,nuvem,face + realce,0,000020,0
+quadros_160x120/q_0004.png,000028,dia,roi_fisico_1_posicao_a.json,1,borda,sem pré-processamento,0,000036,0
+quadros_160x120/q_0004.png,000028,dia,roi_fisico_1_posicao_a.json,1,borda,só a face,1,000028,1
+quadros_160x120/q_0004.png,000028,dia,roi_fisico_1_posicao_a.json,1,borda,só o realce,0,000036,0
+quadros_160x120/q_0004.png,000028,dia,roi_fisico_1_posicao_a.json,1,borda,face + realce,0,000028,1
+quadros_160x120/q_0004.png,000028,dia,roi_fisico_1_posicao_a.json,1,nuvem,sem pré-processamento,0,000036,0
+quadros_160x120/q_0004.png,000028,dia,roi_fisico_1_posicao_a.json,1,nuvem,só a face,1,000028,1
+quadros_160x120/q_0004.png,000028,dia,roi_fisico_1_posicao_a.json,1,nuvem,só o realce,0,000036,0
+quadros_160x120/q_0004.png,000028,dia,roi_fisico_1_posicao_a.json,1,nuvem,face + realce,0,000028,1
+quadros_160x120/q_0005.png,000029,dia,roi_fisico_1_posicao_a.json,1,borda,sem pré-processamento,0,000030,0
+quadros_160x120/q_0005.png,000029,dia,roi_fisico_1_posicao_a.json,1,borda,só a face,1,000029,1
+quadros_160x120/q_0005.png,000029,dia,roi_fisico_1_posicao_a.json,1,borda,só o realce,0,000030,0
+quadros_160x120/q_0005.png,000029,dia,roi_fisico_1_posicao_a.json,1,borda,face + realce,0,000029,1
+quadros_160x120/q_0005.png,000029,dia,roi_fisico_1_posicao_a.json,1,nuvem,sem pré-processamento,0,000030,0
+quadros_160x120/q_0005.png,000029,dia,roi_fisico_1_posicao_a.json,1,nuvem,só a face,1,000029,1
+quadros_160x120/q_0005.png,000029,dia,roi_fisico_1_posicao_a.json,1,nuvem,só o realce,0,000030,0
+quadros_160x120/q_0005.png,000029,dia,roi_fisico_1_posicao_a.json,1,nuvem,face + realce,0,000029,1
+quadros_160x120/q_0006.png,000030,dia,roi_fisico_1_posicao_a.json,1,borda,sem pré-processamento,0,000040,0
+quadros_160x120/q_0006.png,000030,dia,roi_fisico_1_posicao_a.json,1,borda,só a face,1,000030,1
+quadros_160x120/q_0006.png,000030,dia,roi_fisico_1_posicao_a.json,1,borda,só o realce,0,000040,0
+quadros_160x120/q_0006.png,000030,dia,roi_fisico_1_posicao_a.json,1,borda,face + realce,0,000030,1
+quadros_160x120/q_0006.png,000030,dia,roi_fisico_1_posicao_a.json,1,nuvem,sem pré-processamento,0,000040,0
+quadros_160x120/q_0006.png,000030,dia,roi_fisico_1_posicao_a.json,1,nuvem,só a face,1,000030,1
+quadros_160x120/q_0006.png,000030,dia,roi_fisico_1_posicao_a.json,1,nuvem,só o realce,0,000040,0
+quadros_160x120/q_0006.png,000030,dia,roi_fisico_1_posicao_a.json,1,nuvem,face + realce,0,000030,1
+quadros_160x120/q_0007.png,00003?,dia,roi_fisico_1_posicao_a.json,1,borda,sem pré-processamento,0,000010,
+quadros_160x120/q_0007.png,00003?,dia,roi_fisico_1_posicao_a.json,1,borda,só a face,1,000031,
+quadros_160x120/q_0007.png,00003?,dia,roi_fisico_1_posicao_a.json,1,borda,só o realce,0,000042,
+quadros_160x120/q_0007.png,00003?,dia,roi_fisico_1_posicao_a.json,1,borda,face + realce,0,000034,
+quadros_160x120/q_0007.png,00003?,dia,roi_fisico_1_posicao_a.json,1,nuvem,sem pré-processamento,0,000010,
+quadros_160x120/q_0007.png,00003?,dia,roi_fisico_1_posicao_a.json,1,nuvem,só a face,1,000031,
+quadros_160x120/q_0007.png,00003?,dia,roi_fisico_1_posicao_a.json,1,nuvem,só o realce,0,000042,
+quadros_160x120/q_0007.png,00003?,dia,roi_fisico_1_posicao_a.json,1,nuvem,face + realce,0,000034,
+quadros_160x120/q_0008.png,000032,dia,roi_fisico_1_posicao_a.json,1,borda,sem pré-processamento,0,000010,0
+quadros_160x120/q_0008.png,000032,dia,roi_fisico_1_posicao_a.json,1,borda,só a face,1,000032,1
+quadros_160x120/q_0008.png,000032,dia,roi_fisico_1_posicao_a.json,1,borda,só o realce,0,000040,0
+quadros_160x120/q_0008.png,000032,dia,roi_fisico_1_posicao_a.json,1,borda,face + realce,0,000035,0
+quadros_160x120/q_0008.png,000032,dia,roi_fisico_1_posicao_a.json,1,nuvem,sem pré-processamento,0,000010,0
+quadros_160x120/q_0008.png,000032,dia,roi_fisico_1_posicao_a.json,1,nuvem,só a face,1,000032,1
+quadros_160x120/q_0008.png,000032,dia,roi_fisico_1_posicao_a.json,1,nuvem,só o realce,0,000040,0
+quadros_160x120/q_0008.png,000032,dia,roi_fisico_1_posicao_a.json,1,nuvem,face + realce,0,000035,0
+quadros_160x120/q_0009.png,000032,dia,roi_fisico_1_posicao_a.json,1,borda,sem pré-processamento,0,000010,0
+quadros_160x120/q_0009.png,000032,dia,roi_fisico_1_posicao_a.json,1,borda,só a face,1,000032,1
+quadros_160x120/q_0009.png,000032,dia,roi_fisico_1_posicao_a.json,1,borda,só o realce,0,000040,0
+quadros_160x120/q_0009.png,000032,dia,roi_fisico_1_posicao_a.json,1,borda,face + realce,0,000032,1
+quadros_160x120/q_0009.png,000032,dia,roi_fisico_1_posicao_a.json,1,nuvem,sem pré-processamento,0,000010,0
+quadros_160x120/q_0009.png,000032,dia,roi_fisico_1_posicao_a.json,1,nuvem,só a face,1,000032,1
+quadros_160x120/q_0009.png,000032,dia,roi_fisico_1_posicao_a.json,1,nuvem,só o realce,0,000040,0
+quadros_160x120/q_0009.png,000032,dia,roi_fisico_1_posicao_a.json,1,nuvem,face + realce,0,000032,1
+quadros_160x120/q_0010.png,000032,dia,roi_fisico_1.json,0,borda,sem pré-processamento,0,000030,0
+quadros_160x120/q_0010.png,000032,dia,roi_fisico_1.json,0,borda,só a face,1,000032,1
+quadros_160x120/q_0010.png,000032,dia,roi_fisico_1.json,0,borda,só o realce,0,000030,0
+quadros_160x120/q_0010.png,000032,dia,roi_fisico_1.json,0,borda,face + realce,0,000032,1
+quadros_160x120/q_0010.png,000032,dia,roi_fisico_1.json,0,nuvem,sem pré-processamento,0,000030,0
+quadros_160x120/q_0010.png,000032,dia,roi_fisico_1.json,0,nuvem,só a face,1,000032,1
+quadros_160x120/q_0010.png,000032,dia,roi_fisico_1.json,0,nuvem,só o realce,0,000030,0
+quadros_160x120/q_0010.png,000032,dia,roi_fisico_1.json,0,nuvem,face + realce,0,000032,1
+quadros_160x120/q_0011.png,000033,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000013,0
+quadros_160x120/q_0011.png,000033,dia,roi_fisico_1.json,1,borda,só a face,1,000033,1
+quadros_160x120/q_0011.png,000033,dia,roi_fisico_1.json,1,borda,só o realce,0,000033,1
+quadros_160x120/q_0011.png,000033,dia,roi_fisico_1.json,1,borda,face + realce,0,000033,1
+quadros_160x120/q_0011.png,000033,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000013,0
+quadros_160x120/q_0011.png,000033,dia,roi_fisico_1.json,1,nuvem,só a face,1,000033,1
+quadros_160x120/q_0011.png,000033,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000033,1
+quadros_160x120/q_0011.png,000033,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000033,1
+quadros_160x120/q_0012.png,000034,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000030,0
+quadros_160x120/q_0012.png,000034,dia,roi_fisico_1.json,1,borda,só a face,1,000030,0
+quadros_160x120/q_0012.png,000034,dia,roi_fisico_1.json,1,borda,só o realce,0,000031,0
+quadros_160x120/q_0012.png,000034,dia,roi_fisico_1.json,1,borda,face + realce,0,000034,1
+quadros_160x120/q_0012.png,000034,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000030,0
+quadros_160x120/q_0012.png,000034,dia,roi_fisico_1.json,1,nuvem,só a face,1,000038,0
+quadros_160x120/q_0012.png,000034,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000031,0
+quadros_160x120/q_0012.png,000034,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000034,1
+quadros_160x120/q_0013.png,00003?,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000032,
+quadros_160x120/q_0013.png,00003?,dia,roi_fisico_1.json,1,borda,só a face,1,000032,
+quadros_160x120/q_0013.png,00003?,dia,roi_fisico_1.json,1,borda,só o realce,0,000031,
+quadros_160x120/q_0013.png,00003?,dia,roi_fisico_1.json,1,borda,face + realce,0,000032,
+quadros_160x120/q_0013.png,00003?,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000032,
+quadros_160x120/q_0013.png,00003?,dia,roi_fisico_1.json,1,nuvem,só a face,1,000032,
+quadros_160x120/q_0013.png,00003?,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000031,
+quadros_160x120/q_0013.png,00003?,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000032,
+quadros_160x120/q_0014.png,000035,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000030,0
+quadros_160x120/q_0014.png,000035,dia,roi_fisico_1.json,1,borda,só a face,1,000035,1
+quadros_160x120/q_0014.png,000035,dia,roi_fisico_1.json,1,borda,só o realce,0,000030,0
+quadros_160x120/q_0014.png,000035,dia,roi_fisico_1.json,1,borda,face + realce,0,000035,1
+quadros_160x120/q_0014.png,000035,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000030,0
+quadros_160x120/q_0014.png,000035,dia,roi_fisico_1.json,1,nuvem,só a face,1,000035,1
+quadros_160x120/q_0014.png,000035,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000030,0
+quadros_160x120/q_0014.png,000035,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000035,1
+quadros_160x120/q_0015.png,000036,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000030,0
+quadros_160x120/q_0015.png,000036,dia,roi_fisico_1.json,1,borda,só a face,1,000036,1
+quadros_160x120/q_0015.png,000036,dia,roi_fisico_1.json,1,borda,só o realce,0,000030,0
+quadros_160x120/q_0015.png,000036,dia,roi_fisico_1.json,1,borda,face + realce,0,000036,1
+quadros_160x120/q_0015.png,000036,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000030,0
+quadros_160x120/q_0015.png,000036,dia,roi_fisico_1.json,1,nuvem,só a face,1,000036,1
+quadros_160x120/q_0015.png,000036,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000030,0
+quadros_160x120/q_0015.png,000036,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000036,1
+quadros_160x120/q_0016.png,000037,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000010,0
+quadros_160x120/q_0016.png,000037,dia,roi_fisico_1.json,1,borda,só a face,1,000030,0
+quadros_160x120/q_0016.png,000037,dia,roi_fisico_1.json,1,borda,só o realce,0,000030,0
+quadros_160x120/q_0016.png,000037,dia,roi_fisico_1.json,1,borda,face + realce,0,000030,0
+quadros_160x120/q_0016.png,000037,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000010,0
+quadros_160x120/q_0016.png,000037,dia,roi_fisico_1.json,1,nuvem,só a face,1,000030,0
+quadros_160x120/q_0016.png,000037,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000030,0
+quadros_160x120/q_0016.png,000037,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000030,0
+quadros_160x120/q_0017.png,000038,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000010,0
+quadros_160x120/q_0017.png,000038,dia,roi_fisico_1.json,1,borda,só a face,1,000038,1
+quadros_160x120/q_0017.png,000038,dia,roi_fisico_1.json,1,borda,só o realce,0,000030,0
+quadros_160x120/q_0017.png,000038,dia,roi_fisico_1.json,1,borda,face + realce,0,000038,1
+quadros_160x120/q_0017.png,000038,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000010,0
+quadros_160x120/q_0017.png,000038,dia,roi_fisico_1.json,1,nuvem,só a face,1,000038,1
+quadros_160x120/q_0017.png,000038,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000030,0
+quadros_160x120/q_0017.png,000038,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000038,1
+quadros_160x120/q_0018.png,00003?,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000010,
+quadros_160x120/q_0018.png,00003?,dia,roi_fisico_1.json,1,borda,só a face,1,000030,
+quadros_160x120/q_0018.png,00003?,dia,roi_fisico_1.json,1,borda,só o realce,0,000030,
+quadros_160x120/q_0018.png,00003?,dia,roi_fisico_1.json,1,borda,face + realce,0,000030,
+quadros_160x120/q_0018.png,00003?,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000010,
+quadros_160x120/q_0018.png,00003?,dia,roi_fisico_1.json,1,nuvem,só a face,1,000030,
+quadros_160x120/q_0018.png,00003?,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000030,
+quadros_160x120/q_0018.png,00003?,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000030,
+quadros_160x120/q_0019.png,000039,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000030,0
+quadros_160x120/q_0019.png,000039,dia,roi_fisico_1.json,1,borda,só a face,1,000039,1
+quadros_160x120/q_0019.png,000039,dia,roi_fisico_1.json,1,borda,só o realce,0,000030,0
+quadros_160x120/q_0019.png,000039,dia,roi_fisico_1.json,1,borda,face + realce,0,000033,0
+quadros_160x120/q_0019.png,000039,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000030,0
+quadros_160x120/q_0019.png,000039,dia,roi_fisico_1.json,1,nuvem,só a face,1,000039,1
+quadros_160x120/q_0019.png,000039,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000030,0
+quadros_160x120/q_0019.png,000039,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000033,0
+quadros_160x120/q_0020.png,000040,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000010,0
+quadros_160x120/q_0020.png,000040,dia,roi_fisico_1.json,1,borda,só a face,1,000040,1
+quadros_160x120/q_0020.png,000040,dia,roi_fisico_1.json,1,borda,só o realce,0,000040,1
+quadros_160x120/q_0020.png,000040,dia,roi_fisico_1.json,1,borda,face + realce,0,000040,1
+quadros_160x120/q_0020.png,000040,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000010,0
+quadros_160x120/q_0020.png,000040,dia,roi_fisico_1.json,1,nuvem,só a face,1,000040,1
+quadros_160x120/q_0020.png,000040,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000040,1
+quadros_160x120/q_0020.png,000040,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000040,1
+quadros_160x120/q_0021.png,000041,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000011,0
+quadros_160x120/q_0021.png,000041,dia,roi_fisico_1.json,1,borda,só a face,1,000040,0
+quadros_160x120/q_0021.png,000041,dia,roi_fisico_1.json,1,borda,só o realce,0,000041,1
+quadros_160x120/q_0021.png,000041,dia,roi_fisico_1.json,1,borda,face + realce,0,000040,0
+quadros_160x120/q_0021.png,000041,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000011,0
+quadros_160x120/q_0021.png,000041,dia,roi_fisico_1.json,1,nuvem,só a face,1,000040,0
+quadros_160x120/q_0021.png,000041,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000041,1
+quadros_160x120/q_0021.png,000041,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000040,0
+quadros_160x120/q_0022.png,000041,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000010,0
+quadros_160x120/q_0022.png,000041,dia,roi_fisico_1.json,1,borda,só a face,1,000040,0
+quadros_160x120/q_0022.png,000041,dia,roi_fisico_1.json,1,borda,só o realce,0,000041,1
+quadros_160x120/q_0022.png,000041,dia,roi_fisico_1.json,1,borda,face + realce,0,000040,0
+quadros_160x120/q_0022.png,000041,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000010,0
+quadros_160x120/q_0022.png,000041,dia,roi_fisico_1.json,1,nuvem,só a face,1,000040,0
+quadros_160x120/q_0022.png,000041,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000041,1
+quadros_160x120/q_0022.png,000041,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000040,0
+quadros_160x120/q_0023.png,000041,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000031,0
+quadros_160x120/q_0023.png,000041,dia,roi_fisico_1.json,1,borda,só a face,1,000041,1
+quadros_160x120/q_0023.png,000041,dia,roi_fisico_1.json,1,borda,só o realce,0,000031,0
+quadros_160x120/q_0023.png,000041,dia,roi_fisico_1.json,1,borda,face + realce,0,000041,1
+quadros_160x120/q_0023.png,000041,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000011,0
+quadros_160x120/q_0023.png,000041,dia,roi_fisico_1.json,1,nuvem,só a face,1,000041,1
+quadros_160x120/q_0023.png,000041,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000031,0
+quadros_160x120/q_0023.png,000041,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000041,1
+quadros_160x120/q_0024.png,000042,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000030,0
+quadros_160x120/q_0024.png,000042,dia,roi_fisico_1.json,1,borda,só a face,1,000042,1
+quadros_160x120/q_0024.png,000042,dia,roi_fisico_1.json,1,borda,só o realce,0,000030,0
+quadros_160x120/q_0024.png,000042,dia,roi_fisico_1.json,1,borda,face + realce,0,000042,1
+quadros_160x120/q_0024.png,000042,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000030,0
+quadros_160x120/q_0024.png,000042,dia,roi_fisico_1.json,1,nuvem,só a face,1,000042,1
+quadros_160x120/q_0024.png,000042,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000030,0
+quadros_160x120/q_0024.png,000042,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000042,1
+quadros_160x120/q_0025.png,000043,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000043,1
+quadros_160x120/q_0025.png,000043,dia,roi_fisico_1.json,1,borda,só a face,1,000043,1
+quadros_160x120/q_0025.png,000043,dia,roi_fisico_1.json,1,borda,só o realce,0,000043,1
+quadros_160x120/q_0025.png,000043,dia,roi_fisico_1.json,1,borda,face + realce,0,000043,1
+quadros_160x120/q_0025.png,000043,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000043,1
+quadros_160x120/q_0025.png,000043,dia,roi_fisico_1.json,1,nuvem,só a face,1,000043,1
+quadros_160x120/q_0025.png,000043,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000043,1
+quadros_160x120/q_0025.png,000043,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000043,1
+quadros_160x120/q_0026.png,000044,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000034,0
+quadros_160x120/q_0026.png,000044,dia,roi_fisico_1.json,1,borda,só a face,1,000044,1
+quadros_160x120/q_0026.png,000044,dia,roi_fisico_1.json,1,borda,só o realce,0,000034,0
+quadros_160x120/q_0026.png,000044,dia,roi_fisico_1.json,1,borda,face + realce,0,000044,1
+quadros_160x120/q_0026.png,000044,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000034,0
+quadros_160x120/q_0026.png,000044,dia,roi_fisico_1.json,1,nuvem,só a face,1,000044,1
+quadros_160x120/q_0026.png,000044,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000034,0
+quadros_160x120/q_0026.png,000044,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000044,1
+quadros_160x120/q_0027.png,000045,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000030,0
+quadros_160x120/q_0027.png,000045,dia,roi_fisico_1.json,1,borda,só a face,1,000045,1
+quadros_160x120/q_0027.png,000045,dia,roi_fisico_1.json,1,borda,só o realce,0,000030,0
+quadros_160x120/q_0027.png,000045,dia,roi_fisico_1.json,1,borda,face + realce,0,000045,1
+quadros_160x120/q_0027.png,000045,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000030,0
+quadros_160x120/q_0027.png,000045,dia,roi_fisico_1.json,1,nuvem,só a face,1,000045,1
+quadros_160x120/q_0027.png,000045,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000030,0
+quadros_160x120/q_0027.png,000045,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000045,1
+quadros_160x120/q_0028.png,000046,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000030,0
+quadros_160x120/q_0028.png,000046,dia,roi_fisico_1.json,1,borda,só a face,1,000046,1
+quadros_160x120/q_0028.png,000046,dia,roi_fisico_1.json,1,borda,só o realce,0,000030,0
+quadros_160x120/q_0028.png,000046,dia,roi_fisico_1.json,1,borda,face + realce,0,000046,1
+quadros_160x120/q_0028.png,000046,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000030,0
+quadros_160x120/q_0028.png,000046,dia,roi_fisico_1.json,1,nuvem,só a face,1,000046,1
+quadros_160x120/q_0028.png,000046,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000030,0
+quadros_160x120/q_0028.png,000046,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000046,1
+quadros_160x120/q_0029.png,000048,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000930,0
+quadros_160x120/q_0029.png,000048,dia,roi_fisico_1.json,1,borda,só a face,1,000048,1
+quadros_160x120/q_0029.png,000048,dia,roi_fisico_1.json,1,borda,só o realce,0,000934,0
+quadros_160x120/q_0029.png,000048,dia,roi_fisico_1.json,1,borda,face + realce,0,000048,1
+quadros_160x120/q_0029.png,000048,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000930,0
+quadros_160x120/q_0029.png,000048,dia,roi_fisico_1.json,1,nuvem,só a face,1,000048,1
+quadros_160x120/q_0029.png,000048,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000934,0
+quadros_160x120/q_0029.png,000048,dia,roi_fisico_1.json,1,nuvem,face + realce,0,010048,0
+quadros_160x120/q_0030.png,000049,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000931,0
+quadros_160x120/q_0030.png,000049,dia,roi_fisico_1.json,1,borda,só a face,1,000049,1
+quadros_160x120/q_0030.png,000049,dia,roi_fisico_1.json,1,borda,só o realce,0,000931,0
+quadros_160x120/q_0030.png,000049,dia,roi_fisico_1.json,1,borda,face + realce,0,000049,1
+quadros_160x120/q_0030.png,000049,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000931,0
+quadros_160x120/q_0030.png,000049,dia,roi_fisico_1.json,1,nuvem,só a face,1,000049,1
+quadros_160x120/q_0030.png,000049,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000931,0
+quadros_160x120/q_0030.png,000049,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000049,1
+quadros_160x120/q_0031.png,000050,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000050,1
+quadros_160x120/q_0031.png,000050,dia,roi_fisico_1.json,1,borda,só a face,1,000050,1
+quadros_160x120/q_0031.png,000050,dia,roi_fisico_1.json,1,borda,só o realce,0,000454,0
+quadros_160x120/q_0031.png,000050,dia,roi_fisico_1.json,1,borda,face + realce,0,000050,1
+quadros_160x120/q_0031.png,000050,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000050,1
+quadros_160x120/q_0031.png,000050,dia,roi_fisico_1.json,1,nuvem,só a face,1,000050,1
+quadros_160x120/q_0031.png,000050,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000051,0
+quadros_160x120/q_0031.png,000050,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000050,1
+quadros_160x120/q_0032.png,000051,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000031,0
+quadros_160x120/q_0032.png,000051,dia,roi_fisico_1.json,1,borda,só a face,1,000051,1
+quadros_160x120/q_0032.png,000051,dia,roi_fisico_1.json,1,borda,só o realce,0,000431,0
+quadros_160x120/q_0032.png,000051,dia,roi_fisico_1.json,1,borda,face + realce,0,000051,1
+quadros_160x120/q_0032.png,000051,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000031,0
+quadros_160x120/q_0032.png,000051,dia,roi_fisico_1.json,1,nuvem,só a face,1,000051,1
+quadros_160x120/q_0032.png,000051,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000031,0
+quadros_160x120/q_0032.png,000051,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000051,1
+quadros_160x120/q_0033.png,000052,dia,roi_fisico_1.json,1,borda,sem pré-processamento,0,000030,0
+quadros_160x120/q_0033.png,000052,dia,roi_fisico_1.json,1,borda,só a face,1,000052,1
+quadros_160x120/q_0033.png,000052,dia,roi_fisico_1.json,1,borda,só o realce,0,000050,0
+quadros_160x120/q_0033.png,000052,dia,roi_fisico_1.json,1,borda,face + realce,0,000052,1
+quadros_160x120/q_0033.png,000052,dia,roi_fisico_1.json,1,nuvem,sem pré-processamento,0,000030,0
+quadros_160x120/q_0033.png,000052,dia,roi_fisico_1.json,1,nuvem,só a face,1,000052,1
+quadros_160x120/q_0033.png,000052,dia,roi_fisico_1.json,1,nuvem,só o realce,0,000050,0
+quadros_160x120/q_0033.png,000052,dia,roi_fisico_1.json,1,nuvem,face + realce,0,000052,1

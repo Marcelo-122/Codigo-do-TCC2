@@ -38,6 +38,13 @@ foto fica fora da avaliação), `d` descarta o último quadro, `q` encerra, Ente
 
 Digitar a leitura ao vivo, olhando o medidor, evita rotular depois por foto borrada.
 
+A janela que abre junto mostra o quadro ao vivo com a caixa da ROI (`--roi`, padrão `roi_fisico_1.json`) e a
+leitura que o classificador faria. Se a caixa sair de cima dos dígitos, **a câmera se mexeu**: pare (`q`), recalibre
+salvando com **outro nome** (`calibrar_roi_usb.py --nome roi_fisico_2`) e acrescente uma linha a
+`posicoes_camera.csv` (`primeiro_quadro,roi,observacao`) com o primeiro quadro da posição nova. Recalibrar com o
+mesmo nome sobrescreve a ROI das fotos anteriores (aconteceu em 2026-11-18; a ROI da posição A teve de ser
+reconstruída em `roi_fisico_1_posicao_a.json`).
+
 ## 3. O que capturar (plano de amostragem)
 
 | Item | Meta |

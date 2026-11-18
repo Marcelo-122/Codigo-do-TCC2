@@ -109,6 +109,10 @@ leram `000024`; os 4 quadros com a luz anterior leram `000006` (sem pré-process
 amostra de **uma leitura só**: o ganho de acurácia ainda precisa ser medido em várias leituras (roteiro em
 `experimentos/hibrido_a_b/ROTEIRO_CAPTURA.md`).
 
+**Resultado em várias leituras** (`experimentos/hibrido_a_b/resultados/ROI_FIXA_FISICO.md`, 30 quadros, 26 leituras):
+sem pré-processamento, 2/30 leituras exatas; só a face, 25/30; face + realce, 24/30. O realce não ajudou e ficou
+desligado na placa; a face é o que decide.
+
 **Os valores não servem para outro medidor.** Nas 21 fotos de outros hidrômetros de `dados/teste/` (caixa marcada à
 mão), a mesma face 14-74 % com realce piorou a leitura (de 36 % para 30 % dos dígitos; com os tons invertidos nas
 fotos de fundo escuro, de 56 % para 41 %), e o realce piorou em todas as faces testadas. Face e realce são escolhidos

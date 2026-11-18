@@ -111,7 +111,24 @@ class Placa(threading.Thread):
         self.ser.rts = True
         time.sleep(0.2)
         self.ser.rts = False
-        self._ler_ate(b"[usb] pronto", 8)
+        buf, fim = b"", time.time() + 8
+        while b"[usb] pronto" not in buf and time.time() < fim:
+            buf += self.ser.read(self.ser.in_waiting or 1)
+        if b"[usb] pronto" not in buf:
+            self.ser.close()
+            # Diz qual firmware respondeu: o erro comum é a placa estar com o de captura ou o de OCR
+            if b"[pronto]" in buf:
+                outro = "o captura_quadros"
+            elif b"OCR Sender" in buf or b"LoRa" in buf:
+                outro = "um dos transmissores"
+            elif b"calibrar_roi_esp32cam" in buf:
+                outro = "o calibrador com USAR_WIFI 1 (modo Wi-Fi)"
+            elif b"waiting for download" in buf:
+                outro = "nenhum: ela ficou em modo de gravação (aperte RST e rode de novo)"
+            else:
+                outro = "algo que não respondeu (confira a porta e o cabo)"
+            sys.exit(f"A placa não está com o calibrador pela USB; respondeu {outro}.\n"
+                     f"Grave Rede/calibrar_roi_esp32cam/calibrar_roi_esp32cam.ino (USAR_WIFI 0) e rode de novo.")
         self.quadro, self.erro, self.ao_vivo, self.parar = None, "", True, False
         self.lock = threading.Lock()
         self.comandos = queue.Queue()
@@ -171,9 +188,22 @@ class Placa(threading.Thread):
         return resposta.get()
 
 
-def desenhar(quadro, r, pre, leitor, estado):
+# Última leitura calculada: o classificador leva ~24 ms por fatia (kernels de referência, como o firmware),
+# então só roda de novo quando o quadro, a caixa ou o pré-processamento mudam.
+_cache = {"chave": None, "digitos": []}
+
+
+def desenhar(quadro, r, pre, leitor, estado, classificar=True):
     """Quadro com a caixa, as fatias (amarelo) e a face de cada uma (azul); embaixo, a entrada 28x28 de
-    cada fatia e o dígito lido. Devolve (imagem, leitura)."""
+    cada fatia e o dígito lido. Devolve (imagem, leitura). `classificar=False` (enquanto a caixa é arrastada)
+    não roda o classificador e mostra "?"."""
+    chave = (id(quadro), tuple(r), tuple(pre))
+    if chave != _cache["chave"] and classificar:
+        _cache["chave"] = chave
+        _cache["digitos"] = [
+            int(np.argmax(leitor.pontuacoes_entrada(pn.entrada_fatia(quadro, a, r[1], b, r[3], (pre[0], pre[1]), pre[2]))))
+            for a, b in fatias(r)]
+    atual = chave == _cache["chave"]
     img = cv2.cvtColor(cv2.resize(quadro, (W * ESC, H * ESC), interpolation=cv2.INTER_NEAREST),
                        cv2.COLOR_GRAY2BGR)
     x0, y0, x1, y1, _ = r
@@ -192,7 +222,7 @@ def desenhar(quadro, r, pre, leitor, estado):
     leitura = ""
     for i, (sx0, sx1) in enumerate(fatias(r)):
         entrada = pn.entrada_fatia(quadro, sx0, y0, sx1, y1, face, realce)
-        dig = int(np.argmax(leitor.pontuacoes_entrada(entrada)))
+        dig = _cache["digitos"][i] if atual else "?"
         leitura += str(dig)
         x = 10 + i * (2 * D + 8)
         if x + 2 * D <= W * ESC:
@@ -270,7 +300,7 @@ def main():
         else:
             estado = ("AO VIVO" if placa.ao_vivo else "CONGELADO") + "  " + nome_giro[giro] + \
                      ("  (salva na placa)" if roi + pre == salva else "  (nao salva)")
-        img, leitura = desenhar(ultimo, roi, pre, leitor, estado)
+        img, leitura = desenhar(ultimo, roi, pre, leitor, estado, classificar=not arrasto)
         cv2.imshow(janela, img)
 
         k = cv2.waitKeyEx(30)
