@@ -107,8 +107,11 @@ pacotes entregues") compara fluxos, não etapas:
   fluxo local (18,84 s) é cerca de 1/10 da do fluxo de imagem (mediana medida de 189 s). A outra metade da H2, a
   taxa de pacotes entregues, depende da métrica (ver a seção de entrega do fluxo de OCR).
 - **Adotada:** manter o pipeline CNN Simples e retirar a segmentação do firmware com uma ROI calibrada na instalação
-  (ver a decisão no README da raiz). Efeito esperado: leitura em ≈ 2 s por leitura. É uma **estimativa**: o
-  firmware ainda não foi alterado.
+  (ver a decisão no README da raiz). Implementada em 2026-11-18: com ROI na NVS, o `transmissor_ocr_esp32cam` não
+  carrega nem roda a segmentação. O classificador leva 1,92 s para as 6 fatias na placa (33 quadros mandados pelo PC,
+  `experimentos/hibrido_a_b/resultados/PLACA_X_PC.md`), e num teste de bancada a leitura saiu 2,3 a 2,9 s depois do
+  `LER`. Latência ponta a ponta e energia nesse modo **ainda não foram medidas** com os scripts desta pasta; os valores
+  desta seção continuam sendo os do modo com segmentação.
 
 **Resultado para a H2.** A latência está confirmada com folga (18,84 s contra 189 s). A taxa de entrega depende da
 métrica: por **leitura** entregue o fluxo local foi melhor (27 de 34, 79,4%, contra 20 de 30, 66,7%, na imagem), mas

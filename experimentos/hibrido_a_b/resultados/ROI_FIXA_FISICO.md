@@ -55,4 +55,4 @@ Sem as fotos cuja leitura é a mesma usada na calibração da sua posição (a f
 
 Detalhe de cada quadro, fluxo e variante em `roi_fixa_fisico_por_foto.csv`.
 
-**Limites:** um medidor e uma iluminação; os quatro primeiros dígitos são sempre 0 (por isso as colunas dos dois últimos e da roda das unidades); a face e o realce foram escolhidos neste mesmo medidor. O resultado mede a leitura com a câmera fixa e calibrada, não a generalização para outro hidrômetro (nas 21 fotos de outros medidores de `dados/teste/`, a mesma face e o realce pioraram a leitura).
+**Limites:** um medidor e uma iluminação; os quatro primeiros dígitos são sempre 0 (por isso as colunas dos dois últimos e da roda das unidades); a face e o realce foram escolhidos neste mesmo medidor. O resultado mede a leitura com a câmera fixa e calibrada, não a generalização para outro hidrômetro (nas 21 fotos avulsas que o `dados/teste/` tinha antes, 12 delas de medidores de gás ou indefinidos, a mesma face e o realce pioraram a leitura).

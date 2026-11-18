@@ -46,7 +46,7 @@ cada um a sua caixa de "Status"; os números detalhados ficam em [`medicoes/`](m
 |---|---|---|
 | Classificador de dígito (CNN 28×28, INT8) | Treinado e avaliado: 95,4 % dos dígitos na validação por foto; 97,7 % dos dígitos e 92,8 % das leituras nas pastas `test` do Dryad (fora do treino) | [`ModeloEDataset/relatorios/RESULTADOS.md`](ModeloEDataset/relatorios/RESULTADOS.md) |
 | Segmentação (U-Net 192×192, INT8) | Treinada, mas fraca (Dice 0,39, IoU 0,28); não acha a janela fora do enquadramento calibrado. **Decisão:** sair do fluxo e dar lugar à ROI calibrada | [`ModeloEDataset/README.md`](ModeloEDataset/README.md), [Decisão](#decisão-pipeline-de-ocr-na-borda) |
-| Leitura completa em hidrômetro físico (emulação em Python) | 21 fotos: com segmentação, 2/21 leituras e 31 % dos dígitos (borda) e 0/21 e 27 % (nuvem); com ROI marcada à mão, 2/21 e ≈ 37 %; invertendo os tons das fotos de fundo escuro, 3/21 e 56 % | [`medicoes/ocr_teste.csv`](medicoes/ocr_teste.csv), [`dados/teste/`](dados/teste/README.md) |
+| Leitura completa em hidrômetro físico (`dados/teste/`, 39 fotos) | Pipeline adotado, ROI calibrada uma vez por posição (30 fotos da bancada): **25/30 leituras, 97,2 % dos dígitos, CER 0,028**, na borda e na nuvem; com votação, o mesmo. Para comparação, nas 39 fotos: com a segmentação do modelo, 2/39 (borda) e 0/39 (nuvem); com ROI marcada à mão e fatia inteira, 4/39 | [`medicoes/ocr_teste.csv`](medicoes/ocr_teste.csv) (`fisico_roi_calibrada*`, `fisico`, `fisico_roi_manual*`), [`dados/teste/`](dados/teste/README.md) |
 | Leitura com ROI fixa em hidrômetro físico (bancada, 2026-11-18) | 30 quadros 160×120 crus da ESP32-CAM, câmera parada, 26 leituras distintas (`000025` a `000052`), um medidor e uma luz. Sem pré-processamento, 2/30 leituras exatas; recortando a face da roda (configuração final, gravada na placa), **25/30 (83 %, IC 95 % 66–93 %)**, e 23/28 (82 %) só nas leituras diferentes da usada na calibração. Com o realce junto, 24/30: o realce não ajudou e foi desligado. Todos os erros na roda das unidades; borda e nuvem (JPEG q90) iguais. Os mesmos 33 quadros mandados à placa (`LERQ`) deram **as mesmas leituras que o PC em 33/33** (25/30 nos dois); as saídas int8 diferem um pouco (até 18, kernels esp-nn × referência) sem mudar nenhum dígito. Classificador na placa: 1,92 s para as 6 fatias | [`ROI_FIXA_FISICO.md`](experimentos/hibrido_a_b/resultados/ROI_FIXA_FISICO.md), [`PLACA_X_PC.md`](experimentos/hibrido_a_b/resultados/PLACA_X_PC.md) |
 | Firmware de debug (`test_images/debug_ocr_esp32cam/`) | Roda em placa: 61 capturas, ≈ 17,6 s de processamento por leitura, medidas com o `modelo.h` de segmentação **antigo** | [`medicoes/README.md`](medicoes/README.md) |
 | Transmissor do fluxo de imagem (`Rede/transmissor_esp32cam/`, FPort 1) | Em placa: consumo em 30 ciclos de `AUTO:30` (≈ 4,64 mAh por leitura); latência mediana de 189 s; 20/30 imagens completas (21/30 na corrida com `CAPTURE`). O `STOP` do modo autônomo não foi testado | [`medicoes/README.md`](medicoes/README.md) |
@@ -55,7 +55,7 @@ cada um a sua caixa de "Status"; os números detalhados ficam em [`medicoes/`](m
 | Servidor (`ocr/pipeline_nuvem.py`) | Implementado, com segmentação (padrão) ou ROI (`--roi`); ≈ 6,25 ms por leitura num Ryzen 5 5600GT | [`ocr/README.md`](ocr/README.md), [`medicoes/README.md`](medicoes/README.md) |
 | Scripts do enlace no PC (`Rede/*.py`) | Testados com nó e receptor simulados (59 verificações) e usados com as placas em 2026-10-27 (`transmissao.csv`, `latencia_ponta_a_ponta.csv`, `latencia_ocr.csv`). O `transmissao_ocr.csv` **nunca foi gerado** | [`medicoes/medir_transmissao.md`](medicoes/medir_transmissao.md), [`medicoes/medir_latencia.md`](medicoes/medir_latencia.md) |
 | Cenário do enlace | Só bancada, a ≈ 2 m (RSSI de −33,5 a −27 dBm). Receptor de canal único no lugar de um gateway, sem servidor de rede, MIC não verificado, sem downlink/ACK e sem retransmissão no modo autônomo | [`medicoes/README.md`](medicoes/README.md) |
-| Conjunto de teste físico (`dados/teste/`) | 21 fotos de medidores diferentes (meta: ≥ 30 de uma instalação fixa); ROI, inclinação e polaridade marcadas à mão, sem conferência independente | [`dados/teste/README.md`](dados/teste/README.md) |
+| Conjunto de teste físico (`dados/teste/`) | 39 fotos de hidrômetro: 30 de uma instalação fixa (bancada de 2026-11-18, medidor `fisico_1`, 26 leituras, rótulos completos e ROI calibrada) e 9 avulsas de medidores diferentes (ROI marcada à mão). As 12 fotos de medidores de gás (e uma indefinida) que estavam no conjunto foram para `dados/teste_outros_medidores/`. Rótulos lidos por uma pessoa, sem conferência independente | [`dados/teste/README.md`](dados/teste/README.md) |
 
 ---
 
@@ -97,14 +97,15 @@ foram medidas com os scripts de `medicoes/`.
 - **Pré-processamento por medidor**: no hidrômetro físico o classificador só leu com a fatia recortada na face da roda
   e com realce de contraste, calibrados por medidor (sem isso, `000000` em 7 de 7 quadros de `000024`; com eles, os 3
   quadros com a iluminação final certos e os 4 com a luz anterior em `000006`). Isso foi visto em **uma leitura só** e
-  ainda precisa ser medido em várias leituras. Os mesmos valores pioraram a leitura nas 21 fotos de outros hidrômetros
-  de `dados/teste/` (36 % → 30 % dos dígitos): não é uma melhoria geral, e sim um ajuste por medidor e iluminação.
+  ainda precisa ser medido em várias leituras. Os mesmos valores pioraram a leitura nas 21 fotos avulsas que o
+  `dados/teste/` tinha antes (36 % → 30 % dos dígitos; 12 delas eram de medidores de gás ou indefinidos e depois foram
+  separadas): não é uma melhoria geral, e sim um ajuste por medidor e iluminação.
 - **Fatiamento calibrado à mão**: o número de rodinhas é ajustado por medidor; o pipeline CNN Simples não lê sozinho um
   medidor desconhecido.
-- **Não lê o medidor físico**: nas 21 fotos físicas de `dados/teste/` (emulação em Python, não na placa) o pipeline com
-  segmentação acertou 2/21 leituras e 31 % dos dígitos na borda e 0/21 e 27 % na nuvem; com a ROI marcada à mão, 2/21
-  e 37 % (3/21 e 56 % invertendo os tons das fotos de fundo escuro). Os 100 % de domínio são sobre as mesmas 24 fotos
-  do *fine-tuning* (ver [Origem das imagens](#origem-das-imagens-e-como-o-pipeline-é-avaliado) e
+- **Só lê o medidor calibrado**: com a ROI calibrada, 25/30 leituras no hidrômetro da bancada (um medidor, uma luz);
+  sem calibração o pipeline não lê medidor físico: nas 39 fotos de `dados/teste/`, a segmentação do modelo deu 2/39
+  leituras (borda) e 0/39 (nuvem), e a ROI marcada à mão com a fatia inteira, 4/39. Os 100 % de domínio são sobre as
+  mesmas 24 fotos do *fine-tuning* (ver [Origem das imagens](#origem-das-imagens-e-como-o-pipeline-é-avaliado) e
   [`medicoes/ocr_teste.csv`](medicoes/ocr_teste.csv)).
 - **Última rodinha**: é o dígito que mais erra (a rodinha gira); o classificador dá menos confiança nele, o que
   permite sinalizá-lo como duvidoso.
@@ -127,7 +128,9 @@ O trabalho foi unificado na `main`; as branches `ocr` e `Treino-Testes-e-Modelos
 
 ## Origem das imagens e como o pipeline é avaliado
 
-**Só as 21 fotos de `dados/teste/` são de um hidrômetro físico.** As demais fotos da ESP32-CAM são de um **monitor** exibindo
+**As fotos de hidrômetro físico estão em `dados/teste/`** (39: 30 da bancada de 2026-11-18, câmera fixa, e 9 avulsas;
+os mesmos 30 quadros e mais 3 com a roda entre dois números estão em `experimentos/hibrido_a_b/quadros_160x120/`). As de
+medidores de gás estão em `dados/teste_outros_medidores/`. As demais fotos da ESP32-CAM são de um **monitor** exibindo
 imagens de hidrômetro (por exemplo, `ModeloEDataset/Imagens/imagem_capturada_15.jpg` mostra a tela e
 `ModeloEDataset/Imagens_2/Imagens_teste_2_ESP32/imagem_capturada_144.jpg` mostra a barra de tarefas). Isso testa a
 câmera, a lente e a compressão, mas **não** o reflexo, a iluminação e o ângulo de um medidor de verdade.
@@ -137,7 +140,8 @@ câmera, a lente e a compressão, mas **não** o reflexo, a iluminação e o ân
 | `ModeloEDataset/Imagens/` | 34 | ESP32-CAM, **monitor** | 3 delas (24 recortes de dígito) no *fine-tuning* do classificador; as outras não entram no treino |
 | `ModeloEDataset/Imagens_2/Imagens_teste_2_ESP32/` | 2 | ESP32-CAM, **monitor** | teste do classificador com recorte manual |
 | `ModeloEDataset/Imagens_2/Imagens_teste_2/` | 4 | fotos de datasets públicos (ex. `20221221_01143.jpg`) | teste do classificador com recorte manual; **nenhuma coincide byte a byte com os 109.018 arquivos do Dryad** (os nomes do Dryad são `testN.jpg`/`trainN.jpg`, então o padrão de nome não prova nada); independência por conteúdo (mesmo medidor em outra foto) não foi verificada |
-| `dados/teste/imagens/` | 21 | ESP32-CAM, **hidrômetro físico** | pipeline completo, borda × nuvem (`ocr/avaliar_pipeline.py --conjunto fisico`, `ocr/avaliar_roi_manual.py`); ver [`dados/teste/`](dados/teste/README.md) |
+| `dados/teste/imagens/` | 39 | ESP32-CAM, **hidrômetro físico** (30 da bancada com câmera fixa, 9 avulsas) | pipeline completo, borda × nuvem: ROI calibrada (`ocr/avaliar_roi_calibrada.py`), segmentação (`ocr/avaliar_pipeline.py --conjunto fisico`) e ROI manual (`ocr/avaliar_roi_manual.py`); ver [`dados/teste/`](dados/teste/README.md) |
+| `dados/teste_outros_medidores/imagens/` | 12 | ESP32-CAM, medidores de **gás** (11) e um indefinido | fora das avaliações; separadas do conjunto de hidrômetro |
 | `ocr/teste_comum/imagens/` | 39 | ESP32-CAM, **monitor** | pipeline completo, borda × nuvem (`ocr/avaliar.py`, `ocr/avaliar_pipeline.py --conjunto comum`) |
 | `test_images/debug_ocr_esp32cam/debug_frames/` | frames | ESP32-CAM, origem (monitor ou físico) **não registrada** | conferência do firmware de debug |
 | `legado/TreinoEModelosOCRNaBorda/dataset/imagens_reais/` | 14 | imagens avulsas, não da ESP32-CAM (nas que foram conferidas: `image1.jpg` é uma foto de catálogo e `image9.jpg`, uma figura explicativa) | pipeline U-NET + CRNN + CTC, arquivado |
@@ -208,7 +212,7 @@ Codigo-do-TCC2/
 │   ├── analise_tempo_no_ar.py     PC: calcula pacotes, tempo no ar e tempo total de envio (`--verificar` confere a fórmula)
 │   └── requirements.txt           Igual ao requirements.txt da raiz
 ├── legado/                        Fora do fluxo atual (ver legado/README.md): protótipo serial → ChirpStack e os pipelines de OCR arquivados (`ocr_cloud/` = U-NET + CNN, `TreinoEModelosOCRNaBorda/` = U-NET + CRNN + CTC)
-├── dados/teste/                   Conjunto de teste de hidrômetro FÍSICO (21 fotos rotuladas da ESP32-CAM; ver dados/teste/README.md)
+├── dados/teste/                   Conjunto de teste de hidrômetro FÍSICO (39 fotos rotuladas da ESP32-CAM; ver dados/teste/README.md); dados/teste_outros_medidores/ guarda as 12 de gás e uma indefinida
 ├── ocr/                           Lado da nuvem (modelos do pipeline CNN Simples no servidor), avaliação borda × nuvem e conjunto de teste comum (ver ocr/README.md)
 │   └── colab_poc/                 Teste de viabilidade de OCR genérico em imagem 160×120 (Tesseract/EasyOCR no Colab; não será usado no trabalho)
 ├── medicoes/                      Medições em hardware: `transmissao.csv` (fluxo de imagem), `transmissao_ocr.csv` (fluxo OCR) + `logs/` + `imagens/` do enlace (ver medicoes/medir_transmissao.md) e as de OCR/energia/latência
@@ -688,9 +692,10 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 - **Medir o modo ROI**: o `transmissor_ocr_esp32cam` já pula a segmentação quando há ROI na NVS (ver
   [Decisão](#decisão-pipeline-de-ocr-na-borda)); falta **medir** latência e energia nesse modo (30 ciclos de `AUTO:30`
   com o INA219 e `latencia_ponta_a_ponta.py --fluxo ocr`) e a acurácia na placa, com gabarito.
-- **Só 21 fotos de medidor físico** (meta de ≥ 30) e poucas fotos reais da ESP32-CAM (dígitos 4, 5 e 6 ausentes no
-  conjunto de domínio): completar as ≥ 30 fotos de `dados/teste/` (e mais para o fine-tuning, sem misturar com o teste) em
-  condições variadas.
+- **Um medidor e uma iluminação** no conjunto físico com câmera fixa (30 fotos, 26 leituras, os quatro primeiros
+  dígitos sempre 0) e poucas fotos reais da ESP32-CAM no treino (dígitos 4, 5 e 6 ausentes no conjunto de domínio):
+  faltam outros hidrômetros e outras condições de luz em `dados/teste/` (e fotos para o fine-tuning, sem misturar com
+  o teste).
 - **Segmentação fraca:** Dice 0,39 e IoU 0,28 no teste do Kaggle depois do re-treino com lote 16 e perda
   entropia cruzada + Dice; a rede (11 KB, sem conexões de salto) tem capacidade limitada. Como a decisão é câmera fixa
   e ROI calibrada na instalação, melhorar o modelo de segmentação não é necessário para a leitura, e só valeria como

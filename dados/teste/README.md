@@ -1,8 +1,29 @@
 # dados/teste/: conjunto de teste de hidrômetro físico
 
-Conjunto **fixo e versionado** para medir o pipeline completo (segmentação → fatias → dígitos) em fotos da ESP32-CAM
-de um **hidrômetro físico**, e não de um monitor exibindo imagens de hidrômetro (o caso de todas as fotos que o
-repositório tinha até agora; ver "Origem das imagens" no [README principal](../../README.md)).
+Conjunto **fixo e versionado** para medir o pipeline completo em fotos da ESP32-CAM de um **hidrômetro físico**, e não
+de um monitor exibindo imagens de hidrômetro (ver "Origem das imagens" no [README principal](../../README.md)).
+
+## O que tem (2026-11-18)
+
+| Fotos | Origem | Rótulos | ROI |
+|---|---|---|---|
+| 30, `fisico_1_q_*.png` | bancada de 2026-11-18: medidor `fisico_1`, câmera fixa (posições A e B), 26 leituras de `000025` a `000052`, luz lateral difusa; quadros 160×120 crus, cópia de `experimentos/hibrido_a_b/quadros_160x120/` (sem os 3 com a roda entre dois números) | completos: `medidor`, `iluminacao`, `angulo` e `caixa` (a ROI calibrada) | calibrada uma vez por posição, em `roi_calibrada.csv` (caixa, `n`, face da roda, realce, JSON de origem) |
+| 9, `esp32_*.jpg` | fotos avulsas de 27/10, medidores diferentes | só `leitura` e `n_digitos` | marcada à mão em `roi_manual.csv` |
+
+As 12 fotos de medidores de gás (11, com marcações como "G6", "Pmax", "1 imp = 0,01 m³" e "Vn … dm³") e uma
+indefinida (painel com kWh ou m³/h) que estavam aqui foram para `dados/teste_outros_medidores/`, com os rótulos e as
+ROIs manuais, e uma coluna `tipo`. Elas não entram nas avaliações.
+
+## Avaliações
+
+| Script | Pipeline | Linhas em `medicoes/ocr_teste.csv` | Resultado (2026-11-18) |
+|---|---|---|---|
+| `python ocr/avaliar_roi_calibrada.py` | **adotado**: ROI calibrada uma vez, sem segmentação, com e sem votação | `fisico_roi_calibrada`, `fisico_roi_calibrada_votacao` | 25/30 leituras, 97,2 % dos dígitos, CER 0,028, na borda e na nuvem; o mesmo com votação |
+| `python ocr/avaliar_pipeline.py --conjunto fisico` | segmentação do modelo (descartada) | `fisico` | 2/39 (borda), 0/39 (nuvem) |
+| `python ocr/avaliar_roi_manual.py` | ROI marcada à mão, fatia inteira | `fisico_roi_manual*` | 4/39 (6/39 com votação) |
+
+A "borda" é emulada em Python com as mesmas contas do firmware; a equivalência com a placa foi medida à parte nas 30
+fotos da bancada (`experimentos/hibrido_a_b/resultados/PLACA_X_PC.md`: 33/33 leituras iguais).
 
 
 ## Como montar
@@ -47,9 +68,11 @@ janela e centros dos roletes) antes de rodar a leitura, e ainda precisam ser con
     python ocr/avaliar_roi_manual.py
 
 grava as linhas `fisico_roi_manual*` em `medicoes/ocr_teste.csv` e o detalhe por foto em
-`medicoes/ocr_teste_por_imagem_fisico_roi_manual.csv`. Resultado em 2026-11-08 (fluxo nuvem): 2/21 leituras e 37 % dos
-dígitos com a ROI; 3/21 e 56 % invertendo os tons das 12 fotos de fundo escuro, que o classificador quase não viu no
-treino.
+`medicoes/ocr_teste_por_imagem_fisico_roi_manual.csv`. Em 2026-11-08, com as 21 fotos avulsas de então (12 delas
+de gás, depois separadas), deu 2/21 leituras e 37 % dos dígitos (fluxo nuvem), e 3/21 e 56 % invertendo os tons das
+fotos de fundo escuro. Com o conjunto atual (39 fotos de hidrômetro), 4/39 leituras e 76 % dos dígitos; a inversão
+não muda nada, porque as fotos de fundo escuro eram as de gás. As 30 fotos da bancada entram aqui com a caixa da ROI
+calibrada, ângulo 0 e fundo claro.
 
 ## O que o conjunto não cobre
 

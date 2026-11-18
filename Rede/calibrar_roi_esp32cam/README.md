@@ -113,8 +113,8 @@ amostra de **uma leitura só**: o ganho de acurácia ainda precisa ser medido em
 sem pré-processamento, 2/30 leituras exatas; só a face, 25/30; face + realce, 24/30. O realce não ajudou e ficou
 desligado na placa; a face é o que decide.
 
-**Os valores não servem para outro medidor.** Nas 21 fotos de outros hidrômetros de `dados/teste/` (caixa marcada à
-mão), a mesma face 14-74 % com realce piorou a leitura (de 36 % para 30 % dos dígitos; com os tons invertidos nas
+**Os valores não servem para outro medidor.** Nas 21 fotos avulsas que o `dados/teste/` tinha antes (caixa marcada à
+mão; 12 delas eram de medidores de gás ou indefinidos e depois foram para `dados/teste_outros_medidores/`), a mesma face 14-74 % com realce piorou a leitura (de 36 % para 30 % dos dígitos; com os tons invertidos nas
 fotos de fundo escuro, de 56 % para 41 %), e o realce piorou em todas as faces testadas. Face e realce são escolhidos
 por medidor e por iluminação, olhando a leitura ao vivo; os padrões (fatia inteira, sem realce) mantêm o
 comportamento anterior.

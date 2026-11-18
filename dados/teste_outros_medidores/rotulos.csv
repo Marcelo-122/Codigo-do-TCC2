@@ -1,0 +1,13 @@
+arquivo,leitura,n_digitos,medidor,origem,iluminacao,angulo,centro_y,caixa,observacao,tipo
+esp32_02.jpg,39515844,8,,fisico,,,,,"gás: G6, VIENA",gás
+esp32_03.jpg,53260548,8,,fisico,,,,,"gás: LAO G2,5, Pmax 100 kPa",gás
+esp32_05.jpg,39515844,8,,fisico,,,,,"gás: G6, VIENA (mesmo medidor da esp32_02)",gás
+esp32_06.jpg,06472462,8,,fisico,,,,,gás: painel preto com Vn (volume cíclico),gás
+esp32_07.jpg,00477741,8,,fisico,,,,,"gás: 1 imp = 0,01 m³, Classe 1,5, Vn 2 dm³",gás
+esp32_11.jpg,05891734,8,,fisico,,,,,"gás: 1 imp = 0,01 m³, faixa de temperatura",gás
+esp32_13.jpg,32914579,8,,fisico,,,,,"gás: 1 imp = 0,01 m³, Classe 1,5",gás
+esp32_15.jpg,31336762,8,,fisico,,,,,"gás: painel preto, série terminada em D",gás
+esp32_16.jpg,44684567,8,,fisico,,,,,"gás: Classe 1,5, série F22L...D",gás
+esp32_21.jpg,01712496,8,,fisico,,,,,"gás: 1 imp = 0,01 m³",gás
+esp32_23.jpg,04572594,8,,fisico,,,,,"gás: 1 imp = 0,01 m³, Vn 1,2 dm³",gás
+esp32_24.jpg,044709,6,,fisico,,,,,"indefinido: painel com kWh ou m³/h e US-3,0; não dá para confirmar que é hidrômetro",indefinido
