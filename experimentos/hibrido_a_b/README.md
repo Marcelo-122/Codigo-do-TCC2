@@ -33,7 +33,8 @@ uma vez e foi recalibrada, então há duas ROIs) e gera `resultados/ROI_FIXA_FIS
 
 O que decide é recortar a face da roda; o realce não acrescentou nada neste conjunto e foi desligado
 (`realce 0` na placa e nos dois JSONs da ROI, que guardam o valor da calibração em `realce_na_calibracao`). Os erros estão todos na roda
-das unidades (`7`, `9` e `1` lidos como `0` ou `3`). Um medidor e uma luz: não mede a generalização para outro
+das unidades: na configuração final (só a face), `7`, `4` e `1` lidos como `0` (5 quadros; com face + realce, também
+`9` lido como `3`). Um medidor e uma luz: não mede a generalização para outro
 hidrômetro.
 
 ```bash

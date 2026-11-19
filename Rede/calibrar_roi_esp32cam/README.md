@@ -133,8 +133,9 @@ e imprime `[roi] modo=seg`. A linha `[ocr] leitura=...` termina com `modo=roi` o
 serial mostra o que foi carregado.
 
 Num teste de bancada (2026-11-18), em modo ROI, a linha `[ocr] leitura=` apareceu 2,3 a 2,9 s depois do `LER`
-(com a segmentação eram ≈ 18 s). É uma observação, não a medição formal: latência e energia sem a segmentação
-ainda precisam ser medidas com os scripts de `medicoes/`.
+(com a segmentação eram ≈ 18 s). A medição formal veio depois, com o `medicoes/latencia_ponta_a_ponta.py` em
+`AUTO:30`: **3,50 s** do despertar até a leitura no PC (mediana de 29 ciclos, 30/30 uplinks recebidos), contra
+18,84 s com a segmentação. A energia sem a segmentação ainda não foi medida.
 
 Se a câmera ou o hidrômetro se mexerem, refaça a calibração: a ROI está em pixels do quadro 160×120 e não se ajusta
 sozinha (na bancada, um deslocamento de ≈ 30 px depois da calibração deixou a caixa fora dos dígitos). O mesmo vale se

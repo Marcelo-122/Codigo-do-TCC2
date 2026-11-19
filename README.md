@@ -50,8 +50,8 @@ cada um a sua caixa de "Status"; os números detalhados ficam em [`medicoes/`](m
 | Leitura com ROI fixa em hidrômetro físico (bancada, 2026-11-18) | 30 quadros 160×120 crus da ESP32-CAM, câmera parada, 26 leituras distintas (`000025` a `000052`), um medidor e uma luz. Sem pré-processamento, 2/30 leituras exatas; recortando a face da roda (configuração final, gravada na placa), **25/30 (83 %, IC 95 % 66–93 %)**, e 23/28 (82 %) só nas leituras diferentes da usada na calibração. Com o realce junto, 24/30: o realce não ajudou e foi desligado. Todos os erros na roda das unidades; borda e nuvem (JPEG q90) iguais. Os mesmos 33 quadros mandados à placa (`LERQ`) deram **as mesmas leituras que o PC em 33/33** (25/30 nos dois); as saídas int8 diferem um pouco (até 18, kernels esp-nn × referência) sem mudar nenhum dígito. Classificador na placa: 1,92 s para as 6 fatias | [`ROI_FIXA_FISICO.md`](experimentos/hibrido_a_b/resultados/ROI_FIXA_FISICO.md), [`PLACA_X_PC.md`](experimentos/hibrido_a_b/resultados/PLACA_X_PC.md) |
 | Firmware de debug (`test_images/debug_ocr_esp32cam/`) | Roda em placa: 61 capturas, ≈ 17,6 s de processamento por leitura, medidas com o `modelo.h` de segmentação **antigo** | [`medicoes/README.md`](medicoes/README.md) |
 | Transmissor do fluxo de imagem (`Rede/transmissor_esp32cam/`, FPort 1) | Em placa: consumo em 30 ciclos de `AUTO:30` (≈ 4,64 mAh por leitura); latência mediana de 189 s; 20/30 imagens completas (21/30 na corrida com `CAPTURE`). O `STOP` do modo autônomo não foi testado | [`medicoes/README.md`](medicoes/README.md) |
-| Transmissor do OCR na borda (`Rede/transmissor_ocr_esp32cam/`, FPort 2) | Compila (core 3.0.7) e roda em placa: consumo em 32 ciclos (0,824 mAh por leitura), latência mediana de 18,84 s, 27/34 uplinks recebidos, medidos **com a segmentação**. Desde 2026-11-18, com ROI na NVS ele pula a segmentação (modo `roi`); em teste de bancada a leitura saiu 2,3 a 2,9 s depois do `LER`, sem medição formal. A acurácia na placa não foi medida | [`medicoes/README.md`](medicoes/README.md) |
-| ROI calibrada no firmware | O calibrador ([`Rede/calibrar_roi_esp32cam/`](Rede/calibrar_roi_esp32cam/README.md)) grava na NVS a ROI, a orientação e o pré-processamento das fatias (face da roda e realce); o transmissor de OCR lê tudo e pula a segmentação. Latência e energia nesse modo ainda não foram medidas com os scripts de `medicoes/` | — |
+| Transmissor do OCR na borda (`Rede/transmissor_ocr_esp32cam/`, FPort 2) | Compila (core 3.0.7) e roda em placa: consumo em 32 ciclos (0,824 mAh por leitura), latência mediana de 18,84 s, 27/34 uplinks recebidos, medidos **com a segmentação**. Desde 2026-11-18, com ROI na NVS ele pula a segmentação (modo `roi`): latência mediana de **3,50 s** em 29 despertares de `AUTO:30`, 30/30 uplinks recebidos; a energia nesse modo não foi medida. Nos 33 quadros mandados pelo PC a placa leu o mesmo que o PC (25/30 nas fotos rotuladas); a leitura ao vivo não foi conferida | [`medicoes/README.md`](medicoes/README.md) |
+| ROI calibrada no firmware | O calibrador ([`Rede/calibrar_roi_esp32cam/`](Rede/calibrar_roi_esp32cam/README.md)) grava na NVS a ROI, a orientação e o pré-processamento das fatias (face da roda e realce); o transmissor de OCR lê tudo e pula a segmentação. Latência ponta a ponta medida (3,50 s, mediana); energia nesse modo ainda não medida | — |
 | Servidor (`ocr/pipeline_nuvem.py`) | Implementado, com segmentação (padrão) ou ROI (`--roi`); ≈ 6,25 ms por leitura num Ryzen 5 5600GT | [`ocr/README.md`](ocr/README.md), [`medicoes/README.md`](medicoes/README.md) |
 | Scripts do enlace no PC (`Rede/*.py`) | Testados com nó e receptor simulados (59 verificações) e usados com as placas em 2026-10-27 (`transmissao.csv`, `latencia_ponta_a_ponta.csv`, `latencia_ocr.csv`). O `transmissao_ocr.csv` **nunca foi gerado** | [`medicoes/medir_transmissao.md`](medicoes/medir_transmissao.md), [`medicoes/medir_latencia.md`](medicoes/medir_latencia.md) |
 | Cenário do enlace | Só bancada, a ≈ 2 m (RSSI de −33,5 a −27 dBm). Receptor de canal único no lugar de um gateway, sem servidor de rede, MIC não verificado, sem downlink/ACK e sem retransmissão no modo autônomo | [`medicoes/README.md`](medicoes/README.md) |
@@ -70,7 +70,7 @@ branches e pastas diferentes; os outros dois (U-NET + CRNN + CTC e U-NET + CNN) 
 |---|---|---|---|
 | Cabe no ESP32-CAM | **Sim.** Arenas de 1,62 MB (segmentação) e 28,6 KB (dígito), medidas; sobram 1,29 MB de PSRAM | **Não.** O detector pede 15.335.424 bytes de arena; havia 4.053.940 (teste em placa) | Não se aplica (só PC) |
 | Roda em hardware | **Sim**: 61 capturas com o firmware de debug; em 2026-11-18, o `transmissor_ocr_esp32cam` em modo ROI leu as mesmas 33 imagens que o PC com o mesmo resultado (33/33) | Não: a alocação falha; os leitores CTC também (operador `REDUCE_PROD` ausente na TFLM do core 3.0.7) | Não |
-| Latência | Com a segmentação: ≈ 17,6 s de processamento por leitura (15,6 s de segmentação + 2,0 s de dígitos), medidos nas 61 capturas com o `modelo.h` de segmentação **antigo** (11.128 B). No modo adotado (ROI, sem segmentação): 1,92 s do classificador para 6 fatias na placa; a latência ponta a ponta e a energia nesse modo ainda não foram medidas | Não se aplica | Não se aplica |
+| Latência | Com a segmentação: ≈ 17,6 s de processamento por leitura (15,6 s de segmentação + 2,0 s de dígitos), medidos nas 61 capturas com o `modelo.h` de segmentação **antigo** (11.128 B). No modo adotado (ROI, sem segmentação): 1,92 s do classificador para 6 fatias na placa e 3,50 s de latência ponta a ponta (mediana, `medicoes/latencia_ocr_roi.csv`); a energia nesse modo ainda não foi medida | Não se aplica | Não se aplica |
 | Acurácia | 95,4 % por dígito na validação por foto (INT8); 97,7 % dos dígitos (92,8 % das leituras) nas pastas `test` do Dryad; 91 % (29/32 dígitos) em imagens novas; **25/30 leituras (97,2 % dos dígitos) no hidrômetro físico** com a ROI calibrada | Leitor CTC: 39 % a 64 % de acerto de sequência em recortes de máscara; no máximo 1 de 10 fotos de ponta a ponta | Treinado só com fontes de dígitos, não com hidrômetros |
 
 Evidências: [`medicoes/README.md`](medicoes/README.md) (CNN Simples em hardware),
@@ -85,19 +85,20 @@ mesma região do quadro; então, em vez de segmentar a cada leitura, a região (
 uma vez na instalação** e o classificador lê as N fatias dessa ROI. O que se mediu ([`ocr/README.md`](ocr/README.md)):
 com a janela certa e o quadro endireitado, a leitura chega a 82–87 % das leituras e 92–95 % dos dígitos; a ROI
 precisa de precisão de cerca de **±1 a ±2 px** no quadro 160×120 (com erro de ±4 px caem para 40–50 %, e com ±6 px
-para 20–26 %). O `transmissor_ocr_esp32cam` já usa a ROI gravada pelo calibrador e não carrega a segmentação; num
-teste de bancada a leitura saiu 2,3 a 2,9 s depois do `LER` (eram ≈ 18 s), mas latência e energia nesse modo ainda não
-foram medidas com os scripts de `medicoes/`.
+para 20–26 %). O `transmissor_ocr_esp32cam` já usa a ROI gravada pelo calibrador e não carrega a segmentação; a
+latência ponta a ponta caiu de 18,84 s para **3,50 s** (medianas, `AUTO:30`), mas a energia nesse modo ainda não foi
+medida.
 
 **Limitações do pipeline CNN Simples assumidas:**
 - **Calibração da ROI**: a ROI, a orientação do quadro e o número de rodinhas precisam ser ajustados na instalação,
   com ±1 a ±2 px de precisão, no calibrador ([`Rede/calibrar_roi_esp32cam/`](Rede/calibrar_roi_esp32cam/README.md)). A
   inclinação não é corrigida no firmware: a câmera tem de ficar com os dígitos na horizontal. Se a câmera se mexer, a
   calibração tem de ser refeita (na bancada, um deslocamento de ≈ 30 px tirou a caixa de cima dos dígitos).
-- **Pré-processamento por medidor**: no hidrômetro físico o classificador só leu com a fatia recortada na face da roda
-  e com realce de contraste, calibrados por medidor (sem isso, `000000` em 7 de 7 quadros de `000024`; com eles, os 3
-  quadros com a iluminação final certos e os 4 com a luz anterior em `000006`). Isso foi visto em **uma leitura só** e
-  ainda precisa ser medido em várias leituras. Os mesmos valores pioraram a leitura nas 21 fotos avulsas que o
+- **Pré-processamento por medidor**: no hidrômetro físico o classificador só leu com a fatia recortada na face da roda,
+  calibrada por medidor. Em 30 quadros da bancada (26 leituras), sem pré-processamento 2/30 leituras exatas; só com a
+  face, 25/30; com a face e o realce de contraste, 24/30, então o realce ficou desligado
+  ([`ROI_FIXA_FISICO.md`](experimentos/hibrido_a_b/resultados/ROI_FIXA_FISICO.md)). A primeira observação, numa leitura
+  só (`000000` em 7 de 7 quadros de `000024` sem pré-processamento), foi o que motivou o recorte. Os mesmos valores pioraram a leitura nas 21 fotos avulsas que o
   `dados/teste/` tinha antes (36 % → 30 % dos dígitos; 12 delas eram de medidores de gás ou indefinidos e depois foram
   separadas): não é uma melhoria geral, e sim um ajuste por medidor e iluminação.
 - **Fatiamento calibrado à mão**: o número de rodinhas é ajustado por medidor; o pipeline CNN Simples não lê sozinho um
@@ -171,7 +172,7 @@ do modelo: o efeito da quantização INT8, que o classificador precisa para cabe
 | Hipótese | Enunciado | Métricas | Resultado medido |
 |---|---|---|---|
 | **H1** (quantização) | Acurácia do classificador INT8 contra o mesmo modelo em ponto flutuante | Acurácia por dígito e por leitura, pareada (McNemar exato) | Sem diferença: na validação do classificador, 95,5 % (float) contra 95,4 % (INT8), p = 0,29; no hidrômetro físico (30 fotos, ROI calibrada), **25/30 leituras e CER 0,028 nos dois**, dígitos iguais em 179/180 (borda) e 180/180 (nuvem), p = 1,0 |
-| **H2** (latência e entrega) | "O método de processamento local apresenta menor latência e maior valor de taxa de pacotes entregues" | Latência ponta a ponta; taxa de entrega por leitura e por pacote | Latência confirmada (mediana de 18,84 s contra 189 s). Entrega por leitura: 79,4 % contra 66,7 %, diferença sem significância estatística (Fisher, p = 0,27). Por pacote o fluxo de imagem foi melhor (98,0 % contra 79,4 %) |
+| **H2** (latência e entrega) | "O método de processamento local apresenta menor latência e maior valor de taxa de pacotes entregues" | Latência ponta a ponta; taxa de entrega por leitura e por pacote | Latência confirmada (mediana de 18,84 s contra 189 s com a segmentação; 3,50 s no modo ROI adotado). Entrega por leitura: 79,4 % contra 66,7 %, diferença sem significância estatística (Fisher, p = 0,27). Por pacote o fluxo de imagem foi melhor (98,0 % contra 79,4 %) |
 | **H3** (energia) | Consumo de energia dos dois fluxos | mAh por leitura; autonomia estimada | O OCR na borda gasta 5,6 a 7,2 vezes menos por leitura. O efeito na autonomia vai de 1,1× a 6× conforme a corrente de sleep, que ainda inclui o Radioenge |
 
 ---
@@ -399,7 +400,7 @@ No fluxo de OCR na borda o dispositivo lê o medidor e só a **leitura** trafega
    a segmentação (~15,6 s), como nas medições de 27/10.
 2. O payload vai ao Radioenge com `AT+SENDB=02:<hex>` (**FPort 2**): `uint16` id + `uint8` flags + N dígitos em ASCII
    (9 bytes com N = 6). Não há blocos nem JPEG: um uplink por leitura, e a latência ponta a ponta medida cai de 189 s
-   (fluxo de imagem, 19 a 27 chunks a 7 s) para 18,84 s (medianas; o OCR medido no modo com segmentação).
+   (fluxo de imagem, 19 a 27 chunks a 7 s) para 18,84 s com a segmentação e 3,50 s no modo ROI (medianas).
 3. O `reconstrutor.py` descriptografa como sempre e, ao ver FPort 2, decodifica a leitura com
    `enlace.parse_leitura()`. Cada leitura vira uma linha em **`medicoes/transmissao_ocr.csv`**, separada do
    `transmissao.csv` de imagem (as duas coexistem na mesma execução).
@@ -624,7 +625,7 @@ captura: ≈ 4,64 mAh por leitura e latência mediana de 189 s até a imagem com
 chegaram completas (ver [`medicoes/`](medicoes/README.md)). O fluxo de OCR na borda
 (`Rede/transmissor_ocr_esp32cam`) teve o consumo medido em 32 ciclos (0,824 mAh por leitura, 5,6 vezes menos que
 a imagem, com ciclo acordado de 19,45 s), e a latência ponta a ponta vista pelo PC foi de 18,84 s (mediana, contra
-189 s da imagem). Só 27 de 34 uplinks do OCR e 20 de 30 imagens chegaram completos ao PC. Uma segunda corrida do
+189 s da imagem); no modo ROI, sem a segmentação, caiu para 3,50 s, com 30 de 30 uplinks recebidos (energia não medida). Só 27 de 34 uplinks do OCR e 20 de 30 imagens chegaram completos ao PC. Uma segunda corrida do
 fluxo de imagem, com o PC mandando `CAPTURE` ao nó sempre ligado (`medicoes/transmissao.csv`), deu 21 de 30 imagens,
 98,7% dos pacotes e 197 s; os números acima vêm da corrida em `AUTO`, que usa o mesmo disparo do OCR (ver
 "Duas corridas do fluxo de imagem" em [`medicoes/`](medicoes/README.md)).
@@ -711,8 +712,8 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
   e ROI calibrada na instalação, melhorar o modelo de segmentação não é necessário para a leitura, e só valeria como
   extensão (arquitetura com *skip connections*, mais épocas).
 - **Integração final**: o firmware (`Rede/transmissor_ocr_esp32cam/`: OCR do debug + envio da leitura na FPort 2,
-  ~9 bytes em vez da imagem inteira) já rodou em placa, com consumo e latência medidos no modo com segmentação; o modo
-  ROI ainda não foi medido (ver o item acima) e a acurácia dele na placa também não.
+  ~9 bytes em vez da imagem inteira) já rodou em placa, com consumo e latência medidos no modo com segmentação; no modo
+  ROI a latência foi medida (3,50 s), mas a energia não, e a leitura ao vivo na placa não foi conferida contra o hidrômetro.
 - Perda de chunks no enlace: hoje o reenvio é manual (`RESEND`, com o `reconstrutor.py` aberto) ou pelo
   `orchestrator.py`; falta automatizar a captura com confirmação.
 - **Comparação borda × nuvem em hardware**: o conjunto comum (`ocr/teste_comum/`) só permite emulação. Para medir a

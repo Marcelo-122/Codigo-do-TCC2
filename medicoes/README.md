@@ -23,6 +23,7 @@ Dados brutos de três firmwares:
 | `corrente/auto30_ocr.csv` (+ `.png`) | `Rede/transmissor_ocr_esp32cam`, `AUTO:30` | 32 ciclos | mesmo formato; 169.738 amostras em 1.697 s, 2026-10-27 12:22 a 12:49 |
 | `latencia_ponta_a_ponta.csv` | mesmo firmware, medido no PC por `latencia_ponta_a_ponta.py auto` | 31 disparos (30 com envio) | uma linha por leitura: chunks enviados/recebidos, bytes do JPEG, RSSI, tempo até o 1º/último chunk e até a imagem completa |
 | `latencia_ocr.csv` | `Rede/transmissor_ocr_esp32cam`, medido no PC por `latencia_ponta_a_ponta.py auto --fluxo ocr` | 34 disparos (27 uplinks recebidos) | uma linha por leitura: RSSI, tempo até a linha `[ocr] leitura=` e até o dado no PC, dígitos lidos, `achou_caixa`; 2026-10-27, 12:59 a 13:27 |
+| `latencia_ocr_roi.csv` | `Rede/transmissor_ocr_esp32cam` em modo ROI (sem segmentação), medido no PC por `latencia_ponta_a_ponta.py auto --fluxo ocr --iniciar-auto 30` | 30 disparos (30 uplinks recebidos) | mesmo formato de `latencia_ocr.csv`; 2026-11-18 23:58 a 2026-11-19 00:14 |
 | `latencia_ocr_tentativa1.csv` | mesmo firmware, primeira tentativa | 28 disparos (1 uplink recebido) | tentativa em que o receptor não entregou nenhum uplink ao PC durante 22 min (12:25 a 12:46); **não entra nas estatísticas**, fica como registro |
 | `transmissao.csv` | `Rede/transmissor_esp32cam` (fluxo de imagem, `CAPTURE` pelo PC) | 30 envios | uma linha por imagem: PDR, tempo de rádio, latência ([`medir_transmissao.md`](medir_transmissao.md)); corrida de 2026-10-27, 14:59 a 16:44 |
 | `transmissao_execucoes_anteriores.csv` | mesmo firmware, 5 execuções interrompidas | 21 linhas | execuções das 13:41 a 14:55 que pegaram as janelas de silêncio do receptor (ver "Enlace do fluxo de imagem"); **fora das estatísticas**; os logs e as imagens delas foram apagados |
@@ -99,7 +100,8 @@ pacotes entregues") compara fluxos, não etapas:
 | Fluxo | Composição | Latência (despertar até o dado no PC) |
 |---|---|---|
 | Nuvem (imagem) | captura em ~0,7 s, 1º chunk em ~2,0 s e envio de 22 a 27 chunks, um a cada ~7,9 s (JPEG de 3,7 a 4,6 KB) | **mediana de 189 s** (173 a 214 s), **medido** em 30 leituras de `AUTO:30` (20 imagens completas; ver "Latência ponta a ponta e entrega do fluxo de imagem"). No teste curto anterior, com JPEG de ~3,0 KB (18 chunks), foram ≈ 141 s. A inferência na nuvem não está incluída |
-| Local (OCR na borda) | inferência de ~17,5 s mais 1 uplink de ~9 bytes | **18,84 s** (mediana; de 18,836 a 18,840 s), **medido** em 34 disparos de `AUTO:30`, dos quais 27 uplinks chegaram ao PC (ver "Latência ponta a ponta e entrega do fluxo de OCR"). O tempo acordado do ciclo inteiro, medido pelo INA219, é 19,45 s |
+| Local (OCR na borda), com segmentação | inferência de ~17,5 s mais 1 uplink de ~9 bytes | **18,84 s** (mediana; de 18,836 a 18,840 s), **medido** em 34 disparos de `AUTO:30`, dos quais 27 uplinks chegaram ao PC (ver "Latência ponta a ponta e entrega do fluxo de OCR"). O tempo acordado do ciclo inteiro, medido pelo INA219, é 19,45 s |
+| Local (OCR na borda), modo ROI (adotado) | captura 0,24 s e classificador 1,92 s, mais 1 uplink de 9 bytes | **3,50 s** (mediana; de 3,496 a 3,580 s), **medido** em 29 despertares de `AUTO:30`, todos entregues (ver "Latência ponta a ponta do fluxo de OCR no modo ROI"). Energia nesse modo ainda não medida |
 
 **Decisão.**
 - *Reduzir o modelo* (entrada menor, menos filtros, kernels otimizados): descartado. Com câmera fixa a
@@ -111,11 +113,11 @@ pacotes entregues") compara fluxos, não etapas:
 - **Adotada:** manter o pipeline CNN Simples e retirar a segmentação do firmware com uma ROI calibrada na instalação
   (ver a decisão no README da raiz). Implementada em 2026-11-18: com ROI na NVS, o `transmissor_ocr_esp32cam` não
   carrega nem roda a segmentação. O classificador leva 1,92 s para as 6 fatias na placa (33 quadros mandados pelo PC,
-  `experimentos/hibrido_a_b/resultados/PLACA_X_PC.md`), e num teste de bancada a leitura saiu 2,3 a 2,9 s depois do
-  `LER`. Latência ponta a ponta e energia nesse modo **ainda não foram medidas** com os scripts desta pasta; os valores
-  desta seção continuam sendo os do modo com segmentação.
+  `experimentos/hibrido_a_b/resultados/PLACA_X_PC.md`). A latência ponta a ponta nesse modo foi medida em 2026-11-18:
+  **3,50 s** (mediana), contra 18,84 s com a segmentação (ver "Latência ponta a ponta do fluxo de OCR no modo ROI").
+  A energia nesse modo **ainda não foi medida**; os valores de energia e autonomia abaixo são os do modo com segmentação.
 
-**Resultado para a H2.** A latência está confirmada com folga (18,84 s contra 189 s). A taxa de entrega depende da
+**Resultado para a H2.** A latência está confirmada com folga (18,84 s contra 189 s com a segmentação; 3,50 s no modo ROI). A taxa de entrega depende da
 métrica: por **leitura** entregue o fluxo local foi melhor (27 de 34, 79,4%, contra 20 de 30, 66,7%, na imagem), mas
 a diferença não é estatisticamente distinguível com essas amostras (Fisher exato, p = 0,27); por **pacote**, o fluxo
 de imagem foi melhor (699 de 713, 98,0%, contra 79,4%). Ver as seções de entrega abaixo. O `transmissao_ocr.csv` ainda
@@ -303,6 +305,30 @@ dá para afirmar a autonomia real depois de medir o sleep sem o Radioenge e com 
 - **Tentativa anterior sem dados.** Em `latencia_ocr_tentativa1.csv` o nó e o PC viram os 27 disparos (12:25 a 12:46), mas
   o receptor não entregou nenhum uplink ao PC até as 12:46:19, e a causa não foi identificada (o script dessa tentativa
   ainda não tinha o `--debug`). Essas 28 linhas **não entram** nas estatísticas acima.
+
+## Latência ponta a ponta do fluxo de OCR no modo ROI (30 leituras)
+
+`python medicoes/latencia_ponta_a_ponta.py auto --n 30 --fluxo ocr --iniciar-auto 30 --csv medicoes/latencia_ocr_roi.csv --debug`
+(2026-11-18 23:58 a 2026-11-19 00:14), com o `transmissor_ocr_esp32cam` em modo ROI (caixa 21,69,151,95, N = 6, face
+14–74 %, sem realce), câmera fixa sobre o hidrômetro. O script reiniciou a placa e mandou `AUTO:30`.
+
+| Grandeza | Valor |
+|---|---|
+| Leituras entregues | **30 de 30** |
+| Latência ponta a ponta (29 despertares do deep sleep) | **mediana 3.499 ms**, de 3.496 a 3.580 ms (desvio 15 ms) |
+| Disparo até a linha `[ocr] leitura=` | 2.856 ms (mediana), mais ≈ 0,64 s até o uplink aparecer no PC |
+| Tempos do nó (`[CICLO_FIM]`) | captura 239 ms, segmentação 0 ms, dígitos 1.916 ms |
+| RSSI médio | de −60 a −59 dBm |
+
+- O 1º disparo (2.838 ms) foi o `[auto] ligado`, logo depois do `AUTO:30`, sem o boot do despertar; fica no CSV, mas
+  fora da mediana para comparar com a medição de 27/10, que conta a partir do `[boot] causa=timer`.
+- Contra os 18.838 ms com a segmentação, a latência caiu 15,3 s (5,4 vezes menor). A diferença é a segmentação
+  (≈ 15,5 s) que deixou de rodar; o classificador e o uplink levam o mesmo tempo de antes.
+- **As leituras não valem como resultado de acurácia.** O foco era a latência: a leitura do hidrômetro e as imagens
+  não foram conferidas nem salvas. Os uplinks trouxeram `000200` (20), `000000` (7) e `000220` (3). A acurácia do modo ROI é a das 30 fotos
+  de `dados/teste/` (25/30) e da comparação placa × PC (33/33 iguais).
+- **Sem perdas** nesta corrida (30 de 30, com RSSI de −60 dBm), contra 27 de 34 em 27/10 (RSSI de −30 dBm). Com
+  amostras deste tamanho isso não basta para concluir nada sobre a causa das perdas de 27/10.
 
 ## Enlace do fluxo de imagem: PDR, tempo de rádio e latência (`transmissao.csv`, 30 envios)
 

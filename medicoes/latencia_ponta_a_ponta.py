@@ -249,7 +249,7 @@ def _leitor(ser, nome, fila, parar):
             fila.put((nome, t, bruto.decode(errors="ignore").strip()))
 
 
-def _abrir_serial(porta):
+def _abrir_serial(porta, reset=False):
     import serial
 
     ser = serial.Serial()
@@ -257,6 +257,13 @@ def _abrir_serial(porta):
     ser.dtr = False  # evita resetar a placa ao abrir (igual a grab_image_debug.py)
     ser.rts = False
     ser.open()
+    if reset:
+        # Na ESP32-CAM-MB, abrir a porta assim pode deixar a placa em modo de gravacao ("waiting for
+        # download"). Um pulso so no RTS (EN), com o DTR (IO0) solto, reinicia a placa no firmware.
+        # Com um FTDI so com TX/RX/GND o pulso nao faz nada.
+        ser.rts = True
+        time.sleep(0.2)
+        ser.rts = False
     return ser
 
 
@@ -273,7 +280,13 @@ def main():
     p.add_argument("--debug", action="store_true",
                    help="imprime cada linha das duas seriais e o motivo de cada uplink descartado")
     p.add_argument("--salvar-imagens", metavar="PASTA", help="salva cada imagem remontada (conta no tempo)")
+    p.add_argument("--iniciar-auto", type=int, metavar="S",
+                   help="modo auto: depois do reset, manda AUTO:<S> ao no (sem isso, ligue o AUTO antes)")
+    p.add_argument("--sem-reset", action="store_true",
+                   help="nao reinicia o no ao abrir a porta (ex.: no ja em AUTO, ligado por FTDI)")
     args = p.parse_args()
+    if args.iniciar_auto is not None and (args.modo != "auto" or args.sem_reset):
+        p.error("--iniciar-auto so vale no modo auto e sem --sem-reset")
 
     import config
 
@@ -282,7 +295,7 @@ def main():
     med = Medidor(app_skey, dev_addr, args.modo, args.fluxo, pasta_imagens=args.salvar_imagens,
                   log=print if args.debug else None)
 
-    tx = _abrir_serial(config.require("TX_SERIAL_PORT"))
+    tx = _abrir_serial(config.require("TX_SERIAL_PORT"), reset=not args.sem_reset)
     rx = _abrir_serial(config.require("RX_SERIAL_PORT"))
     fila, parar = queue.Queue(), threading.Event()
     leitores = []
@@ -318,6 +331,23 @@ def main():
         processar(nome, t, texto)
         for linha in med.linhas[antes:]:  # inclui a leitura fechada por um novo disparo
             publicar(linha)
+
+    if not args.sem_reset:
+        # espera o no terminar o boot (banner "Comandos:") antes do primeiro LER ou do AUTO
+        fim = time.time() + 30
+        pronto = False
+        while time.time() < fim and not pronto:
+            try:
+                nome, t, texto = fila.get(timeout=0.5)
+            except queue.Empty:
+                continue
+            processar(nome, t, texto)
+            pronto = nome == "tx" and "Comandos:" in texto
+        if not pronto:
+            print("Aviso: o no nao mostrou o banner em 30 s (firmware errado ou modo de gravacao?)")
+        if args.iniciar_auto is not None:
+            tx.write(f"AUTO:{args.iniciar_auto}\n".encode())
+            print(f"AUTO:{args.iniciar_auto} enviado")
 
     try:
         while len(med.linhas) < args.n:

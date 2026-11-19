@@ -69,6 +69,11 @@ python medicoes/latencia_ponta_a_ponta.py auto --n 30 --fluxo ocr
   em `auto` que o PC começou a ouvir no meio), o script adota o id do primeiro uplink.
 - Chunks de imagem (FPort 1) numa medição `--fluxo ocr`, e uplinks de leitura (FPort 2) numa medição de imagem, são
   ignorados.
+- Ao abrir a porta do nó, o script reinicia a placa com um pulso no RTS (na ESP32-CAM-MB, abrir a porta sem esse
+  reset deixava a placa em modo de gravação) e espera o banner `Comandos:` antes do primeiro `LER`. Com o reset, o nó
+  volta com `auto=0`; use `--iniciar-auto 30` no modo `auto` para o script mandar `AUTO:30` sozinho. Com o nó já em
+  `AUTO` por um FTDI só com TX/RX/GND, use `--sem-reset`. Medição no modo ROI (2026-11-18):
+  `python medicoes/latencia_ponta_a_ponta.py auto --n 30 --fluxo ocr --iniciar-auto 30 --csv medicoes/latencia_ocr_roi.csv --debug`.
 - Use `--debug` para ver as linhas das duas seriais e o motivo de cada uplink descartado
   (uma tentativa anterior ficou 22 min sem receber nenhum uplink e não deixou pista sem ele). Cada tentativa deve usar
   um `--csv` próprio para não misturar execuções. O `reconstrutor.py --tx --fluxo ocr` mede a mesma coisa e grava em
