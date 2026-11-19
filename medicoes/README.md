@@ -24,6 +24,10 @@ Dados brutos de três firmwares:
 | `latencia_ponta_a_ponta.csv` | mesmo firmware, medido no PC por `latencia_ponta_a_ponta.py auto` | 31 disparos (30 com envio) | uma linha por leitura: chunks enviados/recebidos, bytes do JPEG, RSSI, tempo até o 1º/último chunk e até a imagem completa |
 | `latencia_ocr.csv` | `Rede/transmissor_ocr_esp32cam`, medido no PC por `latencia_ponta_a_ponta.py auto --fluxo ocr` | 34 disparos (27 uplinks recebidos) | uma linha por leitura: RSSI, tempo até a linha `[ocr] leitura=` e até o dado no PC, dígitos lidos, `achou_caixa`; 2026-10-27, 12:59 a 13:27 |
 | `latencia_ocr_roi.csv` | `Rede/transmissor_ocr_esp32cam` em modo ROI (sem segmentação), medido no PC por `latencia_ponta_a_ponta.py auto --fluxo ocr --iniciar-auto 30` | 30 disparos (30 uplinks recebidos) | mesmo formato de `latencia_ocr.csv`; 2026-11-18 23:58 a 2026-11-19 00:14 |
+| `corrente/auto30_ocr_roi_classe_a.csv` | `Rede/transmissor_ocr_esp32cam` em modo ROI, Radioenge em **classe A**, `AUTO:30` | 29 ciclos | formato do INA219; 102.707 amostras (1.027 s), 2026-11-19 |
+| `corrente/auto30_imagem_classe_a.csv` | `Rede/transmissor_esp32cam`, Radioenge em **classe A**, `AUTO:30` | 29 ciclos | formato do INA219; 527.088 amostras (5.271 s), 2026-11-19 |
+| `latencia_ocr_roi_classe_a.csv` e `latencia_imagem_classe_a.csv` | as mesmas corridas, medidas no PC por `latencia_ponta_a_ponta.py auto --iniciar-auto 30` | 30 leituras cada | mesmo formato de `latencia_ocr.csv` e `latencia_ponta_a_ponta.csv` |
+| `corrente/descartadas/` | primeira corrida do fluxo de imagem em classe A | 4 ciclos válidos | interrompida por uma queda de energia do nó às 12:19; **fora das estatísticas** |
 | `latencia_ocr_tentativa1.csv` | mesmo firmware, primeira tentativa | 28 disparos (1 uplink recebido) | tentativa em que o receptor não entregou nenhum uplink ao PC durante 22 min (12:25 a 12:46); **não entra nas estatísticas**, fica como registro |
 | `transmissao.csv` | `Rede/transmissor_esp32cam` (fluxo de imagem, `CAPTURE` pelo PC) | 30 envios | uma linha por imagem: PDR, tempo de rádio, latência ([`medir_transmissao.md`](medir_transmissao.md)); corrida de 2026-10-27, 14:59 a 16:44 |
 | `transmissao_execucoes_anteriores.csv` | mesmo firmware, 5 execuções interrompidas | 21 linhas | execuções das 13:41 a 14:55 que pegaram as janelas de silêncio do receptor (ver "Enlace do fluxo de imagem"); **fora das estatísticas**; os logs e as imagens delas foram apagados |
@@ -101,7 +105,7 @@ pacotes entregues") compara fluxos, não etapas:
 |---|---|---|
 | Nuvem (imagem) | captura em ~0,7 s, 1º chunk em ~2,0 s e envio de 22 a 27 chunks, um a cada ~7,9 s (JPEG de 3,7 a 4,6 KB) | **mediana de 189 s** (173 a 214 s), **medido** em 30 leituras de `AUTO:30` (20 imagens completas; ver "Latência ponta a ponta e entrega do fluxo de imagem"). No teste curto anterior, com JPEG de ~3,0 KB (18 chunks), foram ≈ 141 s. A inferência na nuvem não está incluída |
 | Local (OCR na borda), com segmentação | inferência de ~17,5 s mais 1 uplink de ~9 bytes | **18,84 s** (mediana; de 18,836 a 18,840 s), **medido** em 34 disparos de `AUTO:30`, dos quais 27 uplinks chegaram ao PC (ver "Latência ponta a ponta e entrega do fluxo de OCR"). O tempo acordado do ciclo inteiro, medido pelo INA219, é 19,45 s |
-| Local (OCR na borda), modo ROI (adotado) | captura 0,24 s e classificador 1,92 s, mais 1 uplink de 9 bytes | **3,50 s** (mediana; de 3,496 a 3,580 s), **medido** em 29 despertares de `AUTO:30`, todos entregues (ver "Latência ponta a ponta do fluxo de OCR no modo ROI"). Energia nesse modo ainda não medida |
+| Local (OCR na borda), modo ROI (adotado) | captura 0,24 s e classificador 1,92 s, mais 1 uplink de 9 bytes | **3,50 s** (mediana; de 3,496 a 3,580 s), **medido** em 29 despertares de `AUTO:30`, todos entregues (ver "Latência ponta a ponta do fluxo de OCR no modo ROI"). Energia: 0,175 mAh por leitura com o Radioenge em classe A (ver "Consumo dos dois fluxos com o Radioenge em classe A") |
 
 **Decisão.**
 - *Reduzir o modelo* (entrada menor, menos filtros, kernels otimizados): descartado. Com câmera fixa a
@@ -115,7 +119,9 @@ pacotes entregues") compara fluxos, não etapas:
   carrega nem roda a segmentação. O classificador leva 1,92 s para as 6 fatias na placa (33 quadros mandados pelo PC,
   `experimentos/hibrido_a_b/resultados/PLACA_X_PC.md`). A latência ponta a ponta nesse modo foi medida em 2026-11-18:
   **3,50 s** (mediana), contra 18,84 s com a segmentação (ver "Latência ponta a ponta do fluxo de OCR no modo ROI").
-  A energia nesse modo **ainda não foi medida**; os valores de energia e autonomia abaixo são os do modo com segmentação.
+  A energia nesse modo foi medida em 2026-11-19, já com o Radioenge em classe A: **0,175 mAh por leitura** com sleep de
+  30 s (ver "Consumo dos dois fluxos com o Radioenge em classe A"). As seções de energia de 27/10 abaixo são do modo com
+  segmentação e do Radioenge em classe C.
 
 **Resultado para a H2.** A latência está confirmada com folga (18,84 s contra 189 s com a segmentação; 3,50 s no modo ROI). A taxa de entrega depende da
 métrica: por **leitura** entregue o fluxo local foi melhor (27 de 34, 79,4%, contra 20 de 30, 66,7%, na imagem), mas
@@ -224,7 +230,7 @@ da corrida de imagem como uma linha só, e os picos de TX (a cada ≈ 8 s) preen
 o tempo todo; na verdade a corrente acordado fica em ≈ 80 mA (mediana) e só 2,5% do tempo passa de 150 mA, tanto na
 imagem quanto no OCR. Gerar os gráficos precisa de `matplotlib` e `numpy`, que não estão no venv do projeto.
 
-### Comparação dos dois fluxos (mesmo sleep de 30 s)
+### Comparação dos dois fluxos (mesmo sleep de 30 s; 27/10, Radioenge em classe C)
 
 | | Imagem (nuvem) | OCR na borda |
 |---|---|---|
@@ -244,6 +250,10 @@ O que a tabela mede de cada fluxo é o **custo de uma leitura**: 4,64 contra 0,8
 também do sleep, como mostra a próxima seção.
 
 ### Autonomia: o piso de sleep esconde a diferença entre os fluxos
+
+> **Atualização de 2026-11-19:** o piso de 24 mA era o Radioenge em **classe C**, recebendo o tempo todo. Em classe A o
+> sleep caiu para ≈ 6 mA; a autonomia recalculada está em "Consumo dos dois fluxos com o Radioenge em classe A". O texto
+> abaixo é a análise de 27/10.
 
 Em sleep o protótipo consome **≈ 24 mA**, e isso é um defeito da bancada, não uma característica dos fluxos: o ESP32 em
 deep sleep gasta microampères, mas o Radioenge continua ligado (o firmware só dorme o ESP32), e a placa ESP32-CAM tem
@@ -330,6 +340,71 @@ dá para afirmar a autonomia real depois de medir o sleep sem o Radioenge e com 
 - **Sem perdas** nesta corrida (30 de 30, com RSSI de −60 dBm), contra 27 de 34 em 27/10 (RSSI de −30 dBm). Com
   amostras deste tamanho isso não basta para concluir nada sobre a causa das perdas de 27/10.
 
+## Consumo dos dois fluxos com o Radioenge em classe A (2026-11-19)
+
+**O que mudou na bancada.** Até 27/10 o Radioenge estava em **classe C** (`AT+CLASS=?` respondia `C`). Pelo manual
+(seção 5.2.4), em classe C o módulo **não entra em baixo consumo**: fica recebendo o tempo todo (20 mA de recepção a 3,3 V,
+especificações do manual), inclusive enquanto o ESP32 dorme. Em classe A ele desliga o rádio sozinho depois das janelas de
+recepção de cada envio (1,8 µA em modo suspenso). O enlace não usa downlink (ABP, `AT+CFM=0`, keepalive desligado), então
+a classe A não tira nada do sistema. O módulo foi passado para classe A com `AT+CLASS=A` (resposta `AT_OK`); a configuração
+**fica gravada no módulo**: continuou `A` depois de uma queda de energia que reiniciou o Radioenge. O manual não tem outro
+comando de sleep; a classe A é o modo de baixo consumo do RD49C.
+
+Medição: `corrente.py capturar` (INA219 no Uno, 100 Hz) junto com `latencia_ponta_a_ponta.py auto --n 30 --iniciar-auto 30`
+(que manda o `AUTO:30` e registra a entrega), mesma bancada e mesmo sleep de 30 s de 27/10. Análise com
+`python medicoes/corrente.py analisar <csv> --offset-ma 0.0 --min-sleep-s 12`. Uma primeira corrida do fluxo de imagem
+foi interrompida por uma queda de energia do nó às 12:19 (os fios da bancada se mexeram); ela está em
+`corrente/descartadas/` e **não entra nas estatísticas**.
+
+| | Imagem (`transmissor_esp32cam`) | OCR na borda, modo ROI (`transmissor_ocr_esp32cam`) |
+|---|---|---|
+| Arquivos | `corrente/auto30_imagem_classe_a.csv`, `latencia_imagem_classe_a.csv` | `corrente/auto30_ocr_roi_classe_a.csv`, `latencia_ocr_roi_classe_a.csv` |
+| Ciclos analisados | 29 (30 leituras) | 29 (30 leituras) |
+| `mAh por leitura` (sleep de 30 s) | **2,91** (desvio 0,14) | **0,175** (desvio 0,004): **16,7 vezes menos** |
+| Carga acordado por leitura, sem o sleep | 2,87 mAh | **0,129 mAh** (22 vezes menos) |
+| Tempo acima do limiar de sleep | 147,6 s (135 a 160 s) | 6,49 s (ESP32 ≈ 4,1 s + janelas de recepção do Radioenge) |
+| Corrente média nesse tempo | 69,9 mA | 71,4 mA |
+| **Corrente em sleep** | **≈ 6,3 mA** | **≈ 6,1 mA** |
+| Período do ciclo | 174,8 s | 33,8 s |
+| JPEG / chunks | 2,9 a 3,4 KB, 17 a 20 chunks (mediana 19) | — (1 uplink de 9 bytes) |
+| Latência ponta a ponta (mediana) | 148,3 s (132 a 157 s, n = 24 completas) | 3,50 s (3,501 a 3,505 s, n = 28 despertares) |
+| Leituras entregues | 24 de 30 (80%) | 29 de 30 (96,7%) |
+| Pacotes entregues | 551 de 557 (98,9%) | 29 de 30 |
+| RSSI (mediana) | −53 dBm | −49 dBm |
+
+- **O sleep caiu de ≈ 24 para ≈ 6 mA** nos dois fluxos (eram 23,7 e 25,2 mA em 27/10). A diferença, ≈ 18 mA, bate com
+  os 20 mA de recepção contínua da classe C no manual. Os ≈ 6 mA que sobram **não foram separados** por medição; o
+  manual dá 1,8 µA para o Radioenge suspenso, então eles devem ser da placa ESP32-CAM (regulador, LED, câmera em
+  power-down), mas isso ainda é inferência.
+- **A corrente acordado também caiu** no fluxo de imagem (69,9 contra 84,5 mA em 27/10): entre um chunk e outro o
+  Radioenge não fica mais recebendo.
+- **Perfil de um ciclo do OCR** (médias de 250 ms): o ESP32 fica acordado ≈ 4,1 s (90 a 160 mA), dorme, e o Radioenge
+  ainda abre as janelas de recepção da classe A (um pico curto ≈ 1 s depois do envio e ≈ 1 s a 24 mA ≈ 2 s depois)
+  antes de cair para o piso. Por isso o "tempo acima do limiar" (6,49 s) é maior que o tempo acordado do ESP32.
+- **Imagem menor que a de 27/10.** A câmera mudou de posição (agora perto do mostrador) e os JPEGs têm 2,9 a 3,4 KB
+  (17 a 20 chunks) contra 3,7 a 4,6 KB (22 a 27 chunks). A carga cresce linearmente com os chunks: **0,157 mAh e 8,1 s
+  por chunk** (ajuste nos 29 ciclos, resíduo de 0,016 mAh). Com 22 a 27 chunks, o mesmo fluxo gastaria **3,5 a 4,2 mAh**
+  por leitura (estimativa), contra 4,64 mAh medidos em 27/10 em classe C. A razão imagem/OCR depende do tamanho da imagem.
+- **Comparação com 27/10, para o OCR:** 0,824 → 0,175 mAh por leitura. Mudaram duas coisas juntas: a segmentação saiu
+  (≈ 15,5 s a menos acordado) e o sleep caiu (classe A). A primeira explica a maior parte da carga acordado; a segunda,
+  o sleep.
+- **Chunks perdidos.** As 6 imagens incompletas perderam **um** chunk cada (índices 5, 3, 13, 1, 9 e 1, conferidos
+  decodificando os uplinks recebidos). O chunk 0, o primeiro depois do despertar, chegou nas 30 leituras. Isso **não
+  apoia** a hipótese de que o primeiro uplink depois do despertar se perde mais (seção do fluxo de OCR acima). A
+  perda por pacote (1,1%) é parecida com a de 27/10 (2,0%), mas no fluxo de imagem um chunk perdido perde a leitura.
+
+**Autonomia com o piso medido em classe A** (bateria hipotética de 2000 mAh, piso de 6,2 mA, média das duas corridas;
+mesmo cálculo da seção de autonomia acima, com 69,9 mA × 147,6 s para a imagem e 71,4 mA × 6,49 s para o OCR):
+
+| Intervalo | Imagem (17 a 20 chunks) | OCR, modo ROI | OCR / imagem | Com o piso de 24 mA de 27/10 (imagem / OCR) |
+|---|---|---|---|---|
+| 10 min | 3,8 dias | 12,0 dias | 3,2× | 1,9 / 3,1 dias |
+| 1 h | 9,4 dias | 13,1 dias | 1,4× | 3,1 / 3,4 dias |
+
+O modelo reproduz as cargas medidas com o sleep de 30 s (2,92 e 0,180 mAh, contra 2,91 e 0,175). Com o piso de ≈ 6 mA,
+o sleep ainda domina em intervalos longos (em 1 h são ≈ 6,2 mAh de sleep, contra 2,9 mAh de uma leitura de imagem e
+0,13 mAh de uma de OCR); o próximo ganho de autonomia está na placa (os ≈ 6 mA restantes), não no fluxo.
+
 ## Enlace do fluxo de imagem: PDR, tempo de rádio e latência (`transmissao.csv`, 30 envios)
 
 `python Rede/reconstrutor.py --tx --envios 30 --distancia 2 --rotulo "bancada, imagem"` (2026-10-27, 14:59 a 16:44), com o nó
@@ -368,10 +443,9 @@ entre blocos, nó e receptor a ≈ 2 m. Comando de PDR e colunas em [`medir_tran
 
 ## Pendente
 
-- **Piso de sleep (vale para os dois fluxos):** separar o sleep do Radioenge (`SLEEP:60` com ele desconectado). É a medição
-  que falta para a conclusão de autonomia da H3: os ≈ 24 mA de sleep dominam a autonomia em intervalos longos (seção
-  "Autonomia: o piso de sleep esconde a diferença entre os fluxos"). Também: autonomia com a bateria real e o intervalo de
-  campo.
+- **Piso de sleep (vale para os dois fluxos):** com o Radioenge em classe A o sleep caiu de ≈ 24 para ≈ 6 mA
+  (2026-11-19). Falta separar o que sobra (`SLEEP:60` com o Radioenge desconectado) e ver o que a placa ESP32-CAM gasta
+  (regulador, LED). Também: autonomia com a bateria real e o intervalo de campo.
 - **Consumo, fluxo de imagem:** investigar a causa do despertar sem envio (ciclo 28) e do JPEG maior. Procedimento em
   [`medir_corrente.md`](medir_corrente.md).
 - **Perdas de uplink nos dois fluxos:** 20,6% das leituras do OCR e 33% das imagens não chegaram ao PC; a causa

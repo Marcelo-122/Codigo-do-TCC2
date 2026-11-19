@@ -41,10 +41,14 @@ uint32_t proximo = 0;
 
 void setup() {
   Serial.begin(BAUD);
+  Serial.println("# procurando o INA219 no I2C...");  // se parar aqui, o barramento I2C travou
 #if defined(ARDUINO_ARCH_ESP32)
   Wire.begin(SDA_PIN, SCL_PIN);
 #else
   Wire.begin();
+  // Sem timeout, o Wire do AVR trava para sempre com SDA/SCL presos (modulo sem VCC/GND, fio solto)
+  // e o logger nao imprime nada. Com timeout, cai na mensagem de "nao encontrado" abaixo.
+  Wire.setWireTimeout(25000, true);
 #endif
   Wire.setClock(400000);
   if (!ina.begin()) {

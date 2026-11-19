@@ -51,7 +51,8 @@ Pontos que mais dão problema:
 ## Preparação (uma vez)
 
 1. Instale a biblioteca **Adafruit INA219** (e a Adafruit BusIO, que ela pede) no Arduino IDE e grave [`ina219_logger/ina219_logger.ino`](ina219_logger/ina219_logger.ino) no Uno: placa *Arduino Uno*, A4/A5, **115200 baud**, amostra a cada 10 ms. Abra o Serial Monitor a 115200 para conferir as linhas `t_us,shunt_mV,bus_V`, e feche-o antes de capturar (a porta só abre em um programa por vez).
-   - O logger imprime `# INA219 nao encontrado: confira SDA/SCL/VCC/GND` uma vez e trava se não achar o módulo. Confira SDA em `A4`, SCL em `A5`, e meça ~5 V entre `VCC` e `GND` **do próprio módulo** (escala DCV 20 do multímetro). 0 V quer dizer que o fio de alimentação ou o de GND não chega.
+   - O logger imprime `# procurando o INA219 no I2C...` e, se não achar o módulo, `# INA219 nao encontrado: confira SDA/SCL/VCC/GND` uma vez e para. No Uno o I2C tem timeout de 25 ms: sem ele, um barramento preso (módulo sem VCC/GND, SDA ou SCL solto) travava o logger sem imprimir nada.
+   - Para achar mau contato, grave antes o [`ina219_diagnostico.ino`](ina219_diagnostico/ina219_diagnostico.ino): ele testa a ligação a cada 300 ms e imprime `OK` (com `bus_V` e corrente), `SEM RESPOSTA` ou `I2C TRAVOU` com o nível de SDA e SCL, marcando com `*` cada mudança de estado enquanto você mexe nos fios. Com `OK` estável, grave de volta o logger. Confira SDA em `A4`, SCL em `A5`, e meça ~5 V entre `VCC` e `GND` **do próprio módulo** (escala DCV 20 do multímetro). 0 V quer dizer que o fio de alimentação ou o de GND não chega.
 2. **Offset:** com o nó desligado (Vin- sem carga), capture 10 s. A corrente que o script mostrar é o offset do INA219 (da ordem de 1 mA com 0,1 Ω). Use esse valor em `--offset-ma`. Na montagem com o Uno, o logger leu `shunt_mV = 0.00` e `bus_V = 0.000` sem o nó, ou seja, offset abaixo da resolução (0,1 mA): use `--offset-ma 0.0`.
 3. **Conferência:** alimente um resistor de 100 Ω (≈ 50 mA a 5 V) pelo INA219 e compare com um multímetro em série. Se divergir mais de ~2%, o shunt do seu módulo não é 0,1 Ω: ajuste `R_SHUNT_OHM` em `corrente.py`.
 
@@ -111,6 +112,7 @@ Saída esperada: uma linha por ciclo com `periodo_s`, `ativo_s`, `mAh`, corrente
 - **Envio (TX):** no fluxo de imagem domina o tempo ativo (`t_envio_ms` ≈ `(chunks − 1) × 7 s`). Picos curtos acima da média marcam cada pacote de ~136 ms.
 - A autonomia do script é um limite superior: não considera eficiência do regulador, auto-descarga nem queda de capacidade da bateria com temperatura.
 - A corrente de sleep medida **inclui o Radioenge**, que fica alimentado durante o deep sleep da ESP32-CAM. Para separar as parcelas, meça um `SLEEP:60` com o Radioenge desconectado.
+- **Confira a classe do Radioenge antes de medir** (`AT+CLASS=?` pela serial do nó). Em classe C ele recebe o tempo todo e o sleep fica em ≈ 24 mA; em classe A (`AT+CLASS=A`, fica gravado no módulo) cai para ≈ 6 mA. As medições de 27/10 foram em classe C; as de 2026-11-19, em classe A.
 
 ## Medição de referência (teste curto, câmera ligada durante o envio)
 

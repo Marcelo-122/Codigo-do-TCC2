@@ -1,0 +1,5 @@
+recebido_em,modo,fluxo,leitura_id,completo,chunks_total,chunks_recebidos,duplicados,jpeg_bytes,rssi_medio,t_ate_foto_ms,t_ate_primeiro_chunk_ms,t_ate_ultimo_chunk_ms,t_envio_ms,t_ate_disponivel_ms,t_ate_ocr_ms,leitura,achou_caixa
+2026-11-19T12:12:25,auto,imagem,25568,1,8,8,0,1342,-48.8,13,1291,58205,56914,58205,,,
+2026-11-19T12:13:54,auto,imagem,44313,1,8,8,0,1344,-51.1,703,1977,58873,56896,58873,,,
+2026-11-19T12:16:28,auto,imagem,48010,1,16,16,0,2760,-52.4,704,1982,124198,122216,124198,,,
+2026-11-19T12:19:10,auto,imagem,36986,1,17,17,0,2817,-52.9,704,1979,131930,129951,131930,,,

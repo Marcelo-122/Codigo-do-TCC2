@@ -361,7 +361,7 @@ Conferir sempre antes de confiar no dataset gerado:
    instalação, e o classificador lê as N fatias dela (ver a decisão no
    [README da raiz](../README.md#decisão-pipeline-de-ocr-na-borda)). Implementado em 2026-11-18 no
    `Rede/transmissor_ocr_esp32cam/` (ROI gravada pelo `Rede/calibrar_roi_esp32cam/`); a latência ponta a ponta nesse
-   modo caiu de 18,84 s para 3,50 s (medianas, `../medicoes/latencia_ocr_roi.csv`); falta medir a energia.
+   modo caiu de 18,84 s para 3,50 s (medianas, `../medicoes/latencia_ocr_roi.csv`); a carga por leitura, com o Radioenge em classe A, foi de 0,175 mAh (sleep de 30 s).
 3. Firmware de produção: feito no `Rede/transmissor_ocr_esp32cam/`, que veio do firmware de debug sem o desenho de
    retângulo/linhas-guia e envia a leitura por LoRaWAN na FPort 2. Falta reenvio ou confirmação quando o uplink se
    perde (hoje uma leitura perdida não é reenviada no modo autônomo).
