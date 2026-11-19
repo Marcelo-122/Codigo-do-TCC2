@@ -104,7 +104,7 @@ pacotes entregues") compara fluxos, não etapas:
 
 | Fluxo | Composição | Latência (despertar até o dado no PC) |
 |---|---|---|
-| Nuvem (imagem) | captura em ~0,7 s, 1º chunk em ~2,0 s e envio de 22 a 27 chunks, um a cada ~7,9 s (JPEG de 3,7 a 4,6 KB) | **mediana de 189 s** (173 a 214 s), **medido** em 30 leituras de `AUTO:30` (20 imagens completas; ver "Latência ponta a ponta e entrega do fluxo de imagem"). No teste curto anterior, com JPEG de ~3,0 KB (18 chunks), foram ≈ 141 s. A inferência na nuvem não está incluída |
+| Nuvem (imagem) | captura em ~0,7 s, 1º chunk em ~2,0 s e envio de 22 a 27 chunks, um a cada ~8,1 s (JPEG de 3,7 a 4,6 KB) | **mediana de 189 s** (173 a 214 s), **medido** em 30 leituras de `AUTO:30` (20 imagens completas; ver "Latência ponta a ponta e entrega do fluxo de imagem"). No teste curto anterior, com JPEG de ~3,0 KB (18 chunks), foram ≈ 141 s. A inferência na nuvem não está incluída |
 | Local (OCR na borda), com segmentação | inferência de ~17,5 s mais 1 uplink de ~9 bytes | **18,84 s** (mediana; de 18,836 a 18,840 s), **medido** em 34 disparos de `AUTO:30`, dos quais 27 uplinks chegaram ao PC (ver "Latência ponta a ponta e entrega do fluxo de OCR"). O tempo acordado do ciclo inteiro, medido pelo INA219, é 19,45 s |
 | Local (OCR na borda), modo ROI (adotado) | captura 0,24 s e classificador 1,92 s, mais 1 uplink de 9 bytes | **3,50 s** (mediana; de 3,496 a 3,580 s), **medido** em 29 despertares de `AUTO:30`, todos entregues (ver "Latência ponta a ponta do fluxo de OCR no modo ROI"). Energia: 0,175 mAh por leitura com o Radioenge em classe A (ver "Consumo dos dois fluxos com o Radioenge em classe A") |
 
