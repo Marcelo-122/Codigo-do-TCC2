@@ -34,6 +34,7 @@ Dados brutos de três firmwares:
 | `logs/<execução>/` e `imagens/` | `reconstrutor.py` | 1 execução | `chunks.csv`, `eventos.jsonl`, `serial_rx.txt` (DevAddr mascarado), `serial_tx.txt` e `meta.json` da corrida de `transmissao.csv`; as 21 imagens completas dela (`..._L<id>.jpg`) |
 | `transmissao_ocr.csv` | `Rede/transmissor_ocr_esp32cam` (fluxo de OCR, FPort 2) | — | uma linha por leitura recebida: dígitos, FCnt, RSSI, tempo de rádio, latência ([`medir_transmissao.md`](medir_transmissao.md)) |
 | `tempo_inferencia_nuvem.py` | servidor (`ocr/pipeline_nuvem.py`, LiteRT sem XNNPACK) | 21 imagens × 5 | tempo do OCR da nuvem sobre as imagens completas de `imagens/`, que a latência ponta a ponta não inclui; em 2026-11-01, Ryzen 5 5600GT (WSL): leitura completa 6,25 ms, segmentação 4,30 ms, ROI fixa 1,91 ms (medianas). Só imprime, não grava CSV |
+| `ina219_logger/` e `ina219_diagnostico/` | Arduino Uno + INA219 | — | o logger de corrente (100 amostras/s, `t_us,shunt_mV,bus_V`) e o diagnóstico ao vivo da ligação do INA219 (para achar mau contato); ver [`medir_corrente.md`](medir_corrente.md) |
 | `exportar_ciclo_corrente.py` | — | 1 ciclo por arquivo | exporta um ciclo de `corrente/*.csv` (mesma detecção de ciclos do `corrente.py analisar`) como envelope mín./máx. a cada 0,25 s, em `.dat` para o gráfico do TCC; o docstring tem os dois comandos usados (ciclo 8 da imagem, ciclo 4 do OCR) |
 
 O `transmissao.csv` e o `transmissao_ocr.csv` são gerados pelo `reconstrutor.py`. O `transmissao.csv` tem a corrida de
@@ -126,8 +127,10 @@ pacotes entregues") compara fluxos, não etapas:
 **Resultado para a H2.** A latência está confirmada com folga (18,84 s contra 189 s com a segmentação; 3,50 s no modo ROI). A taxa de entrega depende da
 métrica: por **leitura** entregue o fluxo local foi melhor (27 de 34, 79,4%, contra 20 de 30, 66,7%, na imagem), mas
 a diferença não é estatisticamente distinguível com essas amostras (Fisher exato, p = 0,27); por **pacote**, o fluxo
-de imagem foi melhor (699 de 713, 98,0%, contra 79,4%). Ver as seções de entrega abaixo. O `transmissao_ocr.csv` ainda
-não foi gerado.
+de imagem foi melhor (699 de 713, 98,0%, contra 79,4%). Ver as seções de entrega abaixo. Nas corridas de 2026-11-19
+(Radioenge em classe A, OCR no modo ROI), o OCR entregou 29 de 30 leituras (96,7%) e a imagem 24 de 30 (80%; 98,9% dos
+pacotes); a diferença por leitura também não é estatisticamente distinguível (Fisher exato, p = 0,10). O
+`transmissao_ocr.csv` ainda não foi gerado.
 
 **Duas corridas do fluxo de imagem.** Houve duas corridas de 30 imagens em 2026-10-27, com números diferentes:
 
@@ -307,7 +310,8 @@ dá para afirmar a autonomia real depois de medir o sleep sem o Radioenge e com 
   se perde mais: no fluxo de imagem, em 3 de 30 leituras (10%) o primeiro chunk recebido só chegou aos 10 a 11 s
   (o chunk inicial parece ter se perdido), contra 2,0% de perda no total; no fluxo de OCR todo uplink é o primeiro depois
   do despertar. As amostras são pequenas demais para afirmar. Um teste direto seria mandar dois `AT+SENDB` seguidos
-  logo após o despertar e comparar as perdas.
+  logo após o despertar e comparar as perdas. Nas corridas de 2026-11-19 a hipótese **não se confirmou**: o chunk 0
+  chegou nas 30 imagens e o OCR perdeu 1 de 30 uplinks (ver "Consumo dos dois fluxos com o Radioenge em classe A").
 - **Sem reenvio.** O nó dorme depois de um único envio, então um uplink perdido é uma leitura perdida. Isso favorece
   uma estratégia de reenvio ou de confirmação (uplink confirmado) como trabalho futuro.
 - **A leitura varia entre ciclos** (13 valores distintos em 27 recebidas, com a câmera fixa). Não há rótulo, então
@@ -398,8 +402,8 @@ mesmo cálculo da seção de autonomia acima, com 69,9 mA × 147,6 s para a imag
 
 | Intervalo | Imagem (17 a 20 chunks) | OCR, modo ROI | OCR / imagem | Com o piso de 24 mA de 27/10 (imagem / OCR) |
 |---|---|---|---|---|
-| 10 min | 3,8 dias | 12,0 dias | 3,2× | 1,9 / 3,1 dias |
-| 1 h | 9,4 dias | 13,1 dias | 1,4× | 3,1 / 3,4 dias |
+| 10 min | 3,8 dias | 12,1 dias | 3,2× | 1,9 / 3,1 dias |
+| 1 h | 9,5 dias | 13,2 dias | 1,4× | 3,1 / 3,4 dias |
 
 O modelo reproduz as cargas medidas com o sleep de 30 s (2,92 e 0,180 mAh, contra 2,91 e 0,175). Com o piso de ≈ 6 mA,
 o sleep ainda domina em intervalos longos (em 1 h são ≈ 6,2 mAh de sleep, contra 2,9 mAh de uma leitura de imagem e
@@ -448,18 +452,19 @@ entre blocos, nó e receptor a ≈ 2 m. Comando de PDR e colunas em [`medir_tran
   (regulador, LED). Também: autonomia com a bateria real e o intervalo de campo.
 - **Consumo, fluxo de imagem:** investigar a causa do despertar sem envio (ciclo 28) e do JPEG maior. Procedimento em
   [`medir_corrente.md`](medir_corrente.md).
-- **Perdas de uplink nos dois fluxos:** 20,6% das leituras do OCR e 33% das imagens não chegaram ao PC; a causa
-  não foi investigada (ver a hipótese do primeiro uplink depois do despertar, acima). Falta também a estratégia de
-  reenvio, que não existe em nenhum dos dois firmwares no modo autônomo.
+- **Perdas de uplink nos dois fluxos:** em 27/10, 20,6% das leituras do OCR e 33% das imagens não chegaram ao PC; em
+  2026-11-19, 1 de 30 (OCR) e 6 de 30 (imagem, um chunk perdido em cada). A causa não foi investigada; a hipótese do
+  primeiro uplink depois do despertar não se confirmou em 2026-11-19. Falta também a estratégia de reenvio, que não
+  existe em nenhum dos dois firmwares no modo autônomo.
 - **Deep sleep:** implementado em `Rede/transmissor_esp32cam` (comandos `AUTO`, `STOP`, `SLEEP`) e em
   `Rede/transmissor_ocr_esp32cam`. No de imagem, os 30 ciclos de `AUTO:30` (acima) mostram a corrente caindo de
   ≈ 84,5 mA acordado para ≈ 23,7 mA dormindo em todos os ciclos, e o teste curto de 4 ciclos confirmou
   `DEEPSLEEP_RESET` e o contador de ciclos na memória RTC. No de OCR, os 32 ciclos de `AUTO:30` mostram o mesmo
-  padrão (≈ 114 mA acordado, ≈ 25 mA dormindo). Roteiro em
-  [`teste_deep_sleep.md`](teste_deep_sleep.md).
-- **Taxa de pacotes entregues (H2):** medida nos dois fluxos pelos CSVs de latência (imagem: 98,0% dos pacotes e
-  20 de 30 imagens; OCR: 79,4% das leituras) e, no fluxo de imagem, pelo `transmissao.csv` (98,7% dos pacotes, 21 de 30
-  imagens). Falta o `transmissao_ocr.csv` (OCR), gerado pelo `reconstrutor.py --tx --fluxo ocr`, ainda sem medições
+  padrão (≈ 114 mA acordado, ≈ 25 mA dormindo). Com o Radioenge em classe A (2026-11-19), o sleep dos dois cai para
+  ≈ 6 mA. Roteiro em [`teste_deep_sleep.md`](teste_deep_sleep.md).
+- **Taxa de pacotes entregues (H2):** medida nos dois fluxos pelos CSVs de latência (27/10: imagem com 98,0% dos
+  pacotes e 20 de 30 imagens, OCR com 79,4% das leituras; 2026-11-19: imagem com 98,9% e 24 de 30, OCR com 29 de 30) e,
+  no fluxo de imagem, pelo `transmissao.csv` (98,7% dos pacotes, 21 de 30 imagens). Falta o `transmissao_ocr.csv` (OCR), gerado pelo `reconstrutor.py --tx --fluxo ocr`, ainda sem medições
   em placa; ver [`medir_transmissao.md`](medir_transmissao.md).
 - **Janelas de silêncio do receptor:** a causa não foi identificada (ver "Enlace do fluxo de imagem").
 - **Perda do último bloco:** 4 dos 10 blocos perdidos na corrida de `transmissao.csv` foram o último da imagem
