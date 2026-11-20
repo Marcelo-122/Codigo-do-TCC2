@@ -700,6 +700,15 @@ O trabalho foi desenvolvido em paralelo e unificado na `main`:
 | `Treino-Testes-e-Modelos` | `TreinoEModelosOCRNaBorda/` (pipeline U-NET + CRNN + CTC, hoje em `legado/`) |
 | `ocr` | `ModeloEDataset/` (classificador de dígitos) e `test_images/` (firmware de debug com OCR on-device) |
 
+Duas tags marcam as versões citadas no texto do TCC2:
+
+| Tag | Commit | O que marca |
+|---|---|---|
+| `tcc2-resultados` | último commit da `main` na entrega | código, dados e medições dos resultados do TCC2 (o link do texto aponta para ela) |
+| `tcc2-unet-ctc-final` | `b24911d1` (2026-11-02), ponta da branch `Treino-Testes-e-Modelos` | última versão do pipeline U-NET + CRNN + CTC no repositório de origem; esse commit não está na `main`, que tem a cópia arquivada em `legado/` |
+
+Para ver o repositório como estava na entrega: `git checkout tcc2-resultados`.
+
 ---
 
 ## Limitações conhecidas e próximos passos

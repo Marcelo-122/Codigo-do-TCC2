@@ -13,6 +13,14 @@ cada janela de --janela-s segundos, o minimo e o maximo, o que mantem os picos d
 Esses dois comandos geram os arquivos da figura do TCC (corrente_ciclo_nuvem.dat e
 corrente_ciclo_borda.dat): ciclo 8 da imagem (219,3 s, 4,648 mAh) e ciclo 4 do OCR
 (49,06 s, 0,822 mAh), escolhidos por terem carga proxima da mediana de cada corrida.
+
+Para a apresentacao final, os ciclos da configuracao adotada (ROI e Radioenge em classe A, 2026-11-19), com carga
+proxima da media de cada corrida (2,914 e 0,175 mAh):
+
+  python medicoes/exportar_ciclo_corrente.py medicoes/corrente/auto30_imagem_classe_a.csv 24 corrente_ciclo_nuvem_classe_a.dat
+  python medicoes/exportar_ciclo_corrente.py medicoes/corrente/auto30_ocr_roi_classe_a.csv 4 corrente_ciclo_borda_classe_a.dat
+
+ciclo 24 da imagem (170,61 s, 2,882 mAh) e ciclo 4 do OCR (33,76 s, 0,176 mAh).
 """
 import argparse
 import os
