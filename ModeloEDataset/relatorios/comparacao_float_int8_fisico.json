@@ -1,6 +1,6 @@
 {
   "fotos": 30,
-  "data": "2026-11-18",
+  "data": "2026-11-20",
   "modelo_float": "modelo_digito.h5",
   "fluxos": {
     "borda": {
@@ -18,7 +18,161 @@
       "mcnemar_exato_p_digitos": 1.0,
       "leituras_so_float_acerta": 0,
       "leituras_so_int8_acerta": 0,
-      "mcnemar_exato_p_leituras": 1.0
+      "mcnemar_exato_p_leituras": 1.0,
+      "f1_float": {
+        "f1_macro": 0.8468,
+        "f1_ponderado": 0.9653,
+        "classes": 10,
+        "por_classe": {
+          "0": {
+            "suporte": 123,
+            "vp": 123,
+            "fp": 4,
+            "fn": 0,
+            "f1": 0.984
+          },
+          "1": {
+            "suporte": 4,
+            "vp": 2,
+            "fp": 0,
+            "fn": 2,
+            "f1": 0.6667
+          },
+          "2": {
+            "suporte": 10,
+            "vp": 10,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "3": {
+            "suporte": 13,
+            "vp": 13,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "4": {
+            "suporte": 13,
+            "vp": 12,
+            "fp": 0,
+            "fn": 1,
+            "f1": 0.96
+          },
+          "5": {
+            "suporte": 6,
+            "vp": 6,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "6": {
+            "suporte": 3,
+            "vp": 3,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "7": {
+            "suporte": 2,
+            "vp": 0,
+            "fp": 0,
+            "fn": 2,
+            "f1": 0.0
+          },
+          "8": {
+            "suporte": 3,
+            "vp": 3,
+            "fp": 1,
+            "fn": 0,
+            "f1": 0.8571
+          },
+          "9": {
+            "suporte": 3,
+            "vp": 3,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          }
+        }
+      },
+      "f1_int8": {
+        "f1_macro": 0.8607,
+        "f1_ponderado": 0.965,
+        "classes": 10,
+        "por_classe": {
+          "0": {
+            "suporte": 123,
+            "vp": 123,
+            "fp": 5,
+            "fn": 0,
+            "f1": 0.9801
+          },
+          "1": {
+            "suporte": 4,
+            "vp": 2,
+            "fp": 0,
+            "fn": 2,
+            "f1": 0.6667
+          },
+          "2": {
+            "suporte": 10,
+            "vp": 10,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "3": {
+            "suporte": 13,
+            "vp": 13,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "4": {
+            "suporte": 13,
+            "vp": 12,
+            "fp": 0,
+            "fn": 1,
+            "f1": 0.96
+          },
+          "5": {
+            "suporte": 6,
+            "vp": 6,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "6": {
+            "suporte": 3,
+            "vp": 3,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "7": {
+            "suporte": 2,
+            "vp": 0,
+            "fp": 0,
+            "fn": 2,
+            "f1": 0.0
+          },
+          "8": {
+            "suporte": 3,
+            "vp": 3,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "9": {
+            "suporte": 3,
+            "vp": 3,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          }
+        }
+      }
     },
     "nuvem": {
       "leituras_exatas_float": 25,
@@ -35,7 +189,161 @@
       "mcnemar_exato_p_digitos": 1.0,
       "leituras_so_float_acerta": 0,
       "leituras_so_int8_acerta": 0,
-      "mcnemar_exato_p_leituras": 1.0
+      "mcnemar_exato_p_leituras": 1.0,
+      "f1_float": {
+        "f1_macro": 0.8468,
+        "f1_ponderado": 0.9653,
+        "classes": 10,
+        "por_classe": {
+          "0": {
+            "suporte": 123,
+            "vp": 123,
+            "fp": 4,
+            "fn": 0,
+            "f1": 0.984
+          },
+          "1": {
+            "suporte": 4,
+            "vp": 2,
+            "fp": 0,
+            "fn": 2,
+            "f1": 0.6667
+          },
+          "2": {
+            "suporte": 10,
+            "vp": 10,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "3": {
+            "suporte": 13,
+            "vp": 13,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "4": {
+            "suporte": 13,
+            "vp": 12,
+            "fp": 0,
+            "fn": 1,
+            "f1": 0.96
+          },
+          "5": {
+            "suporte": 6,
+            "vp": 6,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "6": {
+            "suporte": 3,
+            "vp": 3,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "7": {
+            "suporte": 2,
+            "vp": 0,
+            "fp": 0,
+            "fn": 2,
+            "f1": 0.0
+          },
+          "8": {
+            "suporte": 3,
+            "vp": 3,
+            "fp": 1,
+            "fn": 0,
+            "f1": 0.8571
+          },
+          "9": {
+            "suporte": 3,
+            "vp": 3,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          }
+        }
+      },
+      "f1_int8": {
+        "f1_macro": 0.8468,
+        "f1_ponderado": 0.9653,
+        "classes": 10,
+        "por_classe": {
+          "0": {
+            "suporte": 123,
+            "vp": 123,
+            "fp": 4,
+            "fn": 0,
+            "f1": 0.984
+          },
+          "1": {
+            "suporte": 4,
+            "vp": 2,
+            "fp": 0,
+            "fn": 2,
+            "f1": 0.6667
+          },
+          "2": {
+            "suporte": 10,
+            "vp": 10,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "3": {
+            "suporte": 13,
+            "vp": 13,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "4": {
+            "suporte": 13,
+            "vp": 12,
+            "fp": 0,
+            "fn": 1,
+            "f1": 0.96
+          },
+          "5": {
+            "suporte": 6,
+            "vp": 6,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "6": {
+            "suporte": 3,
+            "vp": 3,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          },
+          "7": {
+            "suporte": 2,
+            "vp": 0,
+            "fp": 0,
+            "fn": 2,
+            "f1": 0.0
+          },
+          "8": {
+            "suporte": 3,
+            "vp": 3,
+            "fp": 1,
+            "fn": 0,
+            "f1": 0.8571
+          },
+          "9": {
+            "suporte": 3,
+            "vp": 3,
+            "fp": 0,
+            "fn": 0,
+            "f1": 1.0
+          }
+        }
+      }
     }
   }
 }

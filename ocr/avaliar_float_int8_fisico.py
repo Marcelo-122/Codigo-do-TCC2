@@ -13,7 +13,7 @@ ESP32-CAM, custa acurácia na leitura do medidor?
 Saídas (na raiz do repositório):
   medicoes/ocr_teste.csv                                     linhas `fisico_roi_calibrada_float` (borda e nuvem);
   medicoes/ocr_teste_por_imagem_fisico_roi_calibrada_float.csv  uma linha por (foto, fluxo), float e INT8 lado a lado;
-  ModeloEDataset/relatorios/comparacao_float_int8_fisico.json  acurácias e McNemar.
+  ModeloEDataset/relatorios/comparacao_float_int8_fisico.json  acurácias, McNemar e F1 por dígito (macro e ponderado).
 
 Uso:  python ocr/avaliar_float_int8_fisico.py   (precisa de h5py, além das dependências do ocr/)
 """
@@ -33,7 +33,7 @@ sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(RAIZ, "ModeloEDataset"))
 from avaliar_pipeline import CAMPOS_RESUMO, SAIDA_RESUMO, _hash_arquivo, distancia_edicao  # noqa: E402
 from avaliar_roi_calibrada import DIR_TESTE, carregar  # noqa: E402
-from comparar_float_int8 import mcnemar_exato, rede_float  # noqa: E402
+from comparar_float_int8 import f1_por_classe, mcnemar_exato, rede_float  # noqa: E402
 from pipeline_nuvem import LeitorB, entrada_fatia, para_quadro_camera, transmitir_como_jpeg  # noqa: E402
 
 MODELO_FLOAT = os.path.join(RAIZ, "ModeloEDataset", "modelos", "modelo_digito.h5")
@@ -96,6 +96,9 @@ def main():
             "mcnemar_exato_p_digitos": round(mcnemar_exato(b_dig, c_dig), 4),
             "leituras_so_float_acerta": b_lei, "leituras_so_int8_acerta": c_lei,
             "mcnemar_exato_p_leituras": round(mcnemar_exato(b_lei, c_lei), 4),
+            # F1 por dígito (as 180 posições): poucas amostras fora do 0, então o F1 de cada classe é instável
+            "f1_float": f1_por_classe([int(r) for _, r, _, _ in ds], [int(f_) for _, _, f_, _ in ds]),
+            "f1_int8": f1_por_classe([int(r) for _, r, _, _ in ds], [int(q) for _, _, _, q in ds]),
         }
         exatas = rel["fluxos"][fluxo]["leituras_exatas_float"]
         dig_ok = rel["fluxos"][fluxo]["digitos_certos_float"]
@@ -113,7 +116,8 @@ def main():
               f"dígitos, CER {r['cer_float']} | INT8 {r['leituras_exatas_int8']}/{len(ls)}, "
               f"{r['digitos_certos_int8']}/{n_dig}, CER {r['cer_int8']} | dígitos iguais "
               f"{r['digitos_iguais_float_int8']}/{n_dig}; só float acerta {b_dig}, só INT8 {c_dig}, "
-              f"McNemar p = {r['mcnemar_exato_p_digitos']}")
+              f"McNemar p = {r['mcnemar_exato_p_digitos']} | macro-F1 float {r['f1_float']['f1_macro']}, "
+              f"INT8 {r['f1_int8']['f1_macro']}")
 
     with open(SAIDA_POR_IMAGEM, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(linhas[0].keys()))

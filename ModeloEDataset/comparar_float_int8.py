@@ -18,7 +18,8 @@ discordantes (b = so o float acerta, c = so o INT8 acerta).
   python comparar_float_int8.py          (na pasta ModeloEDataset, com dataset/digits montado)
 
 Resultado em 2026-11-08: predicoes iguais em 99,62 % dos recortes; b = 14, c = 8;
-McNemar exato p = 0,286. Grava relatorios/comparacao_float_int8.json.
+McNemar exato p = 0,286. Grava relatorios/comparacao_float_int8.json, com o F1 por digito e o
+macro-F1 das duas versoes (f1_por_classe, acrescentado em 2026-11-20).
 """
 import json
 import os
@@ -43,8 +44,11 @@ def interpretador_sem_xnnpack(caminho):
     except ImportError:
         import tensorflow as tf
         Interpreter, OpResolverType = tf.lite.Interpreter, tf.lite.experimental.OpResolverType
+    # Kernels de referência (BUILTIN_REF): dão os 7.037 acertos em qualquer versão. No ai-edge-litert 2.3.0 o
+    # BUILTIN_WITHOUT_DEFAULT_DELEGATES ainda usa kernels otimizados e dá 7.040 (o mesmo que com o XNNPACK);
+    # o resultado de 2026-11-08 foi obtido com uma versão em que essa opção caía nos kernels de referência.
     it = Interpreter(model_path=caminho,
-                     experimental_op_resolver_type=OpResolverType.BUILTIN_WITHOUT_DEFAULT_DELEGATES)
+                     experimental_op_resolver_type=OpResolverType.BUILTIN_REF)
     it.allocate_tensors()
     return it
 
@@ -77,6 +81,27 @@ def mcnemar_exato(b, c):
     return min(1.0, 2 * sum(comb(n, i) for i in range(min(b, c) + 1)) / 2 ** n) if n else 1.0
 
 
+def f1_por_classe(y, p):
+    """F1 de cada dígito (um contra os outros) e as médias, como na Metodologia:
+    F1 = 2*VP / (2*VP + FP + FN). A macro-média usa as classes que aparecem no gabarito OU nas
+    predições (convenção do scikit-learn): um dígito previsto que nunca aparece entra com F1 = 0.
+    A média ponderada pesa cada classe pelo seu suporte (quantos recortes reais ela tem)."""
+    y, p = np.asarray(y), np.asarray(p)
+    classes = sorted(set(y.tolist()) | set(p.tolist()))
+    por_classe, f1s, pesos = {}, [], []
+    for c in classes:
+        vp = int(np.sum((p == c) & (y == c)))
+        fp = int(np.sum((p == c) & (y != c)))
+        fn = int(np.sum((p != c) & (y == c)))
+        f1 = 2 * vp / (2 * vp + fp + fn)
+        por_classe[str(c)] = {"suporte": vp + fn, "vp": vp, "fp": fp, "fn": fn, "f1": round(f1, 4)}
+        f1s.append(f1)
+        pesos.append(vp + fn)
+    return {"f1_macro": round(float(np.mean(f1s)), 4),
+            "f1_ponderado": round(float(np.average(f1s, weights=pesos)), 4) if sum(pesos) else None,
+            "classes": len(classes), "por_classe": por_classe}
+
+
 def main():
     _, _, validacao = dividir_por_foto(DIR_DIGITS, seed=42, fracao_val=0.15)
     x = np.stack([cv2.imread(c, cv2.IMREAD_GRAYSCALE) for c, _ in validacao]).astype(np.float32)[..., None] / 255.0
@@ -106,8 +131,12 @@ def main():
         "predicoes_iguais": round(float(np.mean(p_float == p_int8)), 6),
         "so_float_acerta": b, "so_int8_acerta": c,
         "mcnemar_exato_p": round(mcnemar_exato(b, c), 4),
+        "f1_float": f1_por_classe(y, p_float),
+        "f1_int8": f1_por_classe(y, p_int8),
     }
     for k, v in r.items():
+        if k.startswith("f1_"):
+            v = {c: d["f1"] for c, d in v["por_classe"].items()} | {"macro": v["f1_macro"]}
         print(f"   {k}: {v}")
     with open(SAIDA, "w", encoding="utf-8") as f:
         json.dump(r, f, indent=2)
