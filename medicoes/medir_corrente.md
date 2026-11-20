@@ -111,7 +111,7 @@ Saída esperada: uma linha por ciclo com `periodo_s`, `ativo_s`, `mAh`, corrente
 - **Sleep:** deve ficar claramente abaixo da corrente do nó acordado e parado. Se ficar próxima, o chip não está entrando em deep sleep.
 - **Envio (TX):** no fluxo de imagem domina o tempo ativo (`t_envio_ms` ≈ `(chunks − 1) × 7 s`). Picos curtos acima da média marcam cada pacote de ~136 ms.
 - A autonomia do script é um limite superior: não considera eficiência do regulador, auto-descarga nem queda de capacidade da bateria com temperatura.
-- A corrente de sleep medida **inclui o Radioenge**, que fica alimentado durante o deep sleep da ESP32-CAM. Para separar as parcelas, meça um `SLEEP:60` com o Radioenge desconectado.
+- A corrente de sleep medida **inclui o Radioenge**, que fica alimentado durante o deep sleep da ESP32-CAM. Em classe C ele respondia por ≈ 18 mA dos ≈ 24 mA de sleep (diferença medida ao passá-lo para classe A em 2026-11-19). Os ≈ 6 mA que sobram em classe A ainda misturam a placa e o módulo suspenso; para separá-los, meça um `SLEEP:60` com o Radioenge desconectado.
 - **Confira a classe do Radioenge antes de medir** (`AT+CLASS=?` pela serial do nó). Em classe C ele recebe o tempo todo e o sleep fica em ≈ 24 mA; em classe A (`AT+CLASS=A`, fica gravado no módulo) cai para ≈ 6 mA. As medições de 27/10 foram em classe C; as de 2026-11-19, em classe A.
 
 ## Medição de referência (teste curto, câmera ligada durante o envio)
@@ -127,7 +127,7 @@ python corrente.py analisar corrente/teste_1.csv --offset-ma 0.0 --init-s 2.699 
 | `mAh por leitura` | **6,62** (desvio 0,005 mAh, n = 4; sleep de 30 s) |
 | Período do ciclo | 172,1 s (≈ 142,7 s acordado + 30 s de sleep) |
 | Corrente média acordado | ≈ 162 mA (base de ≈ 159 mA entre os chunks) |
-| Corrente em sleep | ≈ 24,1 mA (p5 23,2 / p95 25,2), incluindo o Radioenge |
+| Corrente em sleep | ≈ 24,1 mA (p5 23,2 / p95 25,2), com o Radioenge em classe C (≈ 18 mA eram dele) |
 | Pico | ≈ 297 mA |
 | Antes de iniciar a câmera | ≈ 77 mA (o degrau até ~159 mA aparece quando a câmera inicia) |
 

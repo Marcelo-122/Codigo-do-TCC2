@@ -155,7 +155,7 @@ Primeira medição de corrente, em 2026-10-27, com `Rede/transmissor_esp32cam` n
 | `mAh por leitura` | **6,62** (desvio 0,005 mAh, n = 4; sleep de 30 s) |
 | Período do ciclo | 172,1 s (≈ 142,7 s acordado + 30 s de sleep) |
 | Corrente média acordado | ≈ 162 mA, com base de ≈ 159 mA entre os chunks e picos de TX até ≈ 298 mA |
-| Corrente em sleep | ≈ 24,1 mA, **incluindo o Radioenge** (ainda não separado) |
+| Corrente em sleep | ≈ 24,1 mA, com o Radioenge em classe C: ≈ 18 mA eram dele, recebendo o tempo todo (ver "Consumo dos dois fluxos com o Radioenge em classe A") |
 | Antes de iniciar a câmera | ≈ 77 mA; o degrau até ≈ 159 mA aparece quando a câmera inicia |
 
 O consumo é dominado pela espera de 7 s entre chunks com CPU e câmera ligadas (≈ 95% da carga do ciclo); os picos
@@ -177,7 +177,7 @@ Ele foi **excluído**, o que deixa **30 ciclos completos**.
 |---|---|
 | `mAh por leitura` | **4,64** (mediana 4,65; desvio 0,24; de 4,26 a 5,24) |
 | Corrente média acordado | ≈ 84,5 mA (de 81 a 86 mA por ciclo); picos de TX de 207 a 220 mA |
-| Corrente em sleep | ≈ 23,7 mA, **incluindo o Radioenge** (ainda não separado) |
+| Corrente em sleep | ≈ 23,7 mA, com o Radioenge em classe C: ≈ 18 mA eram dele, recebendo o tempo todo (ver "Consumo dos dois fluxos com o Radioenge em classe A") |
 | Tempo acordado | média 189,9 s (de 173 a 219 s) |
 | Período do ciclo | média 218,5 s (≈ 190 s acordado + ≈ 29 s de sleep) |
 
@@ -220,7 +220,7 @@ imagem (`corrente/auto30_ocr.csv`, 2026-10-27, 169.738 amostras em 1.697 s, tens
 | `mAh por leitura` | **0,824** (desvio 0,014) |
 | Tempo acordado | **19,45 s** na maioria dos ciclos (início, captura, modelos, segmentação, dígitos e envio) |
 | Corrente média acordado | ≈ 114 mA, com picos de TX de 206 a 227 mA |
-| Corrente em sleep | ≈ 25,2 mA (de 24,1 a 26,3), **incluindo o Radioenge** |
+| Corrente em sleep | ≈ 25,2 mA (de 24,1 a 26,3), com o Radioenge em classe C: ≈ 18 mA eram dele, recebendo o tempo todo (ver "Consumo dos dois fluxos com o Radioenge em classe A") |
 | Período do ciclo | 49,1 s (≈ 19,5 s acordado + ≈ 29,6 s de sleep) |
 
 Os ciclos 24 e 25 da tabela do `analisar` (0,778 e 0,872 mAh) têm a fronteira deslocada por um pico isolado de uma
@@ -258,10 +258,11 @@ também do sleep, como mostra a próxima seção.
 > sleep caiu para ≈ 6 mA; a autonomia recalculada está em "Consumo dos dois fluxos com o Radioenge em classe A". O texto
 > abaixo é a análise de 27/10.
 
-Em sleep o protótipo consome **≈ 24 mA**, e isso é um defeito da bancada, não uma característica dos fluxos: o ESP32 em
-deep sleep gasta microampères, mas o Radioenge continua ligado (o firmware só dorme o ESP32), e a placa ESP32-CAM tem
-regulador, LED e a câmera em power-down. A medição de sleep inclui tudo isso, e **ainda não foi separada** (falta medir o
-`SLEEP:60` com o Radioenge desconectado). Com intervalos longos, esses 24 mA dominam a conta dos dois fluxos: em 1 h são
+Em sleep o protótipo consumia **≈ 24 mA**, e isso era um defeito da bancada, não uma característica dos fluxos: o ESP32 em
+deep sleep gasta microampères, mas o Radioenge continuava recebendo (estava em classe C) e a placa ESP32-CAM tem
+regulador, LED e a câmera em power-down. A medição de 2026-11-19 separou a maior parte: **≈ 18 mA eram o Radioenge em
+classe C**, e em classe A o sleep cai para ≈ 6 mA. Esses ≈ 6 mA restantes (placa e Radioenge suspenso) ainda não foram
+divididos entre os dois. Com intervalos longos, os 24 mA de 27/10 dominavam a conta dos dois fluxos: em 1 h são
 22,7 mAh de sleep, contra 4,5 mAh (imagem) ou 0,6 mAh (OCR) da leitura. Por isso, com o piso medido, a autonomia dos dois
 fica próxima (3,1 e 3,4 dias), embora uma leitura de imagem custe 7 vezes mais.
 
@@ -285,8 +286,9 @@ Cálculo: `mAh por leitura = corrente acordado × tempo acordado + piso de sleep
 também explica por que a linha de 1 h dava 3,1 e 3,2 dias antes e agora 3,1 e 3,4.
 
 **Para a H3**, o resultado é: por leitura, o fluxo de imagem gasta 5,6 a 7,2 vezes mais energia, e o efeito sobre a
-autonomia vai de pequeno (1,1× em 1 h, com o piso medido) a grande (6× com piso de 0,1 mA) conforme o piso de sleep. Só
-dá para afirmar a autonomia real depois de medir o sleep sem o Radioenge e com o regulador que o campo usará.
+autonomia vai de pequeno (1,1× em 1 h, com o piso de 27/10) a grande (6× com piso de 0,1 mA) conforme o piso de sleep.
+Com o piso medido em classe A (≈ 6 mA), a vantagem do OCR na autonomia ficou em 3,2× (leitura a cada 10 min) e 1,4× (a
+cada hora); a autonomia real ainda depende do regulador e da bateria que o campo usará.
 
 ## Latência ponta a ponta e entrega do fluxo de OCR (34 leituras)
 
