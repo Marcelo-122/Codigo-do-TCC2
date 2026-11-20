@@ -3,7 +3,7 @@
 Cada quadro de `quadros_160x120.csv` vai pela serial para o `transmissor_ocr_esp32cam` (comando `LERQ`), com a ROI da
 posição da câmera em que foi tirado (`posicoes_camera.csv`, como no `avaliar_roi_fixa_fisico.py`). A placa lê com o
 mesmo `lerDigitos()` do OCR real (TFLite Micro, kernels do esp-nn) e devolve a leitura e as 10 saídas int8 de cada
-fatia; o PC faz a mesma leitura com o `pipeline_nuvem.py` (ai-edge-litert, kernels de referência). O teste isola o
+fatia; o PC faz a mesma leitura com o `pipeline_nuvem.py` (ai-edge-litert sem XNNPACK, kernels otimizados do LiteRT). O teste isola o
 cálculo: mesmos pixels, mesma ROI, mesmo modelo; só muda onde a conta é feita. Não cobre a câmera ao vivo.
 
 Pré-requisito: `transmissor_ocr_esp32cam` gravado na placa; feche monitores seriais. Nada é enviado pelo rádio.
@@ -128,7 +128,7 @@ def main():
           f"Gerado por `comparar_placa_pc.py` em {datetime.date.today().isoformat()}. Os {len(res)} quadros de "
           f"`{Path(a.manifesto).name}` foram mandados pela serial ao `transmissor_ocr_esp32cam` (comando `LERQ`), cada "
           "um com a ROI da sua posição de câmera, e lidos pelo mesmo `lerDigitos()` do OCR na placa (TFLite Micro, "
-          "esp-nn). O PC leu os mesmos quadros com o `pipeline_nuvem.py` (ai-edge-litert, kernels de referência).", "",
+          "esp-nn). O PC leu os mesmos quadros com o `pipeline_nuvem.py` (ai-edge-litert sem XNNPACK, kernels otimizados do LiteRT).", "",
           "| | Resultado |", "|---|---|",
           f"| Leituras iguais na placa e no PC | {sum(r['leitura_igual'] for r in res)}/{len(res)} |",
           f"| Saídas int8 do classificador idênticas (todas as fatias) | {sum(r['saidas_iguais'] for r in res)}/{len(res)} "

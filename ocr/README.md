@@ -174,7 +174,7 @@ batem com as estimativas automáticas por Hough (−5,5°, +3° e −9°) com di
 ## Limites
 
 - A "borda" é uma **emulação** em Python: o quadro 160×120 vem da redução de uma foto 640×480, não do sensor, e os
-  kernels são os de referência do TFLite, não a TFLM do ESP32. Os números comparam os dois fluxos entre si; não são
+  kernels são os do LiteRT no PC, não os do esp-nn da TFLM no ESP32. Os números comparam os dois fluxos entre si; não são
   a acurácia no hardware.
 - O enquadramento (`centro_y`) e a `caixa_manual` foram escolhidos à mão. A caixa manual é um **oráculo** (limite
   superior do que a segmentação poderia dar), não um resultado do pipeline.

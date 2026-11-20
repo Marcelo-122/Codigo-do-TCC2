@@ -1,6 +1,6 @@
 # Placa x PC nas mesmas imagens
 
-Gerado por `comparar_placa_pc.py` em 2026-11-18. Os 33 quadros de `quadros_160x120.csv` foram mandados pela serial ao `transmissor_ocr_esp32cam` (comando `LERQ`), cada um com a ROI da sua posição de câmera, e lidos pelo mesmo `lerDigitos()` do OCR na placa (TFLite Micro, esp-nn). O PC leu os mesmos quadros com o `pipeline_nuvem.py` (ai-edge-litert, kernels de referência).
+Gerado por `comparar_placa_pc.py` em 2026-11-18. Os 33 quadros de `quadros_160x120.csv` foram mandados pela serial ao `transmissor_ocr_esp32cam` (comando `LERQ`), cada um com a ROI da sua posição de câmera, e lidos pelo mesmo `lerDigitos()` do OCR na placa (TFLite Micro, esp-nn). O PC leu os mesmos quadros com o `pipeline_nuvem.py` (ai-edge-litert sem XNNPACK, kernels otimizados do LiteRT).
 
 | | Resultado |
 |---|---|

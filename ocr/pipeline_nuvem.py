@@ -37,7 +37,8 @@ import time
 import cv2
 import numpy as np
 
-try:  # evita o delegate XNNPACK: a TFLM do firmware usa kernels de referência
+try:  # sem o delegate XNNPACK. No ai-edge-litert 2.3.0 os kernels continuam otimizados (não os de referência,
+    # BUILTIN_REF), e a TFLM do firmware usa os do esp-nn: as saídas int8 diferem um pouco, as leituras não (PLACA_X_PC.md)
     from ai_edge_litert.interpreter import Interpreter, OpResolverType
     _SEM_DELEGATE = dict(experimental_op_resolver_type=OpResolverType.BUILTIN_WITHOUT_DEFAULT_DELEGATES)
 except ImportError:  # pragma: no cover - fallback para outras distribuições do TFLite

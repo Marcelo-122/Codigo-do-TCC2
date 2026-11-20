@@ -10,10 +10,10 @@ discordantes (b = so o float acerta, c = so o INT8 acerta).
 - Float: inferencia em numpy com os pesos lidos do .h5 por h5py (a arquitetura e a da
   tabela do treinar_classificador_digitos.py), para nao depender do TensorFlow. Reproduz os
   7.043 acertos (95,46 %) do relatorio.
-- INT8: LiteRT (ai-edge-litert) ou, se nao estiver instalado, tf.lite, sempre SEM o delegado
-  XNNPACK, como no ocr/pipeline_nuvem.py. Reproduz os 7.037 acertos (95,38 %). Com o
-  XNNPACK ligado o mesmo arquivo acerta 7.040: a troca de kernels mexe no resultado na
-  mesma escala que a quantizacao.
+- INT8: LiteRT (ai-edge-litert) ou, se nao estiver instalado, tf.lite, com os kernels de
+  referencia (BUILTIN_REF). Reproduz os 7.037 acertos (95,38 %). Com kernels otimizados
+  (XNNPACK ligado ou, no ai-edge-litert 2.3.0, ate BUILTIN_WITHOUT_DEFAULT_DELEGATES) o mesmo
+  arquivo acerta 7.040: a troca de kernels mexe no resultado na mesma escala que a quantizacao.
 
   python comparar_float_int8.py          (na pasta ModeloEDataset, com dataset/digits montado)
 

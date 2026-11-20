@@ -45,7 +45,12 @@ hidrômetro.
 `transmissor_ocr_esp32cam` (comando `LERQ x0 y0 x1 y1 n fa fb realce`, com a ROI da posição do quadro), que lê com o
 mesmo `lerDigitos()` do OCR real, e compara com o PC (`resultados/PLACA_X_PC.md`). Em 2026-11-18, com a
 configuração final (só a face): **33/33 leituras iguais** e 25/30 certas nos dois; as saídas int8 do classificador
-diferiram até 18 (kernels esp-nn na placa × de referência no PC), sem mudar nenhum dígito. Com o realce ligado, a
+diferiram até 18 (kernels esp-nn na placa × kernels otimizados do LiteRT no PC), sem mudar nenhum dígito. Nenhum
+dos dois lados usa os kernels de referência: no ai-edge-litert 2.3.0, desligar o XNNPACK
+(`BUILTIN_WITHOUT_DEFAULT_DELEGATES`, como no `pipeline_nuvem.py`) dá as mesmas leituras que o `BUILTIN` com XNNPACK.
+Em 2026-11-20, o `avaliar_roi_fixa_fisico.py` rodado com os kernels de referência (`BUILTIN_REF`) mudou 4 das 264
+leituras, todas nas variantes descartadas ("só o realce" e "sem pré-processamento"); a configuração final e o
+"face + realce" ficaram iguais. Com o realce ligado, a
 mesma comparação tinha dado 33/33 iguais e 24/30 certas. O classificador levou 1,92 s
 para as 6 fatias na placa. O teste não inclui a câmera ao vivo (exposição, variação entre quadros).
 
