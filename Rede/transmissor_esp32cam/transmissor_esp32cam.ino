@@ -37,6 +37,7 @@
 #include "img_converters.h"  // fmt2jpg()
 #include "driver/rtc_io.h"
 #include "esp_sleep.h"
+#include "medir_cpu.h"      // uso de CPU, frequencia e memoria por ciclo (so com MEDIR_CPU=1)
 
 // --- Pinos camera (AI Thinker ESP32-CAM) ---
 #define PWDN_GPIO_NUM   32
@@ -439,6 +440,7 @@ void cicloAutonomo() {
   int total = 0, falhas = -1;
   unsigned long t_captura = 0, t_envio = 0;
   size_t jpegBytes = 0;
+  cpuFase("boot");
 
   if (camPronta) {
     unsigned long t0 = millis();
@@ -446,17 +448,20 @@ void cicloAutonomo() {
     t_captura = millis() - t0;
     if (capturou) {
       desligarCamera();
+      cpuFase("captura");   // captura + compressao JPEG
       jpegBytes = imgSize;
       total = (imgSize + CHUNK_DATA_SIZE - 1) / CHUNK_DATA_SIZE;
       t0 = millis();
       falhas = enviarImagem();
       t_envio = millis() - t0;
+      cpuFase("envio");
     }
   } else {
     Serial.println("[ciclo] camera indisponivel, nada a enviar");
   }
 
   uint32_t dorme = autoIntervaloS;
+  cpuImprimir(cicloN);
   Serial.printf("[CICLO_FIM] ciclo=%u ok=%d chunks=%d falhas=%d jpeg_bytes=%u "
                 "t_ate_ciclo_ms=%lu t_captura_ms=%lu t_envio_ms=%lu t_ativo_ms=%lu sleep_s=%u\n",
                 (unsigned)cicloN, (falhas == 0) ? 1 : 0, total, falhas, (unsigned)jpegBytes,
@@ -487,6 +492,7 @@ void janelaStop() {
 // ================================================================
 void setup() {
   bool acordouDoSleep = (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER);
+  cpuIniciar();   // MEDIR_CPU=1: ganchos de idle; no power-on, calibra 1 s com a placa parada
   // Os holds do sleep seguram PWDN/flash; precisam sair antes de usar a camera.
   pinoLiberar((gpio_num_t)PWDN_GPIO_NUM);
   pinoLiberar(FLASH_LED_GPIO);
@@ -531,6 +537,7 @@ void loop() {
       autoIntervaloS = (s >= (long)INTERVALO_MIN_S) ? (uint32_t)s : INTERVALO_PADRAO_S;
       autoAtivo = true;
       Serial.printf("[auto] ligado, intervalo %u s\n", (unsigned)autoIntervaloS);
+      cpuReiniciar();   // o 1o ciclo nao conta a espera pelo comando
       cicloAutonomo();
     } else if (linha == "STOP") {
       autoAtivo = false;

@@ -1,4 +1,4 @@
-# Medições em hardware (H2 – latência, H3 – energia)
+# Medições em hardware (H2 – custo computacional, H3 – energia; latência e entrega complementares)
 
 As hipóteses H2 e H3 estão definidas no [README da raiz](../README.md#hipóteses-avaliadas).
 
@@ -35,6 +35,7 @@ Dados brutos de três firmwares:
 | `transmissao_ocr.csv` | `Rede/transmissor_ocr_esp32cam` (fluxo de OCR, FPort 2) | — | uma linha por leitura recebida: dígitos, FCnt, RSSI, tempo de rádio, latência ([`medir_transmissao.md`](medir_transmissao.md)) |
 | `tempo_inferencia_nuvem.py` | servidor (`ocr/pipeline_nuvem.py`, LiteRT sem XNNPACK) | 21 imagens × 5 | tempo do OCR da nuvem sobre as imagens completas de `imagens/`, que a latência ponta a ponta não inclui; em 2026-11-01, Ryzen 5 5600GT (WSL): leitura completa 6,25 ms, segmentação 4,30 ms, ROI fixa 1,91 ms (medianas). Só imprime, não grava CSV |
 | `ina219_logger/` e `ina219_diagnostico/` | Arduino Uno + INA219 | — | o logger de corrente (100 amostras/s, `t_us,shunt_mV,bus_V`) e o diagnóstico ao vivo da ligação do INA219 (para achar mau contato); ver [`medir_corrente.md`](medir_corrente.md) |
+| `cpu/cpu_ocr_roi.csv` e `cpu/cpu_imagem.csv` (+ `.log`) | os dois transmissores compilados com `MEDIR_CPU=1`, medidos por `medir_cpu.py` | 31 ciclos cada (30 despertares) | uma linha por ciclo: frequência, uso de CPU e CPU ocupada por núcleo, por fase, picos de PSRAM e RAM interna, e os campos da `[CICLO_FIM]`; 2026-11-20 |
 | `exportar_ciclo_corrente.py` | — | 1 ciclo por arquivo | exporta um ciclo de `corrente/*.csv` (mesma detecção de ciclos do `corrente.py analisar`) como envelope mín./máx. a cada 0,25 s, em `.dat` para o gráfico do TCC; o docstring tem os dois comandos usados (ciclo 8 da imagem, ciclo 4 do OCR) |
 
 O `transmissao.csv` e o `transmissao_ocr.csv` são gerados pelo `reconstrutor.py`. O `transmissao.csv` tem a corrida de
@@ -411,6 +412,46 @@ O modelo reproduz as cargas medidas com o sleep de 30 s (2,92 e 0,180 mAh, contr
 o sleep ainda domina em intervalos longos (em 1 h são ≈ 6,2 mAh de sleep, contra 2,9 mAh de uma leitura de imagem e
 0,13 mAh de uma de OCR); o próximo ganho de autonomia está na placa (os ≈ 6 mA restantes), não no fluxo.
 
+## Uso de CPU, frequência e memória dos dois fluxos (H2, 2026-11-20)
+
+Os dois transmissores foram compilados com `MEDIR_CPU=1` ([`medir_cpu.h`](../Rede/transmissor_ocr_esp32cam/medir_cpu.h),
+o mesmo nos dois) e lidos por [`medir_cpu.py`](medir_cpu.py): 31 ciclos de `AUTO:30` por fluxo, o 1º (do comando, sem
+despertar do deep sleep) fora das contas. Fluxo de OCR em modo ROI (sem segmentação); Radioenge em classe A.
+Dados em [`cpu/cpu_ocr_roi.csv`](cpu/cpu_ocr_roi.csv) e [`cpu/cpu_imagem.csv`](cpu/cpu_imagem.csv), com os logs brutos ao
+lado.
+
+Como mede: as bibliotecas do core 3.0.7 vêm sem as estatísticas de tempo de execução do FreeRTOS, então o uso de cada
+núcleo é estimado pela tarefa idle (um gancho conta as voltas dela; a taxa com o núcleo ocioso é calibrada por 1 s no
+power-on). A janela vai do `setup()` ao deep sleep e não inclui os ≈ 0,5 s de boot da ROM antes dele (por isso
+`t_ms` é menor que o `t_ativo_ms` da `[CICLO_FIM]`). Com a medição ligada a CPU não dorme no idle, então esse firmware
+não serve para medir corrente; os tempos de cada etapa ficaram iguais aos das outras medições (1.917 ms do
+classificador, 11 ms do JPEG).
+
+| Grandeza (mediana de 30 ciclos) | Fluxo de imagem (nuvem) | Fluxo de OCR, modo ROI (borda) |
+|---|---|---|
+| Frequência da CPU | 240 MHz em todos os ciclos (APB 80 MHz, cristal 40 MHz) | idem |
+| Escala dinâmica de frequência | não (`CONFIG_PM_ENABLE` desligado no core 3.0.7) | idem |
+| Janela medida (do `setup()` ao deep sleep) | 115,9 s (99,6 a 165,0 s; 13 a 21 chunks, JPEG de 2.207 a 3.656 B) | 3,55 s (3,547 a 3,552 s) |
+| Uso de CPU no ciclo, núcleo 1 / núcleo 0 | 9,6 % / 0,9 % | 74,1 % / 2,1 % |
+| CPU ocupada no ciclo, núcleo 1 / núcleo 0 | 11,2 s / 1,0 s | 2,63 s / 0,08 s |
+| Processamento da imagem no nó | captura + JPEG: 20 ms a 51 % (≈ 10 ms de CPU) | classificador, 6 fatias: 1.917 ms a 100 % |
+| Envio pelo rádio | 115 s a 9,6 % (≈ 0,75 s de CPU por chunk) | 0,68 s a 91 % (1 uplink) |
+| Boot (`setup()` até o ciclo, inclui ligar a câmera) | 0,71 s a 9,8 % | 0,71 s a 11,5 % |
+| Pico de PSRAM no ciclo (de 4.096 KB) | 148,9 KB | 788,9 KB |
+| Pico de RAM interna no ciclo | 75,0 KB | 77,3 KB |
+
+Leitura:
+
+- **Processamento:** a leitura na borda ocupa o núcleo 1 por 1.917 ms, cerca de 190 vezes os ≈ 10 ms de CPU da
+  compressão JPEG, e reserva 5,3 vezes mais PSRAM (a arena de 768 KB do classificador). A frequência não distingue os
+  fluxos: os dois rodam a 240 MHz fixos enquanto acordados, e a diferença está no tempo acordado.
+- **Ciclo inteiro:** o fluxo de imagem fica acordado ≈ 33 vezes mais e ocupa mais CPU (11,2 s contra 2,6 s no núcleo
+  1), mas quase tudo é a espera ativa pela resposta do Radioenge a cada chunk (o laço que lê a UART por até 2 s), não
+  processamento. Os 7 s entre chunks são `delay()` e aparecem como CPU ociosa.
+- **Núcleo 0:** quase ocioso nos dois (sem Wi-Fi nem Bluetooth); o Arduino roda o `loop()` no núcleo 1.
+- O tempo acordado do fluxo de imagem (116 s) é menor que o de 2026-11-19 (≈ 147 s) porque a câmera foi movida e os
+  JPEGs ficaram menores (13 a 21 chunks, contra 17 a 20).
+
 ## Enlace do fluxo de imagem: PDR, tempo de rádio e latência (`transmissao.csv`, 30 envios)
 
 `python Rede/reconstrutor.py --tx --envios 30 --distancia 2 --rotulo "bancada, imagem"` (2026-10-27, 14:59 a 16:44), com o nó
@@ -464,7 +505,7 @@ entre blocos, nó e receptor a ≈ 2 m. Comando de PDR e colunas em [`medir_tran
   `DEEPSLEEP_RESET` e o contador de ciclos na memória RTC. No de OCR, os 32 ciclos de `AUTO:30` mostram o mesmo
   padrão (≈ 114 mA acordado, ≈ 25 mA dormindo). Com o Radioenge em classe A (2026-11-19), o sleep dos dois cai para
   ≈ 6 mA. Roteiro em [`teste_deep_sleep.md`](teste_deep_sleep.md).
-- **Taxa de pacotes entregues (H2):** medida nos dois fluxos pelos CSVs de latência (27/10: imagem com 98,0% dos
+- **Taxa de pacotes entregues (complementar):** medida nos dois fluxos pelos CSVs de latência (27/10: imagem com 98,0% dos
   pacotes e 20 de 30 imagens, OCR com 79,4% das leituras; 2026-11-19: imagem com 98,9% e 24 de 30, OCR com 29 de 30) e,
   no fluxo de imagem, pelo `transmissao.csv` (98,7% dos pacotes, 21 de 30 imagens). Falta o `transmissao_ocr.csv` (OCR), gerado pelo `reconstrutor.py --tx --fluxo ocr`, ainda sem medições
   em placa; ver [`medir_transmissao.md`](medir_transmissao.md).

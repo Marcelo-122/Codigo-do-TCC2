@@ -58,6 +58,7 @@
 #include "esp_sleep.h"
 #include "esp_heap_caps.h"
 
+#include "medir_cpu.h"      // uso de CPU, frequencia e memoria por ciclo (so com MEDIR_CPU=1)
 #include "modelo.h"         // array modelo_tflite[] (segmentacao)
 #include "modelo_digito.h"  // array modelo_digito_tflite[] (classificador de digito)
 
@@ -510,11 +511,13 @@ ResultadoOcr executarOcr() {
   esp_camera_fb_return(fb);
   r.t_captura = millis() - t0;
   desligarCamera();
+  cpuFase("captura");
 
   t0 = millis();
   if (!cfg.valida && !segOk) segOk = iniciarModelo();   // com ROI, a segmentacao nem e carregada
   if (!digOk) digOk = iniciarModeloDigito();
   r.t_modelos = millis() - t0;
+  cpuFase("modelos");
   if ((!cfg.valida && !segOk) || !digOk) {
     Serial.println("[ocr] modelos indisponiveis");
     free(frame);
@@ -534,10 +537,12 @@ ResultadoOcr executarOcr() {
     else Serial.println("[tflite] Invoke() (segmentacao) falhou");
   }
   r.t_seg = millis() - t0;
+  cpuFase("seg");
 
   t0 = millis();
   if (r.achou) lerDigitos(frame, bx0, by0, bx1, by1, r.n, cfg.fa, cfg.fb, cfg.realce, r.leitura);
   r.t_digitos = millis() - t0;
+  cpuFase("digitos");
   free(frame);
 
   r.ok = inferiu;
@@ -648,6 +653,7 @@ void dormir(uint32_t segundos) {
 void cicloAutonomo() {
   cicloN++;
   unsigned long t_inicio = millis();
+  cpuFase("boot");
 
   ResultadoOcr r = executarOcr();
 
@@ -660,8 +666,10 @@ void cicloAutonomo() {
   } else {
     Serial.println("[ciclo] OCR nao rodou, nada a enviar");
   }
+  cpuFase("envio");
 
   uint32_t dorme = autoIntervaloS;
+  cpuImprimir(cicloN);
   Serial.printf("[CICLO_FIM] ciclo=%u ok=%d chunks=%d falhas=%d leitura=%s achou=%d "
                 "t_ate_ciclo_ms=%lu t_captura_ms=%lu t_modelos_ms=%lu t_seg_ms=%lu "
                 "t_digitos_ms=%lu t_envio_ms=%lu t_ativo_ms=%lu sleep_s=%u\n",
@@ -731,6 +739,7 @@ void lerQuadroDoPc(const String& linha) {
 // ================================================================
 void setup() {
   bool acordouDoSleep = (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER);
+  cpuIniciar();   // MEDIR_CPU=1: ganchos de idle; no power-on, calibra 1 s com a placa parada
   // Os holds do sleep seguram PWDN/flash; precisam sair antes de usar a camera.
   pinoLiberar((gpio_num_t)PWDN_GPIO_NUM);
   pinoLiberar(FLASH_LED_GPIO);
@@ -772,6 +781,7 @@ void loop() {
       autoIntervaloS = (s >= (long)INTERVALO_MIN_S) ? (uint32_t)s : INTERVALO_PADRAO_S;
       autoAtivo = true;
       Serial.printf("[auto] ligado, intervalo %u s\n", (unsigned)autoIntervaloS);
+      cpuReiniciar();   // o 1o ciclo nao conta a espera pelo comando
       cicloAutonomo();
     } else if (linha == "STOP") {
       autoAtivo = false;
