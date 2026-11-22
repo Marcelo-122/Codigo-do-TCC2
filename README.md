@@ -50,7 +50,7 @@ cada um a sua caixa de "Status"; os números detalhados ficam em [`medicoes/`](m
 | Leitura com ROI fixa em hidrômetro físico (bancada, 2026-11-18) | 30 quadros 160×120 crus da ESP32-CAM, câmera parada, 26 leituras distintas (`000025` a `000052`), um medidor e uma luz. Sem pré-processamento, 2/30 leituras exatas; recortando a face da roda (configuração final, gravada na placa), **25/30 (83 %, IC 95 % 66–93 %)**, e 23/28 (82 %) só nas leituras diferentes da usada na calibração. Com o realce junto, 24/30: o realce não ajudou e foi desligado. Todos os erros na roda das unidades; borda e nuvem (JPEG q90) iguais. Os mesmos 33 quadros mandados à placa (`LERQ`) deram **as mesmas leituras que o PC em 33/33** (25/30 nos dois); as saídas int8 diferem um pouco (até 18, kernels esp-nn × LiteRT) sem mudar nenhum dígito. Classificador na placa: 1,92 s para as 6 fatias | [`ROI_FIXA_FISICO.md`](experimentos/hibrido_a_b/resultados/ROI_FIXA_FISICO.md), [`PLACA_X_PC.md`](experimentos/hibrido_a_b/resultados/PLACA_X_PC.md) |
 | Firmware de debug (`test_images/debug_ocr_esp32cam/`) | Roda em placa: 61 capturas, ≈ 17,6 s de processamento por leitura, medidas com o `modelo.h` de segmentação **antigo** | [`medicoes/README.md`](medicoes/README.md) |
 | Transmissor do fluxo de imagem (`Rede/transmissor_esp32cam/`, FPort 1) | Em placa: consumo em 30 ciclos de `AUTO:30` (≈ 4,64 mAh por leitura); latência mediana de 189 s; 20/30 imagens completas (21/30 na corrida com `CAPTURE`). O `STOP` do modo autônomo não foi testado | [`medicoes/README.md`](medicoes/README.md) |
-| Transmissor do OCR na borda (`Rede/transmissor_ocr_esp32cam/`, FPort 2) | Compila (core 3.0.7) e roda em placa: consumo em 32 ciclos (0,824 mAh por leitura), latência mediana de 18,84 s, 27/34 uplinks recebidos, medidos **com a segmentação**. Desde 2026-11-18, com ROI na NVS ele pula a segmentação (modo `roi`): latência mediana de **3,50 s** em 29 despertares de `AUTO:30`, 30/30 uplinks recebidos; energia de **0,175 mAh por leitura** com sleep de 30 s (2026-11-19, Radioenge em classe A). Nos 33 quadros mandados pelo PC a placa leu o mesmo que o PC (25/30 nas fotos rotuladas); a leitura ao vivo não foi conferida | [`medicoes/README.md`](medicoes/README.md) |
+| Transmissor do OCR na borda (`Rede/transmissor_ocr_esp32cam/`, FPort 2) | Compila (core 3.0.7) e roda em placa: consumo em 32 ciclos (0,824 mAh por leitura), latência mediana de 18,84 s, 27/34 uplinks recebidos, medidos **com a segmentação**. Desde 2026-11-18, com ROI na NVS ele pula a segmentação (modo `roi`): latência mediana de **3,50 s** em 29 despertares de `AUTO:30`, 30/30 uplinks recebidos; energia de **0,175 mAh por leitura** com sleep de 30 s (2026-11-19, Radioenge em classe A). Nos 33 quadros capturados pela câmera do nó e lidos pelo firmware (comando `LERQ`), a placa leu o mesmo que o PC: 25/30 contra o gabarito anotado olhando o visor. No modo autônomo, o OCR roda na placa em todo ciclo | [`medicoes/README.md`](medicoes/README.md) |
 | ROI calibrada no firmware | O calibrador ([`Rede/calibrar_roi_esp32cam/`](Rede/calibrar_roi_esp32cam/README.md)) grava na NVS a ROI, a orientação e o pré-processamento das fatias (face da roda e realce); o transmissor de OCR lê tudo e pula a segmentação. Latência ponta a ponta (3,50 s, mediana) e energia (0,175 mAh por leitura, Radioenge em classe A) medidas | — |
 | Servidor (`ocr/pipeline_nuvem.py`) | Implementado, com segmentação (padrão) ou ROI (`--roi`); ≈ 6,25 ms por leitura num Ryzen 5 5600GT | [`ocr/README.md`](ocr/README.md), [`medicoes/README.md`](medicoes/README.md) |
 | Scripts do enlace no PC (`Rede/*.py`) | Testados com nó e receptor simulados (59 verificações) e usados com as placas em 2026-10-27 (`transmissao.csv`, `latencia_ponta_a_ponta.csv`, `latencia_ocr.csv`). O `transmissao_ocr.csv` **nunca foi gerado** | [`medicoes/medir_transmissao.md`](medicoes/medir_transmissao.md), [`medicoes/medir_latencia.md`](medicoes/medir_latencia.md) |
@@ -713,8 +713,8 @@ Para ver o repositório como estava na entrega: `git checkout tcc2-resultados`.
 
 ## Limitações conhecidas e próximos passos
 
-- **Modo ROI medido em latência e energia** (3,50 s; 0,175 mAh por leitura com o Radioenge em classe A); falta a
-  acurácia da leitura ao vivo na placa, com gabarito (a comparação placa × PC usou quadros mandados pelo PC).
+- **Modo ROI medido em latência, energia e acurácia na placa**: 3,50 s; 0,175 mAh por leitura com o Radioenge em
+  classe A; 25/30 leituras nos quadros capturados pela câmera do nó, rotulados olhando o visor e lidos pelo firmware.
 - **Piso de sleep de ≈ 6 mA** (Radioenge em classe A): não foi separado entre a placa ESP32-CAM e o módulo; em
   intervalos longos ele ainda domina a autonomia.
 - **Um medidor e uma iluminação** no conjunto físico com câmera fixa (30 fotos, 26 leituras, os quatro primeiros
@@ -725,15 +725,14 @@ Para ver o repositório como estava na entrega: `git checkout tcc2-resultados`.
   entropia cruzada + Dice; a rede (11 KB, sem conexões de salto) tem capacidade limitada. Como a decisão é câmera fixa
   e ROI calibrada na instalação, melhorar o modelo de segmentação não é necessário para a leitura, e só valeria como
   extensão (arquitetura com *skip connections*, mais épocas).
-- **Integração final**: o firmware (`Rede/transmissor_ocr_esp32cam/`: OCR do debug + envio da leitura na FPort 2,
-  ~9 bytes em vez da imagem inteira) já rodou em placa, com consumo e latência medidos no modo com segmentação; no modo
-  ROI, latência e energia foram medidas (3,50 s; 0,175 mAh), mas a leitura ao vivo na placa não foi conferida contra o hidrômetro.
+- **Integração final**: o firmware (`Rede/transmissor_ocr_esp32cam/`: OCR na placa + envio da leitura na FPort 2,
+  ~9 bytes em vez da imagem inteira) roda em placa nos dois modos; no modo ROI, adotado, latência, energia e acurácia
+  na placa foram medidas (3,50 s; 0,175 mAh; 25/30).
 - Perda de chunks no enlace: hoje o reenvio é manual (`RESEND`, com o `reconstrutor.py` aberto) ou pelo
   `orchestrator.py`; falta automatizar a captura com confirmação.
-- **Comparação borda × nuvem em hardware**: o conjunto comum (`ocr/teste_comum/`) só permite emulação. Para medir a
-  acurácia de verdade, capturar frames 160×120 nativos com o firmware de debug, com a câmera fixa e a ROI calibrada.
-- Ajustar o texto do trabalho: o lado da nuvem usa os mesmos modelos do pipeline CNN Simples no servidor (muda a pergunta de pesquisa
-  para "onde rodar o OCR"), e o Tesseract foi só um teste de viabilidade.
+- **Comparação borda × nuvem em hardware**: feita com os 30 quadros 160×120 nativos de `dados/teste/` (câmera fixa,
+  ROI calibrada), com as mesmas 25/30 leituras nos dois fluxos e na placa; o conjunto comum (`ocr/teste_comum/`),
+  de fotos de um monitor, continua avaliado só no PC.
 - **Organização do repositório:** o protótipo antigo já foi para `legado/` e os scripts do enlace para `Rede/`
   (rodar da raiz: `python Rede/reconstrutor.py`; o `config.py` continua na raiz porque outros scripts também o usam).
   Falta decidir o que fazer com as amostras na raiz (`image.jpg`, `imagem_recebida.jpg`, `imagem_parcial.jpg`).

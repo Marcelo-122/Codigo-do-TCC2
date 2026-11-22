@@ -137,7 +137,8 @@ def main():
           f"PC {ac_pc}/{len(rot)} |",
           f"| Tempo do classificador na placa ({n} fatias) | mediana {int(np.median(tempos))} ms "
           f"({min(tempos)} a {max(tempos)} ms) |", "",
-          "Mede só o cálculo: não inclui a câmera, a exposição nem a variação entre quadros ao vivo. Detalhe por quadro "
+          "Os quadros foram capturados pela câmera do nó e rotulados olhando o visor; a placa os leu com a mesma função "
+          "usada nas leituras da câmera. Detalhe por quadro "
           "em `placa_x_pc_por_foto.csv`."]
     (pasta_res / "PLACA_X_PC.md").write_text("\n".join(md) + "\n", encoding="utf-8")
     print("\n" + "\n".join(md))

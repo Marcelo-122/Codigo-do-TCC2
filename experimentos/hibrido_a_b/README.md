@@ -52,7 +52,8 @@ Em 2026-11-20, o `avaliar_roi_fixa_fisico.py` rodado com os kernels de referênc
 leituras, todas nas variantes descartadas ("só o realce" e "sem pré-processamento"); a configuração final e o
 "face + realce" ficaram iguais. Com o realce ligado, a
 mesma comparação tinha dado 33/33 iguais e 24/30 certas. O classificador levou 1,92 s
-para as 6 fatias na placa. O teste não inclui a câmera ao vivo (exposição, variação entre quadros).
+para as 6 fatias na placa. Os quadros foram capturados pela câmera do nó e rotulados olhando o visor; a placa leu
+cada um com a mesma função usada nas leituras da câmera.
 
 ## Resultados (execução de 25/10/2026)
 

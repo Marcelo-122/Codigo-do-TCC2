@@ -6,6 +6,10 @@ Pipeline para treinar, no PC, os modelos que rodam via **TensorFlow Lite Micro**
 foram testados juntos em hardware real — ver
 ["Firmware / ferramenta de calibração no ESP32-CAM real"](#firmware--ferramenta-de-calibração-no-esp32-cam-real).
 
+> **Solução adotada no TCC:** só o classificador de dígito. A segmentação não localiza a janela com precisão e foi
+> substituída por uma ROI calibrada à mão na instalação (`Rede/calibrar_roi_esp32cam/`), usada na borda e na nuvem;
+> ela continua no firmware apenas como alternativa quando não há ROI gravada.
+
 ## Contexto
 
 O trabalho original (Gustavo) cobre só o primeiro estágio: um modelo de **segmentação**

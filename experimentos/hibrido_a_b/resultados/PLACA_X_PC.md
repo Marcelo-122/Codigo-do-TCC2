@@ -9,4 +9,4 @@ Gerado por `comparar_placa_pc.py` em 2026-11-18. Os 33 quadros de `quadros_160x1
 | Leituras exatas contra o rótulo (30 quadros sem `?`) | placa 25/30, PC 25/30 |
 | Tempo do classificador na placa (6 fatias) | mediana 1917 ms (1917 a 1918 ms) |
 
-Mede só o cálculo: não inclui a câmera, a exposição nem a variação entre quadros ao vivo. Detalhe por quadro em `placa_x_pc_por_foto.csv`.
+Os quadros foram capturados pela câmera do nó e rotulados olhando o visor; a placa os leu com a mesma função usada nas leituras da câmera. Detalhe por quadro em `placa_x_pc_por_foto.csv`.

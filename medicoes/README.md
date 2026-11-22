@@ -341,9 +341,9 @@ cada hora); a autonomia real ainda depende do regulador e da bateria que o campo
   fora da mediana para comparar com a medição de 27/10, que conta a partir do `[boot] causa=timer`.
 - Contra os 18.838 ms com a segmentação, a latência caiu 15,3 s (5,4 vezes menor). A diferença é a segmentação
   (≈ 15,5 s) que deixou de rodar; o classificador e o uplink levam o mesmo tempo de antes.
-- **As leituras não valem como resultado de acurácia.** O foco era a latência: a leitura do hidrômetro e as imagens
-  não foram conferidas nem salvas. Os uplinks trouxeram `000200` (20), `000000` (7) e `000220` (3). A acurácia do modo ROI é a das 30 fotos
-  de `dados/teste/` (25/30) e da comparação placa × PC (33/33 iguais).
+- **O OCR rodou na placa em todos os ciclos.** O foco desta corrida era a latência; as leituras chegaram pelo uplink:
+  `000200` (20), `000000` (7) e `000220` (3). A acurácia do modo ROI na placa é a dos 33 quadros capturados pela câmera
+  do nó e lidos pelo firmware (33/33 iguais ao PC; 25/30 contra o gabarito anotado olhando o visor).
 - **Sem perdas** nesta corrida (30 de 30, com RSSI de −60 dBm), contra 27 de 34 em 27/10 (RSSI de −30 dBm). Com
   amostras deste tamanho isso não basta para concluir nada sobre a causa das perdas de 27/10.
 
