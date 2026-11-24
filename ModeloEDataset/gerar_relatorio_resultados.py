@@ -209,9 +209,6 @@ Gerado por [`ocr/avaliar_teste_publico.py`](../../ocr/avaliar_teste_publico.py);
 |---|---|---|---|---|
 {tabela_teste}
 
-Para comparação: o classificador **antigo**, treinado com essas mesmas pastas `test` dentro do treino, tirava
-**95,6 %** de leituras exatas e 98,6 % dos dígitos nelas (número contaminado, mantido só para mostrar o tamanho do vazamento).
-
 ## Acurácia por classe (INT8, validação)
 
 | Dígito | Exemplos no dataset | Acurácia |
